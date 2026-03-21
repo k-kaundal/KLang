@@ -107,5 +107,49 @@ void run_interpreter_tests(void) {
         value_free(&v);
     }
 
+    {
+        Value v = run_expr("let x = 0\nwhile x < 3 { x = x + 1 }\nx");
+        ASSERT_EQ(v.type, VAL_INT);
+        ASSERT_EQ(v.as.int_val, 3);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("let sum = 0\nfor i in 0 .. 4 { sum = sum + i }\nsum");
+        ASSERT_EQ(v.type, VAL_INT);
+        /* upper bound is exclusive, so 0 + 1 + 2 + 3 */
+        ASSERT_EQ(v.as.int_val, 6);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("let i = 0\nwhile true { if i == 2 { break } i = i + 1 }\ni");
+        ASSERT_EQ(v.type, VAL_INT);
+        ASSERT_EQ(v.as.int_val, 2);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("let sum = 0\nfor i in 0 .. 5 { if i % 2 == 0 { continue } sum = sum + i }\nsum");
+        ASSERT_EQ(v.type, VAL_INT);
+        /* skips even numbers: 1 + 3 = 4 */
+        ASSERT_EQ(v.as.int_val, 4);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("let x = 5 # trailing comment\nx");
+        ASSERT_EQ(v.type, VAL_INT);
+        ASSERT_EQ(v.as.int_val, 5);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("type(1)");
+        ASSERT_EQ(v.type, VAL_STRING);
+        ASSERT_STR_EQ(v.as.str_val, "int");
+        value_free(&v);
+    }
+
     printf("Interpreter tests done.\n");
 }

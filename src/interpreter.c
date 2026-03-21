@@ -295,6 +295,14 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             interp->last_result.return_value = val;
             return make_null();
         }
+        case NODE_BREAK: {
+            interp->last_result.is_break = 1;
+            return make_null();
+        }
+        case NODE_CONTINUE: {
+            interp->last_result.is_continue = 1;
+            return make_null();
+        }
         case NODE_IF: {
             Value cond = eval_node_env(interp, node->data.if_stmt.cond, env);
             int truthy = 0;

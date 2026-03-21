@@ -86,20 +86,28 @@ Source Code (.kl)
 ### 1. Clone Repository
 
 ```
-git clone https://github.com/yourusername/klang.git
-cd klang
+git clone https://github.com/k-kaundal/KLang.git
+cd KLang
 ```
 
-### 2. Build
+### 2. Build (POSIX, macOS, Windows + MinGW/Clang)
 
 ```
-gcc klang.c -o klang
+make          # builds the CLI binary `klang`
 ```
 
 ### 3. Run
 
 ```
-./klang
+./klang repl            # interactive shell
+./klang run examples/hello.kl
+./klang build examples/hello.kl
+```
+
+### 4. Test
+
+```
+make test
 ```
 
 ---
@@ -119,29 +127,62 @@ gcc klang.c -o klang
 
 ## 🔤 Language Basics
 
-### Variables
+### Variables & Types
 
 ```klang
-let x: int = 10
-let y = 20
+let x: int = 10   # explicit type
+let y = 20        # type inferred
+type(x)           # -> "int"
 ```
 
-### Functions
+### Functions & Parameters
 
 ```klang
 fn add(a: int, b: int) -> int {
     return a + b
 }
+
+add(3, 4)         # 7
 ```
 
-### Control Flow
+### Control Flow & Loops
 
 ```klang
 if x > 10 {
-    print("big")
+    println("big")
 } else {
-    print("small")
+    println("small")
 }
+
+while x < 5 {
+    x = x + 1
+}
+
+for i in 0 .. 3 {
+    println(i)    # 0,1,2
+}
+
+# loop controls
+while true {
+    if x == 10 { break }
+    x = x + 1
+}
+```
+
+### Collections & Indexing
+
+```klang
+let nums = [1, 2, 3]
+println(nums[0])  # 1
+println(len(nums))# 3
+```
+
+### Comments & Printing
+
+```klang
+let name = "KLang" # trailing comments use '#'
+# full line comment
+println("Hello " + name)
 ```
 
 ---
@@ -196,6 +237,7 @@ if x > 10 {
 
 ## 🧩 Future Features
 
+* Object-oriented constructs (classes/structs with methods)
 * Generics
 * Closures
 * Async / await
@@ -205,28 +247,35 @@ if x > 10 {
 
 ---
 
-## 🛠️ CLI (Planned)
+## 🛠️ CLI
+
+The CLI is included in the repository and built by default:
 
 ```
-klang run main.kl
-klang build main.kl
-klang repl
-klang install <package>
+klang repl           # interactive prompt
+klang run file.kl    # interpret a source file
+klang build file.kl  # compile & execute via VM
 ```
 
 ---
 
+## 🧭 File Structure
+
+* `src/` — lexer, parser, interpreter, VM, compiler, runtime, CLI
+* `include/` — public headers
+* `stdlib/` — standard library stubs
+* `examples/` — sample `.kl` programs
+* `tests/` — unit tests (lexer, parser, interpreter)
+* `docs/` — architecture notes
+
 ## 🤝 Contributing
 
-Contributions are welcome.
+Contributions are welcome. Please:
 
-Focus areas:
-
-* Compiler improvements
-* Virtual machine
-* Type system
-* Standard library
-* Performance optimization
+1) Build & test locally: `make && make test`  
+2) Keep changes minimal and well-scoped  
+3) Update docs when adding/changing language features  
+4) Open a PR describing the feature or fix
 
 ---
 
@@ -280,4 +329,3 @@ If you want next level, I can generate:
 * `ARCHITECTURE.md` (deep compiler internals)
 * `LANGUAGE_SPEC.md` (formal grammar + rules)
 * `ROADMAP.md` (engineering milestones like real projects)
-
