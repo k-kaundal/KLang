@@ -147,9 +147,24 @@ package_binary() {
             echo -e "${GREEN}✓ Package created: dist/${package_name}.zip${NC}"
         fi
     else
-        # Create tar.gz for Linux/Mac
-        tar -czf "${package_name}.tar.gz" "$package_name"
+        # Create tar.gz for Linux/Mac using POSIX format for maximum compatibility
+        # Check for GNU tar vs BSD tar
+        if tar --version 2>&1 | grep -q "GNU tar"; then
+            # GNU tar supports --format=posix
+            tar --format=posix -czf "${package_name}.tar.gz" "$package_name"
+        else
+            # BSD tar (macOS) is already compatible by default
+            tar -czf "${package_name}.tar.gz" "$package_name"
+        fi
         echo -e "${GREEN}✓ Package created: dist/${package_name}.tar.gz${NC}"
+
+        # Create checksum
+        if command -v sha256sum &> /dev/null; then
+            sha256sum "${package_name}.tar.gz" > "${package_name}.tar.gz.sha256"
+        else
+            shasum -a 256 "${package_name}.tar.gz" > "${package_name}.tar.gz.sha256"
+        fi
+        echo -e "${GREEN}✓ Checksum created: dist/${package_name}.tar.gz.sha256${NC}"
     fi
     cd ..
 }

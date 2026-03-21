@@ -24,3 +24,7 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# Test packages
+test_package_*/
+*.sha256
