@@ -8,6 +8,7 @@ static ASTNode *parse_statement(Parser *parser);
 static ASTNode *parse_block(Parser *parser);
 static ASTNode *parse_break(Parser *parser);
 static ASTNode *parse_continue(Parser *parser);
+static ASTNode *parse_class_def(Parser *parser);
 
 void parser_init(Parser *parser, Lexer *lexer) {
     parser->lexer = lexer;
@@ -106,6 +107,30 @@ static ASTNode *parse_primary(Parser *parser) {
         token_free(&t2);
         return list;
     }
+    if (check(parser, TOKEN_NEW)) {
+        Token t = advance(parser);
+        Token class_tok;
+        char *class_name;
+        ASTNode *new_expr;
+        token_free(&t);
+        class_tok = consume(parser, TOKEN_IDENT);
+        class_name = strdup(class_tok.value);
+        token_free(&class_tok);
+        new_expr = ast_new_new(class_name, line);
+        free(class_name);
+        return new_expr;
+    }
+    if (check(parser, TOKEN_THIS)) {
+        Token t = advance(parser);
+        token_free(&t);
+        return ast_new_this(line);
+    }
+    if (check(parser, TOKEN_SUPER)) {
+        Token t = advance(parser);
+        token_free(&t);
+        /* super.member will be handled in parse_postfix */
+        return ast_new_super("", line);
+    }
 
     fprintf(stderr, "Parse error at line %d: unexpected token %s ('%s')\n",
             line, token_type_name(parser->current.type), parser->current.value);
@@ -146,6 +171,22 @@ static ASTNode *parse_postfix(Parser *parser) {
                 token_free(&t2);
             }
             expr = ast_new_index(expr, idx, line);
+        } else if (check(parser, TOKEN_DOT)) {
+            Token t = advance(parser);
+            Token member_tok;
+            char *member_name;
+            token_free(&t);
+            member_tok = consume(parser, TOKEN_IDENT);
+            member_name = strdup(member_tok.value);
+            token_free(&member_tok);
+            /* Handle super.member specially */
+            if (expr->type == NODE_SUPER) {
+                ast_free(expr);
+                expr = ast_new_super(member_name, line);
+            } else {
+                expr = ast_new_member_access(expr, member_name, line);
+            }
+            free(member_name);
         } else {
             break;
         }
@@ -434,6 +475,7 @@ static ASTNode *parse_return(Parser *parser) {
 static ASTNode *parse_statement(Parser *parser) {
     while (match(parser, TOKEN_SEMICOLON)) {}
 
+    if (check(parser, TOKEN_CLASS)) return parse_class_def(parser);
     if (check(parser, TOKEN_FN)) return parse_func_def(parser);
     if (check(parser, TOKEN_LET)) return parse_let(parser);
     if (check(parser, TOKEN_IF)) return parse_if(parser);
@@ -449,19 +491,50 @@ static ASTNode *parse_statement(Parser *parser) {
         int line = parser->current.line;
         ASTNode *expr = parse_expression(parser);
 
-        if (expr && expr->type == NODE_IDENT && check(parser, TOKEN_ASSIGN)) {
-            char *name = strdup(expr->data.ident.name);
-            ASTNode *value;
-            ASTNode *n;
-            ast_free(expr);
-            {
-                Token t = advance(parser);
-                token_free(&t);
+        if (expr && check(parser, TOKEN_ASSIGN)) {
+            if (expr->type == NODE_IDENT) {
+                char *name = strdup(expr->data.ident.name);
+                ASTNode *value;
+                ASTNode *n;
+                ast_free(expr);
+                {
+                    Token t = advance(parser);
+                    token_free(&t);
+                }
+                value = parse_expression(parser);
+                n = ast_new_assign(name, value, line);
+                free(name);
+                return n;
+            } else if (expr->type == NODE_MEMBER_ACCESS || expr->type == NODE_INDEX) {
+                /* For member access/index assignment (e.g., this.x = value or arr[0] = value)
+                 * The AST structure doesn't directly support this, so we'll handle it
+                 * as a special case. The interpreter/compiler will need to recognize
+                 * assignments to member access/index expressions. 
+                 * 
+                 * For now, we create a binary operation with '=' operator which
+                 * the runtime can intercept. */
+                ASTNode *value;
+                {
+                    Token t = advance(parser);
+                    token_free(&t);
+                }
+                value = parse_expression(parser);
+                return ast_new_binop("=", expr, value, line);
+            } else {
+                /* Assignment to non-lvalue */
+                fprintf(stderr, "Parse error at line %d: invalid assignment target\n", line);
+                parser->had_error = 1;
+                ast_free(expr);
+                {
+                    Token t = advance(parser);
+                    token_free(&t);
+                }
+                {
+                    ASTNode *value = parse_expression(parser);
+                    ast_free(value);
+                }
+                return ast_new_null(line);
             }
-            value = parse_expression(parser);
-            n = ast_new_assign(name, value, line);
-            free(name);
-            return n;
         }
 
         return expr;
@@ -480,6 +553,69 @@ static ASTNode *parse_continue(Parser *parser) {
     Token t = consume(parser, TOKEN_CONTINUE);
     token_free(&t);
     return ast_new_continue(line);
+}
+
+static ASTNode *parse_class_def(Parser *parser) {
+    int line = parser->current.line;
+    Token class_tok = consume(parser, TOKEN_CLASS);
+    Token name_tok;
+    char *class_name;
+    char *parent_name = NULL;
+    ASTNode *class_node;
+    token_free(&class_tok);
+    
+    name_tok = consume(parser, TOKEN_IDENT);
+    class_name = strdup(name_tok.value);
+    token_free(&name_tok);
+    
+    /* Check for extends clause */
+    if (match(parser, TOKEN_EXTENDS)) {
+        Token parent_tok = consume(parser, TOKEN_IDENT);
+        parent_name = strdup(parent_tok.value);
+        token_free(&parent_tok);
+    }
+    
+    class_node = ast_new_class_def(class_name, parent_name, line);
+    free(class_name);
+    if (parent_name) free(parent_name);
+    
+    /* Parse class body */
+    {
+        Token lbrace_tok = consume(parser, TOKEN_LBRACE);
+        token_free(&lbrace_tok);
+    }
+    
+    while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+        ASTNode *member;
+        while (match(parser, TOKEN_SEMICOLON)) {}
+        if (check(parser, TOKEN_RBRACE) || check(parser, TOKEN_EOF)) break;
+        
+        /* Parse class members (let statements and function definitions) */
+        if (check(parser, TOKEN_LET)) {
+            member = parse_let(parser);
+            if (member) nodelist_push(&class_node->data.class_def.members, member);
+        } else if (check(parser, TOKEN_FN)) {
+            member = parse_func_def(parser);
+            if (member) nodelist_push(&class_node->data.class_def.members, member);
+        } else {
+            fprintf(stderr, "Parse error at line %d: expected 'let' or 'fn' in class body, got %s\n",
+                    parser->current.line, token_type_name(parser->current.type));
+            parser->had_error = 1;
+            {
+                Token t = advance(parser);
+                token_free(&t);
+            }
+        }
+        
+        while (match(parser, TOKEN_SEMICOLON)) {}
+    }
+    
+    {
+        Token rbrace_tok = consume(parser, TOKEN_RBRACE);
+        token_free(&rbrace_tok);
+    }
+    
+    return class_node;
 }
 
 ASTNode **parse_program(Parser *parser, int *count) {
