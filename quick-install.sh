@@ -208,7 +208,7 @@ setup_path() {
     # Create shell RC file if it doesn't exist
     if [ ! -f "$shell_rc" ]; then
         touch "$shell_rc" 2>/dev/null || {
-            echo -e "${YELLOW}Warning: Could not create $shell_rc${NC}"
+            echo -e "${YELLOW}Warning: Could not create $shell_rc (check directory permissions)${NC}"
             echo -e "${YELLOW}Please manually add to PATH:${NC}"
             echo -e "  ${BLUE}export PATH=\"\$PATH:$INSTALL_DIR/bin\"${NC}"
             return
@@ -224,16 +224,20 @@ setup_path() {
     fi
     
     # Add to PATH
-    {
+    local write_error
+    if ! write_error=$({
         echo ""
         echo "# KLang"
         echo "export PATH=\"\$PATH:$INSTALL_DIR/bin\""
-    } >> "$shell_rc" 2>/dev/null || {
+    } >> "$shell_rc" 2>&1); then
         echo -e "${YELLOW}Warning: Could not write to $shell_rc${NC}"
+        if [ -n "$write_error" ]; then
+            echo -e "${YELLOW}Error details: $write_error${NC}"
+        fi
         echo -e "${YELLOW}Please manually add to PATH:${NC}"
         echo -e "  ${BLUE}export PATH=\"\$PATH:$INSTALL_DIR/bin\"${NC}"
         return
-    }
+    fi
     
     echo -e "${GREEN}✓ Added KLang to PATH in $shell_rc${NC}"
     echo -e "${YELLOW}Note: Restart your terminal or run:${NC}"
