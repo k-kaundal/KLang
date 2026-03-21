@@ -1,7 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # KLang Quick Installer
 # Universal installation script for all platforms
-# Usage: curl -sSL https://klang.dev/install | bash
+# 
+# Usage: 
+#   curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh | bash
+#   or
+#   wget -qO- https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh | bash
+#
+# Note: This script requires bash. If you get "command not found: #" error,
+#       make sure you're piping to bash (not running directly in zsh/other shells)
 
 set -e
 
@@ -198,10 +205,35 @@ setup_path() {
         return
     fi
     
+    # Create shell RC file if it doesn't exist
+    if [ ! -f "$shell_rc" ]; then
+        touch "$shell_rc" 2>/dev/null || {
+            echo -e "${YELLOW}Warning: Could not create $shell_rc${NC}"
+            echo -e "${YELLOW}Please manually add to PATH:${NC}"
+            echo -e "  ${BLUE}export PATH=\"\$PATH:$INSTALL_DIR/bin\"${NC}"
+            return
+        }
+    fi
+    
+    # Check if file is writable
+    if [ ! -w "$shell_rc" ]; then
+        echo -e "${YELLOW}Warning: $shell_rc is not writable${NC}"
+        echo -e "${YELLOW}Please manually add to PATH:${NC}"
+        echo -e "  ${BLUE}export PATH=\"\$PATH:$INSTALL_DIR/bin\"${NC}"
+        return
+    fi
+    
     # Add to PATH
-    echo "" >> "$shell_rc"
-    echo "# KLang" >> "$shell_rc"
-    echo "export PATH=\"\$PATH:$INSTALL_DIR/bin\"" >> "$shell_rc"
+    {
+        echo ""
+        echo "# KLang"
+        echo "export PATH=\"\$PATH:$INSTALL_DIR/bin\""
+    } >> "$shell_rc" 2>/dev/null || {
+        echo -e "${YELLOW}Warning: Could not write to $shell_rc${NC}"
+        echo -e "${YELLOW}Please manually add to PATH:${NC}"
+        echo -e "  ${BLUE}export PATH=\"\$PATH:$INSTALL_DIR/bin\"${NC}"
+        return
+    }
     
     echo -e "${GREEN}✓ Added KLang to PATH in $shell_rc${NC}"
     echo -e "${YELLOW}Note: Restart your terminal or run:${NC}"
