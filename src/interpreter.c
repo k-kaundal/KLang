@@ -312,6 +312,24 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 return make_null();
             }
             if (v->type == VAL_STRING) return make_string(v->as.str_val);
+            if (v->type == VAL_LIST) {
+                /* Deep copy list to avoid double-free issues */
+                Value copy;
+                int ii;
+                copy.type = VAL_LIST;
+                copy.as.list_val.count = v->as.list_val.count;
+                copy.as.list_val.capacity = v->as.list_val.capacity;
+                copy.as.list_val.items = malloc(v->as.list_val.capacity * sizeof(Value));
+                for (ii = 0; ii < v->as.list_val.count; ii++) {
+                    /* Recursively copy each item */
+                    if (v->as.list_val.items[ii].type == VAL_STRING) {
+                        copy.as.list_val.items[ii] = make_string(v->as.list_val.items[ii].as.str_val);
+                    } else {
+                        copy.as.list_val.items[ii] = v->as.list_val.items[ii];
+                    }
+                }
+                return copy;
+            }
             if (v->type == VAL_FUNCTION && v->as.func_val.param_names) {
                 Value copy = *v;
                 int ii;

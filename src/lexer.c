@@ -44,8 +44,36 @@ static void skip_whitespace_and_comments(Lexer *lexer) {
             else { lexer->col++; }
             lexer->pos++;
         } else if (c == '#') {
+            /* Single-line comment with # */
             while (lexer->source[lexer->pos] && lexer->source[lexer->pos] != '\n')
                 lexer->pos++;
+        } else if (c == '/' && lexer->source[lexer->pos + 1] == '/') {
+            /* Single-line comment with // or doc comment /// */
+            lexer->pos += 2; lexer->col += 2;
+            /* Check if it's a doc comment (///) */
+            int is_doc_comment = (lexer->source[lexer->pos] == '/');
+            if (is_doc_comment) {
+                lexer->pos++; lexer->col++;
+            }
+            /* Skip to end of line */
+            while (lexer->source[lexer->pos] && lexer->source[lexer->pos] != '\n') {
+                lexer->pos++;
+            }
+        } else if (c == '/' && lexer->source[lexer->pos + 1] == '*') {
+            /* Multi-line comment */
+            lexer->pos += 2; lexer->col += 2;
+            while (lexer->source[lexer->pos]) {
+                if (lexer->source[lexer->pos] == '*' && lexer->source[lexer->pos + 1] == '/') {
+                    lexer->pos += 2; lexer->col += 2;
+                    break;
+                }
+                if (lexer->source[lexer->pos] == '\n') {
+                    lexer->line++; lexer->col = 1;
+                } else {
+                    lexer->col++;
+                }
+                lexer->pos++;
+            }
         } else {
             break;
         }
@@ -89,27 +117,30 @@ Token lexer_next_token(Lexer *lexer) {
         }
     }
 
-    /* Strings */
-    if (c == '"') {
+    /* Strings - both double and single quotes */
+    if (c == '"' || c == '\'') {
         int cap = 64, len = 0;
         char *buf = malloc(cap);
         Token t;
+        char quote_char = c;  /* Remember which quote type we're using */
         lexer->pos++; lexer->col++;
-        while (lexer->source[lexer->pos] && lexer->source[lexer->pos] != '"') {
+        while (lexer->source[lexer->pos] && lexer->source[lexer->pos] != quote_char) {
             char ch = lexer->source[lexer->pos];
             if (ch == '\\') {
                 lexer->pos++; lexer->col++;
                 ch = lexer->source[lexer->pos];
                 if (ch == 'n') ch = '\n';
                 else if (ch == 't') ch = '\t';
+                else if (ch == 'r') ch = '\r';
                 else if (ch == '\\') ch = '\\';
                 else if (ch == '"') ch = '"';
+                else if (ch == '\'') ch = '\'';
             }
             if (len + 1 >= cap) { cap *= 2; buf = realloc(buf, cap); }
             buf[len++] = ch;
             lexer->pos++; lexer->col++;
         }
-        if (lexer->source[lexer->pos] == '"') { lexer->pos++; lexer->col++; }
+        if (lexer->source[lexer->pos] == quote_char) { lexer->pos++; lexer->col++; }
         buf[len] = '\0';
         t.type = TOKEN_STRING;
         t.value = buf;
