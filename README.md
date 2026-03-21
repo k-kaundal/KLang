@@ -1,7 +1,3 @@
-Ahh got it—you want **actual raw `.md` content**, not wrapped inside a code block. Here it is clean and ready to paste directly into a `README.md` file:
-
----
-
 # 🚀 KLang
 
 > A high-performance, statically-typed programming language with its own runtime — combining the power of C, the simplicity of Python, and the safety of TypeScript.
