@@ -161,6 +161,12 @@ while x < 5 {
 for i in 0 .. 3 {
     println(i)    # 0,1,2
 }
+
+# loop controls
+while true {
+    if x == 10 { break }
+    x = x + 1
+}
 ```
 
 ### Collections & Indexing

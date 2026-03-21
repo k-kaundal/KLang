@@ -135,6 +135,14 @@ ASTNode *ast_new_return(ASTNode *value, int line) {
     return n;
 }
 
+ASTNode *ast_new_break(int line) {
+    return ast_alloc(NODE_BREAK, line);
+}
+
+ASTNode *ast_new_continue(int line) {
+    return ast_alloc(NODE_CONTINUE, line);
+}
+
 ASTNode *ast_new_block(int line) {
     ASTNode *n = ast_alloc(NODE_BLOCK, line);
     nodelist_init(&n->data.block.stmts);
@@ -210,6 +218,9 @@ void ast_free(ASTNode *node) {
             break;
         case NODE_RETURN:
             ast_free(node->data.return_stmt.value);
+            break;
+        case NODE_BREAK:
+        case NODE_CONTINUE:
             break;
         case NODE_BLOCK:
             for (i = 0; i < node->data.block.stmts.count; i++)

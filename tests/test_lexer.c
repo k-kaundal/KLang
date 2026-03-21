@@ -38,7 +38,7 @@ void run_lexer_tests(void) {
     {
         Lexer lexer;
         Token t;
-        lexer_init(&lexer, "fn if else while for return in true false");
+        lexer_init(&lexer, "fn if else while for return break continue in true false");
 
         t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_FN); token_free(&t);
         t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_IF); token_free(&t);
@@ -46,6 +46,8 @@ void run_lexer_tests(void) {
         t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_WHILE); token_free(&t);
         t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_FOR); token_free(&t);
         t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_RETURN); token_free(&t);
+        t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_BREAK); token_free(&t);
+        t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_CONTINUE); token_free(&t);
         t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_IN); token_free(&t);
         t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_TRUE); token_free(&t);
         t = lexer_next_token(&lexer); ASSERT_EQ(t.type, TOKEN_FALSE); token_free(&t);

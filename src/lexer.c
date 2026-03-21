@@ -138,6 +138,8 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "while") == 0) type = TOKEN_WHILE;
             else if (strcmp(buf, "for") == 0) type = TOKEN_FOR;
             else if (strcmp(buf, "return") == 0) type = TOKEN_RETURN;
+            else if (strcmp(buf, "break") == 0) type = TOKEN_BREAK;
+            else if (strcmp(buf, "continue") == 0) type = TOKEN_CONTINUE;
             else if (strcmp(buf, "in") == 0) type = TOKEN_IN;
             else if (strcmp(buf, "true") == 0) type = TOKEN_TRUE;
             else if (strcmp(buf, "false") == 0) type = TOKEN_FALSE;
@@ -228,6 +230,8 @@ const char *token_type_name(TokenType type) {
         case TOKEN_WHILE: return "WHILE";
         case TOKEN_FOR: return "FOR";
         case TOKEN_RETURN: return "RETURN";
+        case TOKEN_BREAK: return "BREAK";
+        case TOKEN_CONTINUE: return "CONTINUE";
         case TOKEN_IN: return "IN";
         case TOKEN_TRUE: return "TRUE";
         case TOKEN_FALSE: return "FALSE";

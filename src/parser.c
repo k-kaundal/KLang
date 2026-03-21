@@ -6,6 +6,8 @@
 static ASTNode *parse_expression(Parser *parser);
 static ASTNode *parse_statement(Parser *parser);
 static ASTNode *parse_block(Parser *parser);
+static ASTNode *parse_break(Parser *parser);
+static ASTNode *parse_continue(Parser *parser);
 
 void parser_init(Parser *parser, Lexer *lexer) {
     parser->lexer = lexer;
@@ -438,6 +440,8 @@ static ASTNode *parse_statement(Parser *parser) {
     if (check(parser, TOKEN_WHILE)) return parse_while(parser);
     if (check(parser, TOKEN_FOR)) return parse_for(parser);
     if (check(parser, TOKEN_RETURN)) return parse_return(parser);
+    if (check(parser, TOKEN_BREAK)) return parse_break(parser);
+    if (check(parser, TOKEN_CONTINUE)) return parse_continue(parser);
     if (check(parser, TOKEN_LBRACE)) return parse_block(parser);
     if (check(parser, TOKEN_EOF)) return NULL;
 
@@ -462,6 +466,20 @@ static ASTNode *parse_statement(Parser *parser) {
 
         return expr;
     }
+}
+
+static ASTNode *parse_break(Parser *parser) {
+    int line = parser->current.line;
+    Token t = consume(parser, TOKEN_BREAK);
+    token_free(&t);
+    return ast_new_break(line);
+}
+
+static ASTNode *parse_continue(Parser *parser) {
+    int line = parser->current.line;
+    Token t = consume(parser, TOKEN_CONTINUE);
+    token_free(&t);
+    return ast_new_continue(line);
 }
 
 ASTNode **parse_program(Parser *parser, int *count) {

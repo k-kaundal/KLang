@@ -123,7 +123,22 @@ void run_interpreter_tests(void) {
     }
 
     {
-        Value v = run_expr("let x = 5 # comment ignored by lexer\nx");
+        Value v = run_expr("let i = 0\nwhile true { if i == 2 { break } i = i + 1 }\ni");
+        ASSERT_EQ(v.type, VAL_INT);
+        ASSERT_EQ(v.as.int_val, 2);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("let sum = 0\nfor i in 0 .. 5 { if i % 2 == 0 { continue } sum = sum + i }\nsum");
+        ASSERT_EQ(v.type, VAL_INT);
+        /* skips even numbers: 1 + 3 = 4 */
+        ASSERT_EQ(v.as.int_val, 4);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("let x = 5 # trailing comment\nx");
         ASSERT_EQ(v.type, VAL_INT);
         ASSERT_EQ(v.as.int_val, 5);
         value_free(&v);
