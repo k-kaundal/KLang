@@ -6,7 +6,8 @@ typedef enum {
     NODE_BINOP, NODE_UNOP, NODE_CALL, NODE_INDEX,
     NODE_LET, NODE_ASSIGN, NODE_IF, NODE_WHILE, NODE_FOR,
     NODE_RETURN, NODE_BREAK, NODE_CONTINUE, NODE_BLOCK, NODE_FUNC_DEF, NODE_STRUCT_DEF, NODE_IMPORT,
-    NODE_LIST
+    NODE_LIST,
+    NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -40,6 +41,11 @@ struct ASTNode {
         struct { NodeList stmts; } block;
         struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; } func_def;
         struct { NodeList elements; } list;
+        struct { char *name; char *parent_name; NodeList members; } class_def;
+        struct { char *class_name; NodeList args; } new_expr;
+        struct { ASTNode *obj; char *member; } member_access;
+        struct { } this_expr;
+        struct { char *member; } super_expr;
     } data;
 };
 
@@ -67,6 +73,11 @@ ASTNode *ast_new_continue(int line);
 ASTNode *ast_new_block(int line);
 ASTNode *ast_new_func_def(const char *name, const char *return_type, int line);
 ASTNode *ast_new_list(int line);
+ASTNode *ast_new_class_def(const char *name, const char *parent_name, int line);
+ASTNode *ast_new_new(const char *class_name, int line);
+ASTNode *ast_new_member_access(ASTNode *obj, const char *member, int line);
+ASTNode *ast_new_this(int line);
+ASTNode *ast_new_super(const char *member, int line);
 void ast_free(ASTNode *node);
 
 #endif
