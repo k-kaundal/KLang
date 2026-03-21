@@ -158,7 +158,10 @@ if ($hash -eq $expected) { Write-Host "Checksum verified!" } else { Write-Host "
 **Symptom**: `tar: Error opening archive: Unrecognized archive format`
 
 **Solutions**:
-1. Ensure archive is created with POSIX format: `tar --format=posix -czf`
+1. Ensure proper archive creation:
+   - GNU tar: Use `tar --format=posix -czf` for maximum compatibility
+   - BSD tar (macOS): Default format is compatible, use `tar -czf`
+   - The build scripts automatically detect and use the appropriate format
 2. Test archive on target platform before release
 3. Provide alternative download options (direct binary download)
 
