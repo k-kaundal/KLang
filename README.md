@@ -65,6 +65,17 @@ Source Code (.kl)
 * Parser (AST generation)
 * Expression evaluation
 * Variables (symbol table)
+* Functions with parameters and return values
+* **Object-Oriented Programming (Classes, Objects, Inheritance)**
+  * Class definitions with fields and methods
+  * Object instantiation with `new` keyword
+  * Constructors (`init` method)
+  * `this` keyword for self-reference
+  * Inheritance with `extends`
+  * Method overriding
+  * `super` keyword for parent access
+* Control flow (if/else, while, for)
+* Lists and indexing
 * Basic REPL
 
 ### 🚧 In Progress
@@ -185,6 +196,44 @@ let name = "KLang" # trailing comments use '#'
 println("Hello " + name)
 ```
 
+### Object-Oriented Programming (NEW!)
+
+```klang
+# Define a class
+class Point {
+    let x: int = 0
+    let y: int = 0
+    
+    # Constructor
+    fn init(x_val: int, y_val: int) {
+        this.x = x_val
+        this.y = y_val
+    }
+    
+    # Method
+    fn display() {
+        println(this.x)
+        println(this.y)
+    }
+}
+
+# Create object
+let p = new Point(3, 4)
+p.display()  # 3, 4
+
+# Inheritance
+class Point3D extends Point {
+    let z: int = 0
+    
+    fn init(x: int, y: int, z: int) {
+        super.init(x, y)  # Call parent constructor
+        this.z = z
+    }
+}
+
+let p3d = new Point3D(1, 2, 3)
+```
+
 ---
 
 ## 🧠 Design Principles
@@ -237,9 +286,9 @@ println("Hello " + name)
 
 ## 🧩 Future Features
 
-* Object-oriented constructs (classes/structs with methods)
+* ~~Object-oriented constructs (classes/structs with methods)~~ ✅ **IMPLEMENTED**
 * Generics
-* Closures
+* Advanced closures
 * Async / await
 * JIT compiler
 * WebAssembly (WASM)
