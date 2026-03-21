@@ -220,14 +220,21 @@ static Value builtin_join(Interpreter *interp, Value *args, int argc) {
     
     /* Build result */
     char *result = malloc(total_len + 1);
-    result[0] = '\0';
+    char *ptr = result;
     
     for (int i = 0; i < list->count; i++) {
-        if (i > 0) strcat(result, delim);
+        if (i > 0) {
+            int delim_len = strlen(delim);
+            memcpy(ptr, delim, delim_len);
+            ptr += delim_len;
+        }
         char *s = value_to_string(&list->items[i]);
-        strcat(result, s);
+        int s_len = strlen(s);
+        memcpy(ptr, s, s_len);
+        ptr += s_len;
         free(s);
     }
+    *ptr = '\0';
     
     Value v = make_string(result);
     free(result);
@@ -382,11 +389,13 @@ static Value builtin_repeat(Interpreter *interp, Value *args, int argc) {
     int str_len = strlen(str);
     int result_len = str_len * times;
     char *result = malloc(result_len + 1);
-    result[0] = '\0';
+    char *ptr = result;
     
     for (int i = 0; i < times; i++) {
-        strcat(result, str);
+        memcpy(ptr, str, str_len);
+        ptr += str_len;
     }
+    *ptr = '\0';
     
     Value v = make_string(result);
     free(result);
