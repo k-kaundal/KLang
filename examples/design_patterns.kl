@@ -1,0 +1,119 @@
+# Advanced design patterns in KLang
+
+# 1. Builder Pattern
+class StringBuilder {
+    let content: string = ""
+    
+    fn init() {
+        this.content = ""
+    }
+    
+    fn append(text: string) {
+        this.content = this.content + text
+        return this
+    }
+    
+    fn build() -> string {
+        return this.content
+    }
+}
+
+println("=== Builder Pattern ===")
+let builder = new StringBuilder()
+builder.append("Hello")
+builder.append(" ")
+builder.append("World")
+println(builder.build())
+
+# 2. Strategy Pattern (Polymorphism)
+class SortStrategy {
+    fn sort() {
+        println("Base sort")
+    }
+}
+
+class QuickSort extends SortStrategy {
+    fn sort() {
+        println("QuickSort algorithm")
+    }
+}
+
+class MergeSort extends SortStrategy {
+    fn sort() {
+        println("MergeSort algorithm")
+    }
+}
+
+println("\n=== Strategy Pattern ===")
+let strategy1 = new QuickSort()
+let strategy2 = new MergeSort()
+strategy1.sort()
+strategy2.sort()
+
+# 3. Template Method Pattern
+class DataProcessor {
+    fn process() {
+        this.load_data()
+        this.validate()
+        this.transform()
+        this.save()
+    }
+    
+    fn load_data() {
+        println("Loading data...")
+    }
+    
+    fn validate() {
+        println("Validating...")
+    }
+    
+    fn transform() {
+        println("Transforming...")
+    }
+    
+    fn save() {
+        println("Saving...")
+    }
+}
+
+class CSVProcessor extends DataProcessor {
+    fn load_data() {
+        println("Loading CSV data...")
+    }
+    
+    fn transform() {
+        println("Transforming CSV...")
+    }
+}
+
+println("\n=== Template Method Pattern ===")
+let processor = new CSVProcessor()
+processor.process()
+
+# 4. Command Pattern
+class Command {
+    fn execute() {
+        println("Executing base command")
+    }
+}
+
+class PrintCommand extends Command {
+    let message: string = ""
+    
+    fn init(msg: string) {
+        this.message = msg
+    }
+    
+    fn execute() {
+        println("Command: " + this.message)
+    }
+}
+
+println("\n=== Command Pattern ===")
+let cmd1 = new PrintCommand("First command")
+let cmd2 = new PrintCommand("Second command")
+cmd1.execute()
+cmd2.execute()
+
+println("\nAll design patterns demonstrated!")
+

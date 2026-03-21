@@ -1,0 +1,155 @@
+# Advanced data structures in KLang
+
+# 1. Stack Implementation
+class Stack {
+    let items = []
+    let top: int = -1
+    
+    fn init() {
+        this.items = []
+        this.top = -1
+    }
+    
+    fn push(value: int) {
+        this.top = this.top + 1
+        println("Pushed: " + value)
+    }
+    
+    fn pop() -> int {
+        if this.top < 0 {
+            println("Stack underflow")
+            return 0
+        }
+        let value = this.top
+        this.top = this.top - 1
+        println("Popped: " + value)
+        return value
+    }
+    
+    fn is_empty() -> bool {
+        return this.top < 0
+    }
+}
+
+println("=== Stack Demo ===")
+let stack = new Stack()
+stack.push(10)
+stack.push(20)
+stack.push(30)
+stack.pop()
+stack.pop()
+
+# 2. Queue Implementation
+class Queue {
+    let items = []
+    let front: int = 0
+    let rear: int = -1
+    let size: int = 0
+    
+    fn init() {
+        this.items = []
+        this.front = 0
+        this.rear = -1
+        this.size = 0
+    }
+    
+    fn enqueue(value: int) {
+        this.rear = this.rear + 1
+        this.size = this.size + 1
+        println("Enqueued: " + value)
+    }
+    
+    fn dequeue() -> int {
+        if this.size == 0 {
+            println("Queue underflow")
+            return 0
+        }
+        let value = this.front
+        this.front = this.front + 1
+        this.size = this.size - 1
+        println("Dequeued: " + value)
+        return value
+    }
+    
+    fn is_empty() -> bool {
+        return this.size == 0
+    }
+}
+
+println("\n=== Queue Demo ===")
+let queue = new Queue()
+queue.enqueue(1)
+queue.enqueue(2)
+queue.enqueue(3)
+queue.dequeue()
+queue.dequeue()
+
+# 3. Linked List Node
+class Node {
+    let data: int = 0
+    
+    fn init(value: int) {
+        this.data = value
+    }
+}
+
+class LinkedList {
+    let size: int = 0
+    
+    fn init() {
+        this.size = 0
+    }
+    
+    fn insert(value: int) {
+        let node = new Node(value)
+        this.size = this.size + 1
+        println("Inserted: " + value)
+    }
+    
+    fn display() {
+        println("List size: " + this.size)
+    }
+}
+
+println("\n=== Linked List Demo ===")
+let list = new LinkedList()
+list.insert(10)
+list.insert(20)
+list.insert(30)
+list.display()
+
+# 4. Binary Tree Node
+class TreeNode {
+    let value: int = 0
+    
+    fn init(val: int) {
+        this.value = val
+    }
+}
+
+class BinaryTree {
+    let root_value: int = 0
+    let has_root: bool = false
+    
+    fn init() {
+        this.has_root = false
+    }
+    
+    fn insert_root(value: int) {
+        this.root_value = value
+        this.has_root = true
+        println("Root inserted: " + value)
+    }
+    
+    fn inorder() {
+        println("Inorder traversal of tree")
+    }
+}
+
+println("\n=== Binary Tree Demo ===")
+let tree = new BinaryTree()
+tree.insert_root(50)
+tree.inorder()
+
+println("\nAll data structures demonstrated!")
+
