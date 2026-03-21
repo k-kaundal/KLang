@@ -94,32 +94,53 @@ Source Code (.kl)
 
 ## 🚀 Getting Started
 
-### 1. Clone Repository
+### Quick Start (3 Commands)
 
+```bash
+git clone https://github.com/k-kaundal/KLang.git
+cd KLang && make
+./klang repl
 ```
+
+### Detailed Setup
+
+#### 1. Clone Repository
+```bash
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
 ```
 
-### 2. Build (POSIX, macOS, Windows + MinGW/Clang)
-
-```
-make          # builds the CLI binary `klang`
-```
-
-### 3. Run
-
-```
-./klang repl            # interactive shell
-./klang run examples/hello.kl
-./klang build examples/hello.kl
+#### 2. Build
+```bash
+make clean && make    # builds the CLI binary `klang`
 ```
 
-### 4. Test
+#### 3. Run
+```bash
+./klang repl                    # interactive shell
+./klang run examples/hello.kl   # run a script
+```
 
+#### 4. Test
+```bash
+make test    # run test suite
 ```
-make test
-```
+
+### 📖 Documentation
+
+**Essential Guides:**
+- 🚀 [**Getting Started Guide**](docs/GETTING_STARTED.md) - Setup and installation
+- 📘 [**Language Reference**](docs/LANGUAGE_REFERENCE.md) - Complete syntax reference
+- 🔧 [**Usage Guide**](docs/USAGE_GUIDE.md) - How to use KLang
+- 🔨 [**Compilation Guide**](docs/COMPILATION_GUIDE.md) - Building from source
+- 🎓 [**OOP Specification**](docs/OOP_LANGUAGE_SPEC.md) - Object-oriented features
+- 🤝 [**Contributing Guide**](CONTRIBUTING.md) - How to contribute
+
+**Quick Links:**
+- [Examples](examples/) - Working code examples
+- [Tests](tests/) - Test suite
+- [Issues](https://github.com/k-kaundal/KLang/issues) - Bug reports & features
+- [Discussions](https://github.com/k-kaundal/KLang/discussions) - Q&A & ideas
 
 ---
 
