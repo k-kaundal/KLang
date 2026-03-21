@@ -107,5 +107,34 @@ void run_interpreter_tests(void) {
         value_free(&v);
     }
 
+    {
+        Value v = run_expr("let x = 0\nwhile x < 3 { x = x + 1 }\nx");
+        ASSERT_EQ(v.type, VAL_INT);
+        ASSERT_EQ(v.as.int_val, 3);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("let sum = 0\nfor i in 0 .. 4 { sum = sum + i }\nsum");
+        ASSERT_EQ(v.type, VAL_INT);
+        /* upper bound is exclusive, so 0 + 1 + 2 + 3 */
+        ASSERT_EQ(v.as.int_val, 6);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("let x = 5 # comment ignored by lexer\nx");
+        ASSERT_EQ(v.type, VAL_INT);
+        ASSERT_EQ(v.as.int_val, 5);
+        value_free(&v);
+    }
+
+    {
+        Value v = run_expr("type(1)");
+        ASSERT_EQ(v.type, VAL_STRING);
+        ASSERT_STR_EQ(v.as.str_val, "int");
+        value_free(&v);
+    }
+
     printf("Interpreter tests done.\n");
 }
