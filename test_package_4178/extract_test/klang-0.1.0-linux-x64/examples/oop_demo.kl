@@ -1,0 +1,46 @@
+class Animal {
+    let name: string = "Unknown"
+    let age: int = 0
+    
+    fn init(n: string, a: int) {
+        this.name = n
+        this.age = a
+    }
+    
+    fn speak() {
+        println("Animal speaks")
+    }
+    
+    fn info() {
+        println(this.name)
+        println(this.age)
+    }
+}
+
+class Dog extends Animal {
+    let breed: string = "Mixed"
+    
+    fn init(n: string, a: int, b: string) {
+        super.init(n, a)
+        this.breed = b
+    }
+    
+    fn speak() {
+        println("Woof!")
+    }
+    
+    fn info() {
+        super.info()
+        println(this.breed)
+    }
+}
+
+let animal = new Animal("Generic", 5)
+animal.info()
+animal.speak()
+
+println("---")
+
+let dog = new Dog("Buddy", 3, "Golden Retriever")
+dog.info()
+dog.speak()

@@ -1,0 +1,316 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.0)'
+        required: true
+        default: '0.1.0'
+
+env:
+  KLANG_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+
+jobs:
+  # Test on all platforms before building release artifacts
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+          - os: windows-latest
+            platform: windows
+            arch: x64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup build tools (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+      
+      - name: Setup build tools (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          # Xcode command line tools should be pre-installed
+          gcc --version || xcode-select --install
+      
+      - name: Setup build tools (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            make
+      
+      - name: Build KLang (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          make clean
+          make
+          ./klang --version || echo "Built successfully"
+      
+      - name: Build KLang (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: msys2 {0}
+        run: |
+          make clean
+          make
+          ./klang.exe --version || echo "Built successfully"
+      
+      - name: Run tests (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          make test
+      
+      - name: Run tests (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: msys2 {0}
+        run: |
+          make test
+
+  # Build release artifacts for all platforms
+  build:
+    name: Build ${{ matrix.platform }}-${{ matrix.arch }}
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+          - os: macos-13
+            platform: macos
+            arch: x64
+          - os: windows-latest
+            platform: windows
+            arch: x64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup build tools (Ubuntu)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+          fi
+      
+      - name: Setup build tools (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          gcc --version || xcode-select --install
+      
+      - name: Setup build tools (Windows)
+        if: matrix.platform == 'windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            make
+            tar
+      
+      - name: Build KLang (Linux x64)
+        if: matrix.platform == 'linux' && matrix.arch == 'x64'
+        run: |
+          make clean
+          make
+      
+      - name: Build KLang (Linux ARM64)
+        if: matrix.platform == 'linux' && matrix.arch == 'arm64'
+        run: |
+          make clean
+          CC=aarch64-linux-gnu-gcc make
+      
+      - name: Build KLang (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          make clean
+          make
+      
+      - name: Build KLang (Windows)
+        if: matrix.platform == 'windows'
+        shell: msys2 {0}
+        run: |
+          make clean
+          make
+      
+      - name: Create package directory
+        run: |
+          mkdir -p package
+      
+      - name: Package for Unix platforms
+        if: matrix.platform != 'windows'
+        run: |
+          VERSION="${{ env.KLANG_VERSION }}"
+          VERSION="${VERSION#v}"
+          PACKAGE_NAME="klang-${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}"
+          
+          mkdir -p "package/${PACKAGE_NAME}"
+          cp klang "package/${PACKAGE_NAME}/"
+          cp README.md "package/${PACKAGE_NAME}/"
+          cp LICENSE "package/${PACKAGE_NAME}/" || true
+          cp -r examples "package/${PACKAGE_NAME}/" || true
+          cp -r docs "package/${PACKAGE_NAME}/" || true
+          
+          cd package
+          # Use GNU tar format for maximum compatibility
+          tar --format=posix -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          
+          # Verify the archive
+          echo "Archive contents:"
+          tar -tzf "${PACKAGE_NAME}.tar.gz" | head -20
+          
+          # Create checksum
+          if command -v sha256sum &> /dev/null; then
+            sha256sum "${PACKAGE_NAME}.tar.gz" > "${PACKAGE_NAME}.tar.gz.sha256"
+          else
+            shasum -a 256 "${PACKAGE_NAME}.tar.gz" > "${PACKAGE_NAME}.tar.gz.sha256"
+          fi
+      
+      - name: Package for Windows
+        if: matrix.platform == 'windows'
+        shell: msys2 {0}
+        run: |
+          VERSION="${{ env.KLANG_VERSION }}"
+          VERSION="${VERSION#v}"
+          PACKAGE_NAME="klang-${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}"
+          
+          mkdir -p "package/${PACKAGE_NAME}"
+          cp klang.exe "package/${PACKAGE_NAME}/"
+          cp README.md "package/${PACKAGE_NAME}/"
+          cp LICENSE "package/${PACKAGE_NAME}/" || true
+          cp -r examples "package/${PACKAGE_NAME}/" || true
+          cp -r docs "package/${PACKAGE_NAME}/" || true
+          
+          cd package
+          # Create both tar.gz and zip for Windows
+          tar --format=posix -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
+          
+          # Create checksums
+          sha256sum "${PACKAGE_NAME}.tar.gz" > "${PACKAGE_NAME}.tar.gz.sha256"
+          sha256sum "${PACKAGE_NAME}.zip" > "${PACKAGE_NAME}.zip.sha256"
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: klang-${{ matrix.platform }}-${{ matrix.arch }}
+          path: package/*
+          retention-days: 5
+
+  # Create GitHub release
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.sha256" \) -exec cp {} release/ \;
+          ls -lh release/
+      
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION="${{ env.KLANG_VERSION }}"
+          VERSION="${VERSION#v}"
+          
+          cat > release_notes.md << 'EOF'
+          # KLang Release
+          
+          ## Installation
+          
+          ### Quick Install (Linux/macOS)
+          ```bash
+          curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/quick-install.sh | bash
+          ```
+          
+          ### Manual Installation
+          
+          #### Linux/macOS
+          1. Download the appropriate tar.gz file for your platform
+          2. Extract: `tar -xzf klang-VERSION-<platform>-<arch>.tar.gz`
+          3. Add to PATH or copy binary to `/usr/local/bin/`
+          
+          #### Windows
+          1. Download the zip file
+          2. Extract the archive
+          3. Add the `klang.exe` location to your PATH
+          
+          ## Supported Platforms
+          
+          - Linux x64
+          - Linux ARM64
+          - macOS x64 (Intel)
+          - macOS ARM64 (Apple Silicon)
+          - Windows x64
+          
+          ## Verification
+          
+          All release artifacts include SHA256 checksums. Verify your download:
+          
+          ```bash
+          # Linux/macOS
+          sha256sum -c klang-VERSION-<platform>-<arch>.tar.gz.sha256
+          
+          # Windows (PowerShell)
+          Get-FileHash klang-VERSION-windows-x64.zip -Algorithm SHA256
+          ```
+          EOF
+          
+          echo "Release notes generated"
+          cat release_notes.md
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.KLANG_VERSION }}
+          name: KLang ${{ env.KLANG_VERSION }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

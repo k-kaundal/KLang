@@ -1,0 +1,40 @@
+# Calculator class example
+
+class Calculator {
+    let result: int = 0
+    
+    fn init() {
+        this.result = 0
+    }
+    
+    fn add(n: int) {
+        this.result = this.result + n
+        return this
+    }
+    
+    fn multiply(n: int) {
+        this.result = this.result * n
+        return this
+    }
+    
+    fn get_result() {
+        return this.result
+    }
+    
+    fn reset() {
+        this.result = 0
+        return this
+    }
+}
+
+let calc = new Calculator()
+calc.add(5)
+calc.add(10)
+calc.multiply(2)
+
+println("Result:")
+println(calc.get_result())
+
+calc.reset()
+println("After reset:")
+println(calc.get_result())

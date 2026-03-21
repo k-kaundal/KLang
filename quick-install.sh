@@ -91,7 +91,14 @@ download_klang() {
     fi
     
     echo -e "${BLUE}Extracting...${NC}"
-    tar -xzf "$temp_dir/klang.tar.gz" -C "$temp_dir"
+    # Try to extract with error handling for different tar implementations
+    if ! tar -xzf "$temp_dir/klang.tar.gz" -C "$temp_dir" 2>/dev/null; then
+        echo -e "${RED}Error: Failed to extract archive${NC}"
+        echo -e "${YELLOW}The archive may be corrupted or in an incompatible format${NC}"
+        echo -e "${BLUE}Falling back to building from source...${NC}"
+        build_from_source
+        return
+    fi
     
     # Install
     mkdir -p "$INSTALL_DIR/bin"
