@@ -181,7 +181,6 @@ tar -xzf klang-0.1.0-linux-x64.tar.gz
 
 # Test
 ./klang-0.1.0-linux-x64/klang repl  # Type 'exit' to quit
-./klang-0.1.0-linux-x64/klang repl
 ```
 
 #### On macOS (ARM64 - Apple Silicon) - THE ORIGINAL ISSUE
@@ -199,7 +198,6 @@ tar -xzf klang-0.1.0-macos-arm64.tar.gz
 
 # Test
 ./klang-0.1.0-macos-arm64/klang repl  # Type 'exit' to quit
-./klang-0.1.0-macos-arm64/klang repl
 ```
 
 **Expected result**: No "Unrecognized archive format" error ✓
@@ -214,7 +212,6 @@ curl -LO https://github.com/k-kaundal/KLang/releases/download/v0.1.0/klang-0.1.0
 tar -xzf klang-0.1.0-macos-x64.tar.gz
 
 # Test
-./klang-0.1.0-macos-x64/klang repl  # Type 'exit' to quit
 ```
 
 #### On Windows (x64)
@@ -228,7 +225,6 @@ Expand-Archive -Path klang-0.1.0-windows-x64.zip -DestinationPath .
 
 # Test
 .\klang-0.1.0-windows-x64\klang.exe repl  # Type 'exit' to quit
-.\klang-0.1.0-windows-x64\klang.exe repl
 ```
 
 ### Step 5: Test Quick Install Script
@@ -252,7 +248,6 @@ Verify:
 ```bash
 source ~/.bashrc  # or ~/.zshrc
 klang repl  # Type 'exit' to quit
-klang repl
 ```
 
 ## Cross-Platform Verification Checklist
