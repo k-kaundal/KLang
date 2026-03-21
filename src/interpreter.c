@@ -39,11 +39,17 @@ Value *env_get(Env *env, const char *name) {
 }
 
 void env_set_local(Env *env, const char *name, Value val) {
+    // Deep copy strings to avoid double-free issues
+    Value val_copy = val;
+    if (val.type == VAL_STRING && val.as.str_val) {
+        val_copy.as.str_val = strdup(val.as.str_val);
+    }
+    
     EnvEntry *e = env->entries;
     while (e) {
         if (strcmp(e->name, name) == 0) {
             value_free(&e->value);
-            e->value = val;
+            e->value = val_copy;
             return;
         }
         e = e->next;
@@ -51,7 +57,7 @@ void env_set_local(Env *env, const char *name, Value val) {
     {
         EnvEntry *ne = malloc(sizeof(EnvEntry));
         ne->name = strdup(name);
-        ne->value = val;
+        ne->value = val_copy;
         ne->next = env->entries;
         env->entries = ne;
     }
@@ -109,6 +115,47 @@ Value make_null(void) {
     return val;
 }
 
+Value make_class(const char *name, const char *parent_name) {
+    Value val;
+    val.type = VAL_CLASS;
+    val.as.class_val.name = strdup(name);
+    val.as.class_val.parent_name = parent_name ? strdup(parent_name) : NULL;
+    val.as.class_val.methods = env_new(NULL);
+    val.as.class_val.fields = env_new(NULL);
+    return val;
+}
+
+Value make_object(const char *class_name, Env *methods) {
+    Value val;
+    val.type = VAL_OBJECT;
+    val.as.object_val.class_name = strdup(class_name);
+    val.as.object_val.fields = env_new(NULL);
+    val.as.object_val.methods = methods;
+    return val;
+}
+
+Value make_method(Value receiver, Value method) {
+    Value val;
+    val.type = VAL_METHOD;
+    val.as.method_val.receiver = malloc(sizeof(Value));
+    val.as.method_val.method = malloc(sizeof(Value));
+    *val.as.method_val.receiver = receiver;
+    
+    // Deep copy function if needed
+    if (method.type == VAL_FUNCTION && method.as.func_val.param_names) {
+        Value method_copy = method;
+        int i;
+        method_copy.as.func_val.param_names = malloc(method.as.func_val.param_count * sizeof(char *));
+        for (i = 0; i < method.as.func_val.param_count; i++)
+            method_copy.as.func_val.param_names[i] = strdup(method.as.func_val.param_names[i]);
+        *val.as.method_val.method = method_copy;
+    } else {
+        *val.as.method_val.method = method;
+    }
+    
+    return val;
+}
+
 void value_free(Value *v) {
     if (!v) return;
     if (v->type == VAL_STRING && v->as.str_val) {
@@ -130,6 +177,51 @@ void value_free(Value *v) {
             value_free(&v->as.list_val.items[i]);
         free(v->as.list_val.items);
         v->as.list_val.items = NULL;
+    }
+    if (v->type == VAL_CLASS) {
+        if (v->as.class_val.name) {
+            free(v->as.class_val.name);
+            v->as.class_val.name = NULL;
+        }
+        if (v->as.class_val.parent_name) {
+            free(v->as.class_val.parent_name);
+            v->as.class_val.parent_name = NULL;
+        }
+        if (v->as.class_val.methods) {
+            env_free(v->as.class_val.methods);
+            v->as.class_val.methods = NULL;
+        }
+        if (v->as.class_val.fields) {
+            env_free(v->as.class_val.fields);
+            v->as.class_val.fields = NULL;
+        }
+    }
+    if (v->type == VAL_OBJECT) {
+        // Don't free anything to avoid double-free issues
+        // Memory will leak but program will be stable
+        // TODO: implement proper lifecycle management
+        if (v->as.object_val.class_name) {
+            // free(v->as.object_val.class_name);  // Disabled
+            v->as.object_val.class_name = NULL;
+        }
+        if (v->as.object_val.fields) {
+            // env_free(v->as.object_val.fields);  // Disabled
+            v->as.object_val.fields = NULL;
+        }
+    }
+    if (v->type == VAL_METHOD) {
+        if (v->as.method_val.receiver) {
+            // Don't free anything in the receiver (all shared)
+            // Just free the allocated pointer itself
+            free(v->as.method_val.receiver);
+            v->as.method_val.receiver = NULL;
+        }
+        if (v->as.method_val.method) {
+            // Free the method function value
+            value_free(v->as.method_val.method);
+            free(v->as.method_val.method);
+            v->as.method_val.method = NULL;
+        }
     }
 }
 
@@ -154,6 +246,14 @@ char *value_to_string(Value *v) {
             return strdup("<builtin>");
         case VAL_LIST:
             return strdup("<list>");
+        case VAL_CLASS:
+            snprintf(buf, sizeof(buf), "<class %s>", v->as.class_val.name);
+            return strdup(buf);
+        case VAL_OBJECT:
+            snprintf(buf, sizeof(buf), "<object %s>", v->as.object_val.class_name);
+            return strdup(buf);
+        case VAL_METHOD:
+            return strdup("<method>");
         default:
             return strdup("<unknown>");
     }
@@ -255,6 +355,71 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             return make_null();
         }
         case NODE_CALL: {
+            // Special handling for new expressions: new Point(args)
+            if (node->data.call.callee->type == NODE_NEW) {
+                ASTNode *new_node = node->data.call.callee;
+                char *class_name = new_node->data.new_expr.class_name;
+                
+                // Get the class
+                Value *class_val = env_get(env, class_name);
+                if (!class_val || class_val->type != VAL_CLASS) {
+                    fprintf(stderr, "Error at line %d: '%s' is not a class\n", 
+                        node->line, class_name);
+                    interp->had_error = 1;
+                    return make_null();
+                }
+                
+                // Create object
+                Value obj = make_object(class_name, class_val->as.class_val.methods);
+                
+                // Initialize fields with default values from class (deep copy strings)
+                EnvEntry *field_entry = class_val->as.class_val.fields->entries;
+                while (field_entry) {
+                    Value field_val = field_entry->value;
+                    if (field_val.type == VAL_STRING) {
+                        field_val.as.str_val = strdup(field_entry->value.as.str_val);
+                    }
+                    env_set_local(obj.as.object_val.fields, field_entry->name, field_val);
+                    field_entry = field_entry->next;
+                }
+                
+                // Call init method if it exists
+                Value *init_method = env_get(class_val->as.class_val.methods, "init");
+                if (init_method && init_method->type == VAL_FUNCTION) {
+                    int argc = node->data.call.args.count;
+                    Value *args = malloc((argc > 0 ? argc : 1) * sizeof(Value));
+                    int i;
+                    for (i = 0; i < argc; i++)
+                        args[i] = eval_node_env(interp, node->data.call.args.items[i], env);
+                    
+                    // Create call environment with 'this' bound
+                    Env *call_env = env_new(init_method->as.func_val.closure);
+                    env_set_local(call_env, "this", obj);
+                    for (i = 0; i < init_method->as.func_val.param_count && i < argc; i++)
+                        env_set_local(call_env, init_method->as.func_val.param_names[i], args[i]);
+                    
+                    Value init_result = eval_block(interp, init_method->as.func_val.body, call_env);
+                    value_free(&init_result);
+                    
+                    // Get updated 'this' from call_env (in case fields were modified)
+                    Value *updated_this = env_get(call_env, "this");
+                    if (updated_this && updated_this->type == VAL_OBJECT) {
+                        // Fields are shared, so updates are automatic
+                    }
+                    
+                    env_free(call_env);
+                    for (i = 0; i < argc; i++) value_free(&args[i]);
+                    free(args);
+                    
+                    if (interp->last_result.is_return) {
+                        value_free(&interp->last_result.return_value);
+                        interp->last_result.is_return = 0;
+                    }
+                }
+                
+                return obj;
+            }
+            
             Value callee = eval_node_env(interp, node->data.call.callee, env);
             int argc = node->data.call.args.count;
             Value *args = malloc((argc > 0 ? argc : 1) * sizeof(Value));
@@ -265,6 +430,36 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
 
             if (callee.type == VAL_BUILTIN) {
                 result = callee.as.builtin(interp, args, argc);
+            } else if (callee.type == VAL_METHOD) {
+                // Handle bound method call
+                Value method = *callee.as.method_val.method;
+                Value receiver = *callee.as.method_val.receiver;
+                
+                if (method.type == VAL_FUNCTION) {
+                    Env *call_env = env_new(method.as.func_val.closure);
+                    // Bind 'this' to the receiver object
+                    env_set_local(call_env, "this", receiver);
+                    for (i = 0; i < method.as.func_val.param_count && i < argc; i++)
+                        env_set_local(call_env, method.as.func_val.param_names[i], args[i]);
+                    value_free(&result);
+                    result = eval_block(interp, method.as.func_val.body, call_env);
+                    
+                    // Update receiver fields if they were modified
+                    if (receiver.type == VAL_OBJECT) {
+                        Value *updated_this = env_get(call_env, "this");
+                        if (updated_this && updated_this->type == VAL_OBJECT) {
+                            // The receiver in the callee is already updated through shared env
+                        }
+                    }
+                    
+                    env_free(call_env);
+                    if (interp->last_result.is_return) {
+                        value_free(&result);
+                        result = interp->last_result.return_value;
+                        interp->last_result.is_return = 0;
+                        interp->last_result.return_value = make_null();
+                    }
+                }
             } else if (callee.type == VAL_FUNCTION) {
                 Env *call_env = env_new(callee.as.func_val.closure);
                 for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
@@ -372,6 +567,43 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
         }
         case NODE_BINOP: {
             const char *op = node->data.binop.op;
+            
+            // Handle member assignment (this.x = value)
+            if (strcmp(op, "=") == 0 && node->data.binop.left->type == NODE_MEMBER_ACCESS) {
+                ASTNode *member_node = node->data.binop.left;
+                Value obj = eval_node_env(interp, member_node->data.member_access.obj, env);
+                Value val = eval_node_env(interp, node->data.binop.right, env);
+                
+                if (obj.type == VAL_OBJECT) {
+                    // Set the field on the object (env_set will take ownership of val)
+                    env_set(obj.as.object_val.fields, member_node->data.member_access.member, val);
+                }
+                
+                // Don't free val - it's now owned by the object's fields
+                // Don't free obj if it's an object - fields are shared
+                return make_null();
+            }
+            
+            // Handle index assignment (arr[0] = value)
+            if (strcmp(op, "=") == 0 && node->data.binop.left->type == NODE_INDEX) {
+                ASTNode *index_node = node->data.binop.left;
+                Value obj = eval_node_env(interp, index_node->data.index_expr.obj, env);
+                Value idx = eval_node_env(interp, index_node->data.index_expr.index, env);
+                Value val = eval_node_env(interp, node->data.binop.right, env);
+                
+                if (obj.type == VAL_LIST && idx.type == VAL_INT) {
+                    long long i = idx.as.int_val;
+                    if (i >= 0 && i < (long long)obj.as.list_val.count) {
+                        value_free(&obj.as.list_val.items[i]);
+                        obj.as.list_val.items[i] = val;
+                    }
+                }
+                
+                value_free(&obj);
+                value_free(&idx);
+                return make_null();
+            }
+            
             Value left = eval_node_env(interp, node->data.binop.left, env);
             Value right = eval_node_env(interp, node->data.binop.right, env);
             Value result = make_null();
@@ -495,6 +727,228 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             value_free(&obj);
             value_free(&idx);
             return result;
+        }
+        case NODE_CLASS_DEF: {
+            // Create class value
+            Value class_val = make_class(node->data.class_def.name, node->data.class_def.parent_name);
+            
+            // If there's a parent, copy parent methods
+            if (node->data.class_def.parent_name) {
+                Value *parent = env_get(env, node->data.class_def.parent_name);
+                if (parent && parent->type == VAL_CLASS) {
+                    // Copy parent methods to child (deep copy functions)
+                    EnvEntry *e = parent->as.class_val.methods->entries;
+                    while (e) {
+                        Value method_copy = e->value;
+                        // Deep copy function param_names
+                        if (method_copy.type == VAL_FUNCTION && method_copy.as.func_val.param_names) {
+                            int j;
+                            method_copy.as.func_val.param_names = malloc(method_copy.as.func_val.param_count * sizeof(char *));
+                            for (j = 0; j < method_copy.as.func_val.param_count; j++)
+                                method_copy.as.func_val.param_names[j] = strdup(e->value.as.func_val.param_names[j]);
+                        }
+                        env_set_local(class_val.as.class_val.methods, e->name, method_copy);
+                        e = e->next;
+                    }
+                    // Copy parent fields (deep copy strings)
+                    e = parent->as.class_val.fields->entries;
+                    while (e) {
+                        Value field_copy = e->value;
+                        if (field_copy.type == VAL_STRING) {
+                            field_copy.as.str_val = strdup(e->value.as.str_val);
+                        }
+                        env_set_local(class_val.as.class_val.fields, e->name, field_copy);
+                        e = e->next;
+                    }
+                }
+            }
+            
+            // Process members
+            int i;
+            for (i = 0; i < node->data.class_def.members.count; i++) {
+                ASTNode *member = node->data.class_def.members.items[i];
+                if (member->type == NODE_FUNC_DEF) {
+                    // Add method to class
+                    Value func;
+                    func.type = VAL_FUNCTION;
+                    func.as.func_val.param_count = member->data.func_def.params.count;
+                    func.as.func_val.param_names = NULL;
+                    if (func.as.func_val.param_count > 0) {
+                        int j;
+                        func.as.func_val.param_names = malloc(func.as.func_val.param_count * sizeof(char *));
+                        for (j = 0; j < func.as.func_val.param_count; j++)
+                            func.as.func_val.param_names[j] = strdup(member->data.func_def.params.items[j]->data.ident.name);
+                    }
+                    func.as.func_val.body = member->data.func_def.body;
+                    func.as.func_val.closure = env;
+                    env_set_local(class_val.as.class_val.methods, member->data.func_def.name, func);
+                } else if (member->type == NODE_LET) {
+                    // Add field default value to class
+                    Value field_val = member->data.let_stmt.value ? 
+                        eval_node_env(interp, member->data.let_stmt.value, env) : make_null();
+                    env_set_local(class_val.as.class_val.fields, member->data.let_stmt.name, field_val);
+                }
+            }
+            
+            // Store class in environment
+            env_set_local(env, node->data.class_def.name, class_val);
+            return make_null();
+        }
+        case NODE_NEW: {
+            // Instantiate object
+            Value *class_val = env_get(env, node->data.new_expr.class_name);
+            if (!class_val || class_val->type != VAL_CLASS) {
+                fprintf(stderr, "Error at line %d: '%s' is not a class\n", 
+                    node->line, node->data.new_expr.class_name);
+                interp->had_error = 1;
+                return make_null();
+            }
+            
+            // Create object
+            Value obj = make_object(node->data.new_expr.class_name, class_val->as.class_val.methods);
+            
+            // Initialize fields with default values from class (deep copy strings)
+            EnvEntry *field_entry = class_val->as.class_val.fields->entries;
+            while (field_entry) {
+                Value field_val = field_entry->value;
+                if (field_val.type == VAL_STRING) {
+                    field_val.as.str_val = strdup(field_entry->value.as.str_val);
+                }
+                env_set_local(obj.as.object_val.fields, field_entry->name, field_val);
+                field_entry = field_entry->next;
+            }
+            
+            // Call init method if it exists
+            Value *init_method = env_get(class_val->as.class_val.methods, "init");
+            if (init_method && init_method->type == VAL_FUNCTION) {
+                int argc = node->data.new_expr.args.count;
+                Value *args = malloc((argc > 0 ? argc : 1) * sizeof(Value));
+                int i;
+                for (i = 0; i < argc; i++)
+                    args[i] = eval_node_env(interp, node->data.new_expr.args.items[i], env);
+                
+                // Create call environment with 'this' bound
+                Env *call_env = env_new(init_method->as.func_val.closure);
+                env_set_local(call_env, "this", obj);
+                for (i = 0; i < init_method->as.func_val.param_count && i < argc; i++)
+                    env_set_local(call_env, init_method->as.func_val.param_names[i], args[i]);
+                
+                Value init_result = eval_block(interp, init_method->as.func_val.body, call_env);
+                value_free(&init_result);
+                
+                // Get updated 'this' from call_env (in case fields were modified)
+                Value *updated_this = env_get(call_env, "this");
+                if (updated_this && updated_this->type == VAL_OBJECT) {
+                    // Copy updated fields back
+                    value_free(&obj);
+                    obj = *updated_this;
+                    obj.as.object_val.class_name = strdup(updated_this->as.object_val.class_name);
+                    obj.as.object_val.fields = env_new(NULL);
+                    EnvEntry *e = updated_this->as.object_val.fields->entries;
+                    while (e) {
+                        env_set_local(obj.as.object_val.fields, e->name, e->value);
+                        e = e->next;
+                    }
+                }
+                
+                env_free(call_env);
+                for (i = 0; i < argc; i++) value_free(&args[i]);
+                free(args);
+                
+                if (interp->last_result.is_return) {
+                    value_free(&interp->last_result.return_value);
+                    interp->last_result.is_return = 0;
+                }
+            }
+            
+            return obj;
+        }
+        case NODE_MEMBER_ACCESS: {
+            Value obj = eval_node_env(interp, node->data.member_access.obj, env);
+            Value result = make_null();
+            
+            if (obj.type == VAL_OBJECT) {
+                // Check fields first
+                Value *field = env_get(obj.as.object_val.fields, node->data.member_access.member);
+                if (field) {
+                    if (field->type == VAL_STRING) result = make_string(field->as.str_val);
+                    else result = *field;
+                } else {
+                    // Check methods
+                    Value *method = env_get(obj.as.object_val.methods, node->data.member_access.member);
+                    if (method && method->type == VAL_FUNCTION) {
+                        // Return bound method
+                        result = make_method(obj, *method);
+                        return result; // Don't free obj since it's part of method
+                    }
+                }
+            } else if (obj.type == VAL_CLASS) {
+                // Access to static methods or parent class
+                Value *method = env_get(obj.as.class_val.methods, node->data.member_access.member);
+                if (method) {
+                    if (method->type == VAL_STRING) result = make_string(method->as.str_val);
+                    else result = *method;
+                }
+            }
+            
+            // Don't free obj if it's an object or class - they share Env pointers
+            if (obj.type != VAL_OBJECT && obj.type != VAL_CLASS) {
+                value_free(&obj);
+            }
+            return result;
+        }
+        case NODE_THIS: {
+            Value *this_val = env_get(env, "this");
+            if (!this_val) {
+                fprintf(stderr, "Error at line %d: 'this' used outside of class method\n", node->line);
+                interp->had_error = 1;
+                return make_null();
+            }
+            // Return the value directly (share Env pointers, don't deep copy)
+            return *this_val;
+        }
+        case NODE_SUPER: {
+            // Get 'this' to find current object
+            Value *this_val = env_get(env, "this");
+            if (!this_val || this_val->type != VAL_OBJECT) {
+                fprintf(stderr, "Error at line %d: 'super' used outside of class method\n", node->line);
+                interp->had_error = 1;
+                return make_null();
+            }
+            
+            // Get the class definition
+            Value *class_val = env_get(env, this_val->as.object_val.class_name);
+            if (!class_val || class_val->type != VAL_CLASS) {
+                fprintf(stderr, "Error at line %d: cannot find class definition\n", node->line);
+                interp->had_error = 1;
+                return make_null();
+            }
+            
+            // Get parent class
+            if (!class_val->as.class_val.parent_name) {
+                fprintf(stderr, "Error at line %d: class has no parent\n", node->line);
+                interp->had_error = 1;
+                return make_null();
+            }
+            
+            Value *parent_class = env_get(env, class_val->as.class_val.parent_name);
+            if (!parent_class || parent_class->type != VAL_CLASS) {
+                fprintf(stderr, "Error at line %d: cannot find parent class\n", node->line);
+                interp->had_error = 1;
+                return make_null();
+            }
+            
+            // Access parent method
+            Value *method = env_get(parent_class->as.class_val.methods, node->data.super_expr.member);
+            if (!method || method->type != VAL_FUNCTION) {
+                fprintf(stderr, "Error at line %d: parent class has no method '%s'\n", 
+                    node->line, node->data.super_expr.member);
+                interp->had_error = 1;
+                return make_null();
+            }
+            
+            // Return bound method
+            return make_method(*this_val, *method);
         }
         default:
             return make_null();

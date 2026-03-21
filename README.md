@@ -65,6 +65,17 @@ Source Code (.kl)
 * Parser (AST generation)
 * Expression evaluation
 * Variables (symbol table)
+* Functions with parameters and return values
+* **Object-Oriented Programming (Classes, Objects, Inheritance)**
+  * Class definitions with fields and methods
+  * Object instantiation with `new` keyword
+  * Constructors (`init` method)
+  * `this` keyword for self-reference
+  * Inheritance with `extends`
+  * Method overriding
+  * `super` keyword for parent access
+* Control flow (if/else, while, for)
+* Lists and indexing
 * Basic REPL
 
 ### 🚧 In Progress
@@ -83,32 +94,63 @@ Source Code (.kl)
 
 ## 🚀 Getting Started
 
-### 1. Clone Repository
+### ⚡ Quick Install (For End Users)
 
+**KLang is self-contained - No gcc or build tools needed to run programs!**
+
+```bash
+# One-line install (Linux/macOS)
+curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh | bash
+
+# Then immediately use KLang
+klang repl
+klang run myprogram.kl
 ```
+
+### 🔧 Build from Source (For Developers)
+
+Only needed if you want to modify KLang or pre-built binaries aren't available:
+
+```bash
+# Clone and build
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
+./build.sh              # Cross-platform build script
+
+# Install
+./install.sh            # Install to system
+
+# Use
+klang repl              # Interactive shell
+klang run script.kl     # Run a script
 ```
 
-### 2. Build (POSIX, macOS, Windows + MinGW/Clang)
+### Platform Support
 
-```
-make          # builds the CLI binary `klang`
-```
+| Platform | Status | Installation |
+|----------|--------|--------------|
+| 🐧 Linux (x64, ARM64) | ✅ Tested | `./build.sh` |
+| 🍎 macOS (Intel, Apple Silicon) | ✅ Supported | `./build.sh` |
+| 🪟 Windows (x64) | ✅ Supported | `build.bat` |
 
-### 3. Run
+**Key Point:** Once you have the `klang` binary, you can run KLang programs **without any dependencies** - no gcc, no make, no compilers needed!
 
-```
-./klang repl            # interactive shell
-./klang run examples/hello.kl
-./klang build examples/hello.kl
-```
+### 📖 Documentation
 
-### 4. Test
+**Essential Guides:**
+- 🚀 [**Getting Started Guide**](docs/GETTING_STARTED.md) - Setup and installation
+- 📦 [**Distribution Guide**](docs/DISTRIBUTION.md) - Self-contained runtime info
+- 📘 [**Language Reference**](docs/LANGUAGE_REFERENCE.md) - Complete syntax reference
+- 🔧 [**Usage Guide**](docs/USAGE_GUIDE.md) - How to use KLang
+- 🔨 [**Compilation Guide**](docs/COMPILATION_GUIDE.md) - Building from source
+- 🎓 [**OOP Specification**](docs/OOP_LANGUAGE_SPEC.md) - Object-oriented features
+- 🤝 [**Contributing Guide**](CONTRIBUTING.md) - How to contribute
 
-```
-make test
-```
+**Quick Links:**
+- [Examples](examples/) - Working code examples
+- [Tests](tests/) - Test suite
+- [Issues](https://github.com/k-kaundal/KLang/issues) - Bug reports & features
+- [Discussions](https://github.com/k-kaundal/KLang/discussions) - Q&A & ideas
 
 ---
 
@@ -185,6 +227,44 @@ let name = "KLang" # trailing comments use '#'
 println("Hello " + name)
 ```
 
+### Object-Oriented Programming (NEW!)
+
+```klang
+# Define a class
+class Point {
+    let x: int = 0
+    let y: int = 0
+    
+    # Constructor
+    fn init(x_val: int, y_val: int) {
+        this.x = x_val
+        this.y = y_val
+    }
+    
+    # Method
+    fn display() {
+        println(this.x)
+        println(this.y)
+    }
+}
+
+# Create object
+let p = new Point(3, 4)
+p.display()  # 3, 4
+
+# Inheritance
+class Point3D extends Point {
+    let z: int = 0
+    
+    fn init(x: int, y: int, z: int) {
+        super.init(x, y)  # Call parent constructor
+        this.z = z
+    }
+}
+
+let p3d = new Point3D(1, 2, 3)
+```
+
 ---
 
 ## 🧠 Design Principles
@@ -237,9 +317,9 @@ println("Hello " + name)
 
 ## 🧩 Future Features
 
-* Object-oriented constructs (classes/structs with methods)
+* ~~Object-oriented constructs (classes/structs with methods)~~ ✅ **IMPLEMENTED**
 * Generics
-* Closures
+* Advanced closures
 * Async / await
 * JIT compiler
 * WebAssembly (WASM)

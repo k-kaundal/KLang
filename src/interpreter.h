@@ -4,7 +4,8 @@
 #include "ast.h"
 
 typedef enum {
-    VAL_INT, VAL_FLOAT, VAL_STRING, VAL_BOOL, VAL_NULL, VAL_FUNCTION, VAL_LIST, VAL_BUILTIN
+    VAL_INT, VAL_FLOAT, VAL_STRING, VAL_BOOL, VAL_NULL, VAL_FUNCTION, VAL_LIST, VAL_BUILTIN,
+    VAL_CLASS, VAL_OBJECT, VAL_METHOD
 } ValueType;
 
 typedef struct Value Value;
@@ -26,6 +27,24 @@ typedef struct {
     int capacity;
 } ListVal;
 
+typedef struct {
+    char *name;
+    char *parent_name;
+    Env *methods;      // Environment for methods
+    Env *fields;       // Environment for default field values
+} ClassVal;
+
+typedef struct {
+    char *class_name;
+    Env *fields;       // Instance fields
+    Env *methods;      // Reference to class methods (shared)
+} ObjectVal;
+
+typedef struct {
+    Value *receiver;   // The 'this' object (pointer to avoid incomplete type)
+    Value *method;     // The function to call (pointer to avoid incomplete type)
+} MethodVal;
+
 struct Value {
     ValueType type;
     union {
@@ -36,6 +55,9 @@ struct Value {
         FunctionVal func_val;
         ListVal list_val;
         BuiltinFn builtin;
+        ClassVal class_val;
+        ObjectVal object_val;
+        MethodVal method_val;
     } as;
 };
 
@@ -71,6 +93,9 @@ Value make_float(double v);
 Value make_string(const char *s);
 Value make_bool(int v);
 Value make_null(void);
+Value make_class(const char *name, const char *parent_name);
+Value make_object(const char *class_name, Env *methods);
+Value make_method(Value receiver, Value method);
 void value_free(Value *v);
 void value_print(Value *v);
 char *value_to_string(Value *v);

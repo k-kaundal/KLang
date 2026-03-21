@@ -165,6 +165,38 @@ ASTNode *ast_new_list(int line) {
     return n;
 }
 
+ASTNode *ast_new_class_def(const char *name, const char *parent_name, int line) {
+    ASTNode *n = ast_alloc(NODE_CLASS_DEF, line);
+    n->data.class_def.name = strdup(name);
+    n->data.class_def.parent_name = parent_name ? strdup(parent_name) : NULL;
+    nodelist_init(&n->data.class_def.members);
+    return n;
+}
+
+ASTNode *ast_new_new(const char *class_name, int line) {
+    ASTNode *n = ast_alloc(NODE_NEW, line);
+    n->data.new_expr.class_name = strdup(class_name);
+    nodelist_init(&n->data.new_expr.args);
+    return n;
+}
+
+ASTNode *ast_new_member_access(ASTNode *obj, const char *member, int line) {
+    ASTNode *n = ast_alloc(NODE_MEMBER_ACCESS, line);
+    n->data.member_access.obj = obj;
+    n->data.member_access.member = strdup(member);
+    return n;
+}
+
+ASTNode *ast_new_this(int line) {
+    return ast_alloc(NODE_THIS, line);
+}
+
+ASTNode *ast_new_super(const char *member, int line) {
+    ASTNode *n = ast_alloc(NODE_SUPER, line);
+    n->data.super_expr.member = member ? strdup(member) : NULL;
+    return n;
+}
+
 void ast_free(ASTNode *node) {
     int i;
     if (!node) return;
@@ -243,6 +275,28 @@ void ast_free(ASTNode *node) {
             for (i = 0; i < node->data.list.elements.count; i++)
                 ast_free(node->data.list.elements.items[i]);
             nodelist_free(&node->data.list.elements);
+            break;
+        case NODE_CLASS_DEF:
+            free(node->data.class_def.name);
+            if (node->data.class_def.parent_name) free(node->data.class_def.parent_name);
+            for (i = 0; i < node->data.class_def.members.count; i++)
+                ast_free(node->data.class_def.members.items[i]);
+            nodelist_free(&node->data.class_def.members);
+            break;
+        case NODE_NEW:
+            free(node->data.new_expr.class_name);
+            for (i = 0; i < node->data.new_expr.args.count; i++)
+                ast_free(node->data.new_expr.args.items[i]);
+            nodelist_free(&node->data.new_expr.args);
+            break;
+        case NODE_MEMBER_ACCESS:
+            ast_free(node->data.member_access.obj);
+            free(node->data.member_access.member);
+            break;
+        case NODE_THIS:
+            break;
+        case NODE_SUPER:
+            if (node->data.super_expr.member) free(node->data.super_expr.member);
             break;
         default:
             break;
