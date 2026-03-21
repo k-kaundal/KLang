@@ -73,10 +73,37 @@ install_user() {
     # Check if user bin is in PATH
     if [[ ":$PATH:" != *":$USER_INSTALL_DIR:"* ]]; then
         echo -e "${YELLOW}Note: $USER_INSTALL_DIR is not in your PATH${NC}"
-        echo -e "Add this line to your ~/.bashrc or ~/.zshrc:"
-        echo -e "  ${BLUE}export PATH=\"\$PATH:$USER_INSTALL_DIR\"${NC}"
         echo ""
-        echo -e "Then run: ${BLUE}source ~/.bashrc${NC} (or ~/.zshrc)"
+        
+        # Detect user's shell
+        local user_shell=""
+        if [ -n "$SHELL" ]; then
+            user_shell=$(basename "$SHELL")
+        else
+            user_shell="bash"
+        fi
+        
+        echo -e "${YELLOW}Add PATH to your shell configuration:${NC}"
+        case "$user_shell" in
+            zsh)
+                echo -e "  ${BLUE}echo 'export PATH=\"\$PATH:$USER_INSTALL_DIR\"' >> ~/.zshrc${NC}"
+                echo -e "  ${BLUE}source ~/.zshrc${NC}"
+                ;;
+            bash)
+                echo -e "  ${BLUE}echo 'export PATH=\"\$PATH:$USER_INSTALL_DIR\"' >> ~/.bashrc${NC}"
+                echo -e "  ${BLUE}source ~/.bashrc${NC}"
+                ;;
+            fish)
+                echo -e "  ${BLUE}echo 'set -gx PATH \$PATH $USER_INSTALL_DIR' >> ~/.config/fish/config.fish${NC}"
+                echo -e "  ${BLUE}source ~/.config/fish/config.fish${NC}"
+                ;;
+            *)
+                echo -e "  ${BLUE}echo 'export PATH=\"\$PATH:$USER_INSTALL_DIR\"' >> ~/.profile${NC}"
+                echo -e "  ${BLUE}source ~/.profile${NC}"
+                ;;
+        esac
+        echo ""
+        echo -e "${YELLOW}Or simply close and reopen your terminal${NC}"
     else
         echo -e "${GREEN}✓ KLang is now available in PATH${NC}"
     fi
