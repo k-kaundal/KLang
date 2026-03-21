@@ -102,6 +102,11 @@ Source Code (.kl)
 # One-line install (Linux/macOS)
 curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh | bash
 
+# For security-conscious users, review the script first:
+# curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh > /tmp/install.sh
+# less /tmp/install.sh
+# bash /tmp/install.sh
+
 # Then immediately use KLang
 klang repl
 klang run myprogram.kl

@@ -429,6 +429,12 @@ If all else fails, start fresh:
 rm -rf ~/.klang
 
 # Re-run quick install
+# Security Note: For maximum security, review the script before running:
+# curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh > /tmp/install.sh
+# less /tmp/install.sh  # Review the script
+# bash /tmp/install.sh  # Run after review
+
+# Quick install (one-line):
 curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh | bash
 
 # Follow the post-installation instructions carefully

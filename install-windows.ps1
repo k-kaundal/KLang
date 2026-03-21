@@ -15,11 +15,12 @@ $INSTALL_DIR_USER = "$env:LOCALAPPDATA\KLang"
 $INSTALL_DIR_SYSTEM = "$env:ProgramFiles\KLang"
 
 function Show-Banner {
+    $versionPadding = " " * (40 - 27 - $KLANG_VERSION.Length)  # Adjust spacing based on version length
     Write-Host ""
     Write-Host "╔══════════════════════════════════════════╗" -ForegroundColor Blue
     Write-Host "║                                          ║" -ForegroundColor Blue
     Write-Host "║         KLang Windows Installer          ║" -ForegroundColor Blue
-    Write-Host "║                v$KLANG_VERSION                        ║" -ForegroundColor Blue
+    Write-Host "║                   v$KLANG_VERSION$versionPadding║" -ForegroundColor Blue
     Write-Host "║                                          ║" -ForegroundColor Blue
     Write-Host "╚══════════════════════════════════════════╝" -ForegroundColor Blue
     Write-Host ""

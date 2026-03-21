@@ -244,7 +244,7 @@ setup_path() {
         [ ! -w "$rc_file" ] && continue
         
         # Check if KLang PATH is already in this file
-        if grep -q "KLANG" "$rc_file" 2>/dev/null || grep -q ".klang/bin" "$rc_file" 2>/dev/null; then
+        if grep -iq "klang" "$rc_file" 2>/dev/null; then
             echo -e "${GREEN}✓ KLang PATH already exists in $rc_file${NC}"
             path_added=1
             rc_file_updated="$rc_file"
