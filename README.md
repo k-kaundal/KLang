@@ -94,42 +94,52 @@ Source Code (.kl)
 
 ## 🚀 Getting Started
 
-### Quick Start (3 Commands)
+### ⚡ Quick Install (For End Users)
+
+**KLang is self-contained - No gcc or build tools needed to run programs!**
 
 ```bash
-git clone https://github.com/k-kaundal/KLang.git
-cd KLang && make
-./klang repl
+# One-line install (Linux/macOS)
+curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh | bash
+
+# Then immediately use KLang
+klang repl
+klang run myprogram.kl
 ```
 
-### Detailed Setup
+### 🔧 Build from Source (For Developers)
 
-#### 1. Clone Repository
+Only needed if you want to modify KLang or pre-built binaries aren't available:
+
 ```bash
+# Clone and build
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
+./build.sh              # Cross-platform build script
+
+# Install
+./install.sh            # Install to system
+
+# Use
+klang repl              # Interactive shell
+klang run script.kl     # Run a script
 ```
 
-#### 2. Build
-```bash
-make clean && make    # builds the CLI binary `klang`
-```
+### Platform Support
 
-#### 3. Run
-```bash
-./klang repl                    # interactive shell
-./klang run examples/hello.kl   # run a script
-```
+| Platform | Status | Installation |
+|----------|--------|--------------|
+| 🐧 Linux (x64, ARM64) | ✅ Tested | `./build.sh` |
+| 🍎 macOS (Intel, Apple Silicon) | ✅ Supported | `./build.sh` |
+| 🪟 Windows (x64) | ✅ Supported | `build.bat` |
 
-#### 4. Test
-```bash
-make test    # run test suite
-```
+**Key Point:** Once you have the `klang` binary, you can run KLang programs **without any dependencies** - no gcc, no make, no compilers needed!
 
 ### 📖 Documentation
 
 **Essential Guides:**
 - 🚀 [**Getting Started Guide**](docs/GETTING_STARTED.md) - Setup and installation
+- 📦 [**Distribution Guide**](docs/DISTRIBUTION.md) - Self-contained runtime info
 - 📘 [**Language Reference**](docs/LANGUAGE_REFERENCE.md) - Complete syntax reference
 - 🔧 [**Usage Guide**](docs/USAGE_GUIDE.md) - How to use KLang
 - 🔨 [**Compilation Guide**](docs/COMPILATION_GUIDE.md) - Building from source

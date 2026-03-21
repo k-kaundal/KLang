@@ -1,16 +1,84 @@
 # Getting Started with KLang
 
 ## 📚 Table of Contents
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Building from Source](#building-from-source)
+- [Self-Contained Runtime](#self-contained-runtime)
+- [For End Users](#for-end-users)
+- [For Developers](#for-developers)
 - [Quick Start](#quick-start)
 - [Your First Program](#your-first-program)
 - [Next Steps](#next-steps)
 
 ---
 
-## Prerequisites
+## Self-Contained Runtime
+
+**Important:** KLang is a **self-contained interpreter** that runs `.kl` programs directly. Once you have the `klang` binary:
+
+✅ **You CAN** run KLang programs immediately  
+✅ **No gcc, clang, or other compilers needed**  
+✅ **No build tools required at runtime**  
+✅ **Just the KLang binary is enough**
+
+🔧 **You only need build tools (gcc, make) to BUILD KLang itself, not to RUN it!**
+
+---
+
+## For End Users
+
+If you just want to **run** KLang programs, you don't need any build tools.
+
+### Quick Installation
+
+#### Option 1: One-Line Install (Recommended)
+```bash
+# Linux/macOS
+curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh | bash
+```
+
+This will:
+- Download or build KLang
+- Install to `~/.klang/bin/`
+- Add to your PATH
+- No sudo required!
+
+#### Option 2: Download Pre-built Binary (Coming Soon)
+```bash
+# Download from releases
+wget https://github.com/k-kaundal/KLang/releases/latest/download/klang-linux-x64.tar.gz
+tar -xzf klang-linux-x64.tar.gz
+./install.sh
+```
+
+#### Option 3: Build from Source
+If pre-built binaries aren't available:
+```bash
+git clone https://github.com/k-kaundal/KLang.git
+cd KLang
+./build.sh
+./install.sh
+```
+
+### System Requirements (Runtime)
+
+**To RUN KLang programs:**
+- Operating System: Linux, macOS, or Windows
+- Memory: 50 MB RAM
+- Disk: 5 MB for binary
+- Dependencies: None! (Only standard system libraries)
+
+**NOT REQUIRED:**
+- ❌ gcc or clang
+- ❌ make or build tools
+- ❌ Python, Node.js, or other runtimes
+- ❌ Any external dependencies
+
+---
+
+## For Developers
+
+If you want to **modify** or **build** KLang from source:
+
+### Prerequisites
 
 ### System Requirements
 - **Operating System**: Linux, macOS, or Windows (with MinGW/WSL)
