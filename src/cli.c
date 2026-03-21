@@ -1,0 +1,122 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "lexer.h"
+#include "parser.h"
+#include "interpreter.h"
+#include "compiler.h"
+#include "vm.h"
+#include "runtime.h"
+
+void run_repl(void);
+
+static char *read_file(const char *path) {
+    FILE *f = fopen(path, "r");
+    long size;
+    char *buf;
+    size_t read_bytes;
+    if (!f) {
+        fprintf(stderr, "Cannot open file: %s\n", path);
+        return NULL;
+    }
+    fseek(f, 0, SEEK_END);
+    size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    buf = malloc(size + 1);
+    read_bytes = fread(buf, 1, size, f);
+    buf[read_bytes] = '\0';
+    fclose(f);
+    return buf;
+}
+
+static void run_file(const char *path) {
+    char *source = read_file(path);
+    Lexer lexer;
+    Parser parser;
+    int count = 0;
+    ASTNode **nodes;
+    int i;
+    if (!source) return;
+
+    lexer_init(&lexer, source);
+    parser_init(&parser, &lexer);
+
+    nodes = parse_program(&parser, &count);
+
+    if (!parser.had_error) {
+        Interpreter *interp = interpreter_new();
+        runtime_init(interp);
+
+        for (i = 0; i < count; i++) {
+            Value result = eval_node(interp, nodes[i]);
+            value_free(&result);
+            if (interp->had_error) break;
+        }
+
+        interpreter_free(interp);
+    }
+
+    for (i = 0; i < count; i++) ast_free(nodes[i]);
+    free(nodes);
+    parser_free(&parser);
+    lexer_free(&lexer);
+    free(source);
+}
+
+static void build_file(const char *path) {
+    char *source = read_file(path);
+    Lexer lexer;
+    Parser parser;
+    int count = 0;
+    ASTNode **nodes;
+    int i;
+    if (!source) return;
+
+    lexer_init(&lexer, source);
+    parser_init(&parser, &lexer);
+
+    nodes = parse_program(&parser, &count);
+
+    if (!parser.had_error) {
+        Compiler *comp = compiler_new();
+        Chunk *chunk = compile_program(comp, nodes, count);
+        VM *vm = vm_new();
+        vm_execute(vm, chunk);
+        vm_free(vm);
+        chunk_free(chunk);
+        compiler_free(comp);
+    }
+
+    for (i = 0; i < count; i++) ast_free(nodes[i]);
+    free(nodes);
+    parser_free(&parser);
+    lexer_free(&lexer);
+    free(source);
+}
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        run_repl();
+        return 0;
+    }
+
+    if (strcmp(argv[1], "repl") == 0) {
+        run_repl();
+    } else if (strcmp(argv[1], "run") == 0) {
+        if (argc < 3) {
+            fprintf(stderr, "Usage: klang run <file.kl>\n");
+            return 1;
+        }
+        run_file(argv[2]);
+    } else if (strcmp(argv[1], "build") == 0) {
+        if (argc < 3) {
+            fprintf(stderr, "Usage: klang build <file.kl>\n");
+            return 1;
+        }
+        build_file(argv[2]);
+    } else {
+        fprintf(stderr, "Unknown command: %s\n", argv[1]);
+        return 1;
+    }
+    return 0;
+}
