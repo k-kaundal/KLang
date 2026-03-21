@@ -188,60 +188,116 @@ build_from_source() {
 
 # Setup PATH
 setup_path() {
-    local shell_rc=""
-    
-    # Detect shell
-    if [ -n "$BASH_VERSION" ]; then
-        shell_rc="$HOME/.bashrc"
-    elif [ -n "$ZSH_VERSION" ]; then
-        shell_rc="$HOME/.zshrc"
-    else
-        shell_rc="$HOME/.profile"
-    fi
-    
     # Check if already in PATH
     if [[ ":$PATH:" == *":$INSTALL_DIR/bin:"* ]]; then
         echo -e "${GREEN}✓ KLang already in PATH${NC}"
         return
     fi
     
-    # Create shell RC file if it doesn't exist
-    if [ ! -f "$shell_rc" ]; then
-        touch "$shell_rc" 2>/dev/null || {
-            echo -e "${YELLOW}Warning: Could not create $shell_rc (check directory permissions)${NC}"
-            echo -e "${YELLOW}Please manually add to PATH:${NC}"
-            echo -e "  ${BLUE}export PATH=\"\$PATH:$INSTALL_DIR/bin\"${NC}"
-            return
-        }
+    # Detect user's actual shell (not the script interpreter)
+    local user_shell=""
+    if [ -n "$SHELL" ]; then
+        user_shell=$(basename "$SHELL")
+    else
+        user_shell="bash"
     fi
     
-    # Check if file is writable
-    if [ ! -w "$shell_rc" ]; then
-        echo -e "${YELLOW}Warning: $shell_rc is not writable${NC}"
-        echo -e "${YELLOW}Please manually add to PATH:${NC}"
-        echo -e "  ${BLUE}export PATH=\"\$PATH:$INSTALL_DIR/bin\"${NC}"
-        return
-    fi
+    # Determine which RC files to update based on actual shell
+    local rc_files=()
+    local primary_rc=""
     
-    # Add to PATH
-    local write_error
-    if ! write_error=$({
-        echo ""
-        echo "# KLang"
-        echo "export PATH=\"\$PATH:$INSTALL_DIR/bin\""
-    } >> "$shell_rc" 2>&1); then
-        echo -e "${YELLOW}Warning: Could not write to $shell_rc${NC}"
-        if [ -n "$write_error" ]; then
-            echo -e "${YELLOW}Error details: $write_error${NC}"
+    case "$user_shell" in
+        zsh)
+            primary_rc="$HOME/.zshrc"
+            rc_files=("$HOME/.zshrc" "$HOME/.zprofile")
+            ;;
+        bash)
+            primary_rc="$HOME/.bashrc"
+            rc_files=("$HOME/.bashrc" "$HOME/.bash_profile")
+            ;;
+        fish)
+            primary_rc="$HOME/.config/fish/config.fish"
+            rc_files=("$HOME/.config/fish/config.fish")
+            ;;
+        *)
+            primary_rc="$HOME/.profile"
+            rc_files=("$HOME/.profile")
+            ;;
+    esac
+    
+    local path_added=0
+    local rc_file_updated=""
+    
+    # Try to add to shell RC files
+    for rc_file in "${rc_files[@]}"; do
+        # Skip if file doesn't exist and we can't create it
+        if [ ! -f "$rc_file" ]; then
+            # Try to create parent directory for fish
+            if [[ "$rc_file" == *".config/fish"* ]]; then
+                mkdir -p "$(dirname "$rc_file")" 2>/dev/null || continue
+            fi
+            # Create the file
+            touch "$rc_file" 2>/dev/null || continue
         fi
-        echo -e "${YELLOW}Please manually add to PATH:${NC}"
+        
+        # Skip if not writable
+        [ ! -w "$rc_file" ] && continue
+        
+        # Check if KLang PATH is already in this file
+        if grep -iq "klang" "$rc_file" 2>/dev/null; then
+            echo -e "${GREEN}✓ KLang PATH already exists in $rc_file${NC}"
+            path_added=1
+            rc_file_updated="$rc_file"
+            continue
+        fi
+        
+        # Add to PATH with fish-specific syntax
+        local write_error
+        if [[ "$rc_file" == *".config/fish"* ]]; then
+            if ! write_error=$({
+                echo ""
+                echo "# KLang"
+                echo "set -gx PATH \$PATH $INSTALL_DIR/bin"
+            } >> "$rc_file" 2>&1); then
+                continue
+            fi
+        else
+            if ! write_error=$({
+                echo ""
+                echo "# KLang"
+                echo "export PATH=\"\$PATH:$INSTALL_DIR/bin\""
+            } >> "$rc_file" 2>&1); then
+                continue
+            fi
+        fi
+        
+        echo -e "${GREEN}✓ Added KLang to PATH in $rc_file${NC}"
+        path_added=1
+        rc_file_updated="$rc_file"
+        break
+    done
+    
+    if [ $path_added -eq 0 ]; then
+        echo -e "${YELLOW}Warning: Could not automatically add to PATH${NC}"
+        echo -e "${YELLOW}Please manually add this line to your shell configuration:${NC}"
         echo -e "  ${BLUE}export PATH=\"\$PATH:$INSTALL_DIR/bin\"${NC}"
+        echo ""
+        echo -e "${YELLOW}For zsh, add to: ~/.zshrc${NC}"
+        echo -e "${YELLOW}For bash, add to: ~/.bashrc${NC}"
+        echo -e "${YELLOW}For fish, add to: ~/.config/fish/config.fish${NC}"
         return
     fi
     
-    echo -e "${GREEN}✓ Added KLang to PATH in $shell_rc${NC}"
-    echo -e "${YELLOW}Note: Restart your terminal or run:${NC}"
-    echo -e "  ${BLUE}source $shell_rc${NC}"
+    echo -e "${YELLOW}Important: Restart your terminal or run:${NC}"
+    if [[ "$rc_file_updated" == *".config/fish"* ]]; then
+        echo -e "  ${BLUE}source $rc_file_updated${NC}"
+    elif [[ "$rc_file_updated" == *".zshrc"* ]]; then
+        echo -e "  ${BLUE}source ~/.zshrc${NC}"
+    elif [[ "$rc_file_updated" == *".bashrc"* ]]; then
+        echo -e "  ${BLUE}source ~/.bashrc${NC}"
+    else
+        echo -e "  ${BLUE}source $rc_file_updated${NC}"
+    fi
 }
 
 # Verify installation
@@ -253,10 +309,47 @@ verify_install() {
         echo -e "${GREEN}✓ KLang installed successfully!${NC}"
         echo -e "  Location: $INSTALL_DIR/bin/klang"
         echo ""
+        
+        # Detect user's shell for better instructions
+        local user_shell=""
+        if [ -n "$SHELL" ]; then
+            user_shell=$(basename "$SHELL")
+        fi
+        
         echo -e "${GREEN}Next steps:${NC}"
-        echo -e "  1. Restart your terminal or run: ${BLUE}source ~/.bashrc${NC}"
-        echo -e "  2. Try: ${BLUE}klang repl${NC}"
-        echo -e "  3. Or: ${BLUE}klang run $INSTALL_DIR/examples/hello.kl${NC}"
+        echo ""
+        echo -e "${YELLOW}1. Reload your shell configuration:${NC}"
+        case "$user_shell" in
+            zsh)
+                echo -e "   ${BLUE}source ~/.zshrc${NC}"
+                echo -e "   ${YELLOW}Or simply close and reopen your terminal${NC}"
+                ;;
+            bash)
+                echo -e "   ${BLUE}source ~/.bashrc${NC}"
+                echo -e "   ${YELLOW}Or simply close and reopen your terminal${NC}"
+                ;;
+            fish)
+                echo -e "   ${BLUE}source ~/.config/fish/config.fish${NC}"
+                echo -e "   ${YELLOW}Or simply close and reopen your terminal${NC}"
+                ;;
+            *)
+                echo -e "   ${BLUE}source ~/.profile${NC}"
+                echo -e "   ${YELLOW}Or simply close and reopen your terminal${NC}"
+                ;;
+        esac
+        echo ""
+        echo -e "${YELLOW}2. Verify KLang is in your PATH:${NC}"
+        echo -e "   ${BLUE}which klang${NC}"
+        echo -e "   ${YELLOW}(Should show: $INSTALL_DIR/bin/klang)${NC}"
+        echo ""
+        echo -e "${YELLOW}3. Try KLang:${NC}"
+        echo -e "   ${BLUE}klang repl${NC}                    ${GREEN}# Interactive mode${NC}"
+        echo -e "   ${BLUE}klang run $INSTALL_DIR/examples/hello.kl${NC}"
+        echo ""
+        echo -e "${YELLOW}Troubleshooting:${NC}"
+        echo -e "  If 'klang' command is still not found after reloading:"
+        echo -e "  • Use the full path: ${BLUE}$INSTALL_DIR/bin/klang repl${NC}"
+        echo -e "  • Manually add to PATH: ${BLUE}export PATH=\"\$PATH:$INSTALL_DIR/bin\"${NC}"
         echo ""
     else
         echo -e "${RED}Installation failed${NC}"

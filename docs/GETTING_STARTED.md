@@ -30,16 +30,30 @@ If you just want to **run** KLang programs, you don't need any build tools.
 ### Quick Installation
 
 #### Option 1: One-Line Install (Recommended)
+
+**Linux/macOS:**
 ```bash
-# Linux/macOS
 curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh | bash
 ```
+
+**Windows:** (See Option 3 below for Windows installation)
 
 This will:
 - Download or build KLang
 - Install to `~/.klang/bin/`
 - Add to your PATH
 - No sudo required!
+
+**After installation, restart your terminal or run:**
+```bash
+# For Bash
+source ~/.bashrc
+
+# For Zsh (macOS default)
+source ~/.zshrc
+```
+
+**Troubleshooting:** If you get "command not found: klang", see the [PATH Troubleshooting Guide](PATH_TROUBLESHOOTING.md).
 
 #### Option 2: Download Pre-built Binary (Coming Soon)
 ```bash
@@ -50,12 +64,31 @@ tar -xzf klang-linux-x64.tar.gz
 ```
 
 #### Option 3: Build from Source
-If pre-built binaries aren't available:
+
+**Linux/macOS:**
 ```bash
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
 ./build.sh
 ./install.sh
+```
+
+**Windows:**
+```powershell
+# Clone the repository
+git clone https://github.com/k-kaundal/KLang.git
+cd KLang
+
+# Build
+.\build.bat
+
+# Install (run PowerShell as your regular user, not admin)
+.\install-windows.ps1 -User
+```
+
+For system-wide installation on Windows (requires admin):
+```powershell
+.\install-windows.ps1 -System
 ```
 
 ### System Requirements (Runtime)

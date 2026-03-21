@@ -102,10 +102,17 @@ Source Code (.kl)
 # One-line install (Linux/macOS)
 curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh | bash
 
+# For security-conscious users, review the script first:
+# curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.sh > /tmp/install.sh
+# less /tmp/install.sh
+# bash /tmp/install.sh
+
 # Then immediately use KLang
 klang repl
 klang run myprogram.kl
 ```
+
+**Troubleshooting:** If you get "command not found: klang" after installation, see the [PATH Troubleshooting Guide](docs/PATH_TROUBLESHOOTING.md).
 
 ### 🔧 Build from Source (For Developers)
 
@@ -131,7 +138,7 @@ klang run script.kl     # Run a script
 |----------|--------|--------------|
 | 🐧 Linux (x64, ARM64) | ✅ Tested | `./build.sh` |
 | 🍎 macOS (Intel, Apple Silicon) | ✅ Supported | `./build.sh` |
-| 🪟 Windows (x64) | ✅ Supported | `build.bat` |
+| 🪟 Windows (x64) | ✅ Supported | `build.bat` + `install-windows.ps1` |
 
 **Key Point:** Once you have the `klang` binary, you can run KLang programs **without any dependencies** - no gcc, no make, no compilers needed!
 
@@ -139,6 +146,7 @@ klang run script.kl     # Run a script
 
 **Essential Guides:**
 - 🚀 [**Getting Started Guide**](docs/GETTING_STARTED.md) - Setup and installation
+- 🔧 [**PATH Troubleshooting**](docs/PATH_TROUBLESHOOTING.md) - Fix "command not found" errors
 - 📦 [**Distribution Guide**](docs/DISTRIBUTION.md) - Self-contained runtime info
 - 📘 [**Language Reference**](docs/LANGUAGE_REFERENCE.md) - Complete syntax reference
 - 🔧 [**Usage Guide**](docs/USAGE_GUIDE.md) - How to use KLang
