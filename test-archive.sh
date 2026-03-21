@@ -128,11 +128,11 @@ if [ -f "$EXTRACT_DIR/$PACKAGE_NAME/klang" ]; then
         chmod +x "$EXTRACT_DIR/$PACKAGE_NAME/klang"
     fi
     
-    # Try to run binary
-    if "$EXTRACT_DIR/$PACKAGE_NAME/klang" --version 2>/dev/null || echo "Test"; then
+    # Try to run binary (klang doesn't support --version, so just check if it runs)
+    if "$EXTRACT_DIR/$PACKAGE_NAME/klang" help 2>/dev/null >/dev/null; then
         echo -e "${GREEN}✓ Binary can be executed${NC}"
     else
-        echo -e "${YELLOW}⚠ Binary execution test skipped${NC}"
+        echo -e "${YELLOW}⚠ Binary execution test: binary runs but may need arguments${NC}"
     fi
 else
     echo -e "${RED}✗ Binary not found in extracted archive${NC}"

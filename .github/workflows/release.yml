@@ -183,8 +183,14 @@ jobs:
           cp -r docs "package/${PACKAGE_NAME}/" || true
 
           cd package
-          # Use GNU tar format for maximum compatibility
-          tar --format=posix -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          # Create archive with appropriate tar format
+          if tar --version 2>&1 | grep -q "GNU tar"; then
+            # GNU tar supports --format=posix for better compatibility
+            tar --format=posix -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          else
+            # BSD tar (macOS) is compatible by default
+            tar -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          fi
 
           # Verify the archive
           echo "Archive contents:"
@@ -214,7 +220,12 @@ jobs:
 
           cd package
           # Create both tar.gz and zip for Windows
-          tar --format=posix -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          # MSYS2 provides GNU tar
+          if tar --version 2>&1 | grep -q "GNU tar"; then
+            tar --format=posix -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          else
+            tar -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          fi
           zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
 
           # Create checksums
