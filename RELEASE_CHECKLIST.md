@@ -103,7 +103,7 @@ curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.s
 # Or test manual download
 wget https://github.com/k-kaundal/KLang/releases/download/v0.1.0/klang-0.1.0-linux-x64.tar.gz
 tar -xzf klang-0.1.0-linux-x64.tar.gz
-./klang-0.1.0-linux-x64/klang --version
+./klang-0.1.0-linux-x64/klang repl  # Type 'exit' to quit
 ```
 
 #### macOS
@@ -114,14 +114,14 @@ curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.s
 # Or test manual download
 curl -LO https://github.com/k-kaundal/KLang/releases/download/v0.1.0/klang-0.1.0-macos-arm64.tar.gz
 tar -xzf klang-0.1.0-macos-arm64.tar.gz
-./klang-0.1.0-macos-arm64/klang --version
+./klang-0.1.0-macos-arm64/klang repl  # Type 'exit' to quit
 ```
 
 #### Windows
 ```powershell
 # Download and extract manually
 # Then test:
-.\klang-0.1.0-windows-x64\klang.exe --version
+.\klang-0.1.0-windows-x64\klang.exe repl  # Type 'exit' to quit
 ```
 
 ### Step 6: Verify Checksums

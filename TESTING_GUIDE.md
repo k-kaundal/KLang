@@ -72,7 +72,7 @@ ls -lh dist/
 # Test extraction
 cd /tmp
 tar -xzf /path/to/KLang/dist/klang-0.1.0-*.tar.gz
-./klang-0.1.0-*/klang --version
+./klang-0.1.0-*/klang repl  # Type 'exit' to quit
 ```
 
 ### Step 4: Test Installation Script
@@ -86,7 +86,7 @@ make clean && make
 
 # Verify installation
 which klang
-klang --version
+klang repl  # Type 'exit' to quit
 ```
 
 ## CI Testing (After PR Merge)
@@ -118,10 +118,10 @@ Click on each job and verify:
 ```bash
 # Linux/macOS
 chmod +x klang
-./klang --version
+./klang repl  # Type 'exit' to quit
 
 # Windows (PowerShell)
-.\klang.exe --version
+.\klang.exe repl  # Type 'exit' to quit
 ```
 
 ## Release Testing
@@ -180,7 +180,7 @@ sha256sum -c klang-0.1.0-linux-x64.tar.gz.sha256
 tar -xzf klang-0.1.0-linux-x64.tar.gz
 
 # Test
-./klang-0.1.0-linux-x64/klang --version
+./klang-0.1.0-linux-x64/klang repl  # Type 'exit' to quit
 ./klang-0.1.0-linux-x64/klang repl
 ```
 
@@ -198,7 +198,7 @@ shasum -a 256 -c klang-0.1.0-macos-arm64.tar.gz.sha256
 tar -xzf klang-0.1.0-macos-arm64.tar.gz
 
 # Test
-./klang-0.1.0-macos-arm64/klang --version
+./klang-0.1.0-macos-arm64/klang repl  # Type 'exit' to quit
 ./klang-0.1.0-macos-arm64/klang repl
 ```
 
@@ -214,7 +214,7 @@ curl -LO https://github.com/k-kaundal/KLang/releases/download/v0.1.0/klang-0.1.0
 tar -xzf klang-0.1.0-macos-x64.tar.gz
 
 # Test
-./klang-0.1.0-macos-x64/klang --version
+./klang-0.1.0-macos-x64/klang repl  # Type 'exit' to quit
 ```
 
 #### On Windows (x64)
@@ -227,7 +227,7 @@ Invoke-WebRequest -Uri "https://github.com/k-kaundal/KLang/releases/download/v0.
 Expand-Archive -Path klang-0.1.0-windows-x64.zip -DestinationPath .
 
 # Test
-.\klang-0.1.0-windows-x64\klang.exe --version
+.\klang-0.1.0-windows-x64\klang.exe repl  # Type 'exit' to quit
 .\klang-0.1.0-windows-x64\klang.exe repl
 ```
 
@@ -251,7 +251,7 @@ Expected behavior:
 Verify:
 ```bash
 source ~/.bashrc  # or ~/.zshrc
-klang --version
+klang repl  # Type 'exit' to quit
 klang repl
 ```
 

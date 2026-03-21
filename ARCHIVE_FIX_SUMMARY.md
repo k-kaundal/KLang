@@ -169,7 +169,7 @@ curl -sSL https://raw.githubusercontent.com/k-kaundal/KLang/main/quick-install.s
 # Or manual
 curl -LO https://github.com/k-kaundal/KLang/releases/download/v0.1.0/klang-0.1.0-macos-arm64.tar.gz
 tar -xzf klang-0.1.0-macos-arm64.tar.gz
-./klang-0.1.0-macos-arm64/klang --version
+./klang-0.1.0-macos-arm64/klang repl  # Type 'exit' to quit
 ```
 
 #### Linux
@@ -177,14 +177,14 @@ tar -xzf klang-0.1.0-macos-arm64.tar.gz
 wget https://github.com/k-kaundal/KLang/releases/download/v0.1.0/klang-0.1.0-linux-x64.tar.gz
 sha256sum -c klang-0.1.0-linux-x64.tar.gz.sha256
 tar -xzf klang-0.1.0-linux-x64.tar.gz
-./klang-0.1.0-linux-x64/klang --version
+./klang-0.1.0-linux-x64/klang repl  # Type 'exit' to quit
 ```
 
 #### Windows
 ```powershell
 # Download and extract the zip file
 # Then:
-.\klang-0.1.0-windows-x64\klang.exe --version
+.\klang-0.1.0-windows-x64\klang.exe repl  # Type 'exit' to quit
 ```
 
 ## Architecture Benefits

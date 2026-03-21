@@ -65,7 +65,7 @@ jobs:
         run: |
           make clean
           make
-          ./klang --version || echo "Built successfully"
+          test -f ./klang && echo "Built successfully"
 
       - name: Build KLang (Windows)
         if: matrix.os == 'windows-latest'
@@ -73,7 +73,7 @@ jobs:
         run: |
           make clean
           make
-          ./klang.exe --version || echo "Built successfully"
+          test -f ./klang.exe && echo "Built successfully"
 
       - name: Run tests (Unix)
         if: matrix.os != 'windows-latest'
