@@ -143,6 +143,11 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "in") == 0) type = TOKEN_IN;
             else if (strcmp(buf, "true") == 0) type = TOKEN_TRUE;
             else if (strcmp(buf, "false") == 0) type = TOKEN_FALSE;
+            else if (strcmp(buf, "class") == 0) type = TOKEN_CLASS;
+            else if (strcmp(buf, "new") == 0) type = TOKEN_NEW;
+            else if (strcmp(buf, "this") == 0) type = TOKEN_THIS;
+            else if (strcmp(buf, "extends") == 0) type = TOKEN_EXTENDS;
+            else if (strcmp(buf, "super") == 0) type = TOKEN_SUPER;
             t.type = type;
             t.value = buf;
             t.line = line;
@@ -202,7 +207,7 @@ Token lexer_next_token(Lexer *lexer) {
                 lexer->pos++; lexer->col++;
                 return make_token(TOKEN_DOTDOT, "..", line, col);
             }
-            return make_token(TOKEN_EOF, ".", line, col);
+            return make_token(TOKEN_DOT, ".", line, col);
         default: {
             char buf[2] = {c, 0};
             return make_token(TOKEN_EOF, buf, line, col);
@@ -235,6 +240,11 @@ const char *token_type_name(TokenType type) {
         case TOKEN_IN: return "IN";
         case TOKEN_TRUE: return "TRUE";
         case TOKEN_FALSE: return "FALSE";
+        case TOKEN_CLASS: return "CLASS";
+        case TOKEN_NEW: return "NEW";
+        case TOKEN_THIS: return "THIS";
+        case TOKEN_EXTENDS: return "EXTENDS";
+        case TOKEN_SUPER: return "SUPER";
         case TOKEN_PLUS: return "PLUS";
         case TOKEN_MINUS: return "MINUS";
         case TOKEN_STAR: return "STAR";
@@ -259,6 +269,7 @@ const char *token_type_name(TokenType type) {
         case TOKEN_COMMA: return "COMMA";
         case TOKEN_ARROW: return "ARROW";
         case TOKEN_DOTDOT: return "DOTDOT";
+        case TOKEN_DOT: return "DOT";
         case TOKEN_EOF: return "EOF";
         default: return "UNKNOWN";
     }
