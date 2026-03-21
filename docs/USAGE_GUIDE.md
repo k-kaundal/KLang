@@ -134,7 +134,9 @@ Alice
 ### REPL Commands
 ```klang
 exit             # Exit REPL
+exit()           # Exit REPL (function call)
 quit             # Exit REPL (alias)
+quit()           # Exit REPL (function call)
 clear            # Clear screen (future)
 help             # Show help (future)
 ```
@@ -320,6 +322,84 @@ println(true)              # Print boolean
 println([1, 2, 3])         # Print list
 ```
 
+**`print(value)`**
+```klang
+print("Hello ")            # Print without newline
+print("World")
+```
+
+**`input(prompt)`**
+```klang
+let name = input("Enter your name: ")
+println("Hello " + name)
+```
+
+#### String Functions
+
+**`uppercase(str)`** - Convert string to uppercase
+```klang
+let result = uppercase("hello")  # "HELLO"
+```
+
+**`lowercase(str)`** - Convert string to lowercase
+```klang
+let result = lowercase("HELLO")  # "hello"
+```
+
+**`trim(str)`** - Remove leading and trailing whitespace
+```klang
+let result = trim("  hello  ")   # "hello"
+```
+
+**`split(str, delimiter)`** - Split string into list
+```klang
+let words = split("apple,banana,cherry", ",")
+# Returns: ["apple", "banana", "cherry"]
+```
+
+**`join(list, delimiter)`** - Join list elements into string
+```klang
+let items = ["apple", "banana", "cherry"]
+let result = join(items, ", ")   # "apple, banana, cherry"
+```
+
+**`substring(str, start, end)`** - Extract substring
+```klang
+let text = "Hello World"
+let result = substring(text, 0, 5)  # "Hello"
+```
+
+**`startswith(str, prefix)`** - Check if string starts with prefix
+```klang
+let result = startswith("Hello World", "Hello")  # true
+```
+
+**`endswith(str, suffix)`** - Check if string ends with suffix
+```klang
+let result = endswith("Hello World", "World")  # true
+```
+
+**`contains(str, substring)`** - Check if string contains substring
+```klang
+let result = contains("Hello World", "lo Wo")  # true
+```
+
+**`indexof(str, substring)`** - Find index of substring (-1 if not found)
+```klang
+let index = indexof("Hello World", "World")  # 6
+```
+
+**`replace(str, old, new)`** - Replace all occurrences
+```klang
+let result = replace("Hello World", "World", "KLang")
+# Returns: "Hello KLang"
+```
+
+**`repeat(str, count)`** - Repeat string n times
+```klang
+let result = repeat("Ha", 3)  # "HaHaHa"
+```
+
 #### Collection Functions
 
 **`len(collection)`**
@@ -328,12 +408,12 @@ let nums = [1, 2, 3, 4, 5]
 let count = len(nums)      # 5
 
 let text = "Hello"
-# len(text)  # Future: string length
+let length = len(text)     # 5
 ```
 
 #### Type Functions
 
-**`type(value)`** (if available)
+**`type(value)`**
 ```klang
 type(42)                   # "int"
 type("hello")              # "string"
@@ -341,16 +421,25 @@ type(true)                 # "bool"
 type([1, 2, 3])            # "list"
 ```
 
-### Future Standard Library
-
-**String Functions** (planned)
+**`str(value)`** - Convert value to string
 ```klang
-str.length("hello")        # 5
-str.upper("hello")         # "HELLO"
-str.lower("HELLO")         # "hello"
-str.split("a,b,c", ",")    # ["a", "b", "c"]
-str.trim("  text  ")       # "text"
+let num = 42
+let text = str(num)        # "42"
 ```
+
+**`int(value)`** - Convert value to integer
+```klang
+let num = int("42")        # 42
+let rounded = int(3.14)    # 3
+```
+
+**`float(value)`** - Convert value to float
+```klang
+let num = float("3.14")    # 3.14
+let decimal = float(42)    # 42.0
+```
+
+### Future Standard Library
 
 **Math Functions** (planned)
 ```klang
