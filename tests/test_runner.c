@@ -11,6 +11,7 @@ int main(void) {
     run_interpreter_tests();
     run_arrow_function_tests();
     run_ternary_tests();
+    run_async_await_tests();
     printf("\n=== Results: %d passed, %d failed ===\n", test_pass_count, test_fail_count);
     return test_fail_count > 0 ? 1 : 0;
 }

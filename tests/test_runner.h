@@ -20,5 +20,6 @@ void run_parser_tests(void);
 void run_interpreter_tests(void);
 void run_arrow_function_tests(void);
 void run_ternary_tests(void);
+void run_async_await_tests(void);
 
 #endif

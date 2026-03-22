@@ -278,6 +278,12 @@ ASTNode *ast_new_case(ASTNode *value, int line) {
     return n;
 }
 
+ASTNode *ast_new_await(ASTNode *expr, int line) {
+    ASTNode *n = ast_alloc(NODE_AWAIT, line);
+    n->data.await_expr.expr = expr;
+    return n;
+}
+
 void ast_free(ASTNode *node) {
     int i;
     if (!node) return;
@@ -421,6 +427,9 @@ void ast_free(ASTNode *node) {
             for (i = 0; i < node->data.case_stmt.body.count; i++)
                 ast_free(node->data.case_stmt.body.items[i]);
             nodelist_free(&node->data.case_stmt.body);
+            break;
+        case NODE_AWAIT:
+            ast_free(node->data.await_expr.expr);
             break;
         default:
             break;

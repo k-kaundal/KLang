@@ -8,7 +8,8 @@ typedef enum {
     NODE_RETURN, NODE_BREAK, NODE_CONTINUE, NODE_BLOCK, NODE_FUNC_DEF, NODE_STRUCT_DEF, NODE_IMPORT,
     NODE_LIST, NODE_OBJECT,
     NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER,
-    NODE_TEMPLATE_LITERAL, NODE_TERNARY, NODE_SWITCH, NODE_CASE
+    NODE_TEMPLATE_LITERAL, NODE_TERNARY, NODE_SWITCH, NODE_CASE,
+    NODE_AWAIT
 } NodeType;
 
 typedef enum {
@@ -61,7 +62,7 @@ struct ASTNode {
         struct { } break_stmt;
         struct { } continue_stmt;
         struct { NodeList stmts; } block;
-        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; } func_def;
+        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; int is_async; } func_def;
         struct { NodeList elements; } list;
         struct { ObjectProperty *props; int count; int capacity; } object;
         struct { char *name; char *parent_name; NodeList members; int is_abstract; } class_def;
@@ -73,6 +74,7 @@ struct ASTNode {
         struct { ASTNode *cond; ASTNode *true_expr; ASTNode *false_expr; } ternary;
         struct { ASTNode *expr; NodeList cases; ASTNode *default_case; } switch_stmt;
         struct { ASTNode *value; NodeList body; } case_stmt;
+        struct { ASTNode *expr; } await_expr;
     } data;
 };
 
@@ -113,6 +115,7 @@ ASTNode *ast_new_template_literal(int line);
 ASTNode *ast_new_ternary(ASTNode *cond, ASTNode *true_expr, ASTNode *false_expr, int line);
 ASTNode *ast_new_switch(ASTNode *expr, int line);
 ASTNode *ast_new_case(ASTNode *value, int line);
+ASTNode *ast_new_await(ASTNode *expr, int line);
 void ast_free(ASTNode *node);
 
 #endif

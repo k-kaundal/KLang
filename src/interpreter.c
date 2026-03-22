@@ -584,6 +584,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             func.as.func_val.body = node->data.func_def.body;
             func.as.func_val.closure = env;
+            func.as.func_val.is_async = node->data.func_def.is_async;
             
             // Arrow functions are expressions that return the function value
             // Named functions are statements that bind to a name
@@ -728,17 +729,53 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     }
                 }
             } else if (callee.type == VAL_FUNCTION) {
-                Env *call_env = env_new(callee.as.func_val.closure);
-                for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
-                    env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
-                value_free(&result);
-                result = eval_block(interp, callee.as.func_val.body, call_env);
-                env_free(call_env);
-                if (interp->last_result.is_return) {
+                /* Check if function is async */
+                if (callee.as.func_val.is_async) {
+                    /* Async functions always return a Promise */
+                    /* Create a Promise and execute function body */
+                    Value promise_result;
+                    Env *call_env = env_new(callee.as.func_val.closure);
+                    Value body_result;
+                    
+                    /* Bind parameters */
+                    for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
+                        env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                    
+                    /* Execute function body */
                     value_free(&result);
-                    result = interp->last_result.return_value;
-                    interp->last_result.is_return = 0;
-                    interp->last_result.return_value = make_null();
+                    body_result = eval_block(interp, callee.as.func_val.body, call_env);
+                    env_free(call_env);
+                    
+                    /* Handle return value */
+                    if (interp->last_result.is_return) {
+                        value_free(&body_result);
+                        body_result = interp->last_result.return_value;
+                        interp->last_result.is_return = 0;
+                        interp->last_result.return_value = make_null();
+                    }
+                    
+                    /* Wrap result in Promise.resolve() */
+                    promise_result.type = VAL_PROMISE;
+                    promise_result.as.promise_val.state = PROMISE_FULFILLED;
+                    promise_result.as.promise_val.result = malloc(sizeof(Value));
+                    *promise_result.as.promise_val.result = body_result;
+                    promise_result.as.promise_val.callbacks = NULL;
+                    
+                    result = promise_result;
+                } else {
+                    /* Regular synchronous function */
+                    Env *call_env = env_new(callee.as.func_val.closure);
+                    for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
+                        env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                    value_free(&result);
+                    result = eval_block(interp, callee.as.func_val.body, call_env);
+                    env_free(call_env);
+                    if (interp->last_result.is_return) {
+                        value_free(&result);
+                        result = interp->last_result.return_value;
+                        interp->last_result.is_return = 0;
+                        interp->last_result.return_value = make_null();
+                    }
                 }
             } else {
                 fprintf(stderr, "Error: not a function\n");
@@ -1615,6 +1652,47 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             } else {
                 return eval_node_env(interp, node->data.ternary.false_expr, env);
             }
+        }
+        case NODE_AWAIT: {
+            /* Evaluate the expression being awaited */
+            Value awaited = eval_node_env(interp, node->data.await_expr.expr, env);
+            
+            /* If it's a Promise, extract the resolved value */
+            if (awaited.type == VAL_PROMISE) {
+                PromiseVal promise = awaited.as.promise_val;
+                
+                /* If promise is fulfilled, return the result */
+                if (promise.state == PROMISE_FULFILLED) {
+                    Value result = *promise.result;
+                    /* Don't free the original promise value - just extract result */
+                    return result;
+                }
+                /* If promise is rejected, throw the error */
+                else if (promise.state == PROMISE_REJECTED) {
+                    fprintf(stderr, "Uncaught (in promise): ");
+                    if (promise.result) {
+                        if (promise.result->type == VAL_STRING) {
+                            fprintf(stderr, "%s\n", promise.result->as.str_val);
+                        } else {
+                            fprintf(stderr, "Error\n");
+                        }
+                    } else {
+                        fprintf(stderr, "Error\n");
+                    }
+                    interp->had_error = 1;
+                    value_free(&awaited);
+                    return make_null();
+                }
+                /* If promise is pending, for now return null (in real async this would suspend) */
+                else {
+                    fprintf(stderr, "Warning: awaiting pending promise - returning null\n");
+                    value_free(&awaited);
+                    return make_null();
+                }
+            }
+            
+            /* If not a promise, return the value as-is (await on non-promise resolves immediately) */
+            return awaited;
         }
         default:
             return make_null();

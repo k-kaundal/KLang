@@ -19,6 +19,7 @@ typedef struct {
     int param_count;
     ASTNode *body;
     Env *closure;
+    int is_async;
 } FunctionVal;
 
 typedef struct {

@@ -383,6 +383,15 @@ static ASTNode *parse_postfix(Parser *parser) {
 
 static ASTNode *parse_unary(Parser *parser) {
     int line = parser->current.line;
+    
+    /* Handle await expression */
+    if (check(parser, TOKEN_AWAIT)) {
+        Token t = advance(parser);
+        token_free(&t);
+        ASTNode *expr = parse_unary(parser);
+        return ast_new_await(expr, line);
+    }
+    
     if (check(parser, TOKEN_MINUS)) {
         Token t = advance(parser);
         token_free(&t);
@@ -526,7 +535,47 @@ static int is_arrow_function_start(Parser *parser) {
 static ASTNode *parse_arrow_function(Parser *parser);
 
 static ASTNode *parse_expression(Parser *parser) {
-    // Check if this is an arrow function
+    // Check for async arrow function: async (x) => ... or async x => ...
+    if (check(parser, TOKEN_ASYNC)) {
+        // Peek ahead to see if this is an arrow function
+        if (parser->peek.type == TOKEN_IDENT || parser->peek.type == TOKEN_LPAREN) {
+            // Look for => after identifier or (params)
+            int saved_pos = parser->lexer->pos;
+            int saved_line = parser->lexer->line;
+            int saved_col = parser->lexer->col;
+            Token saved_current = parser->current;
+            Token saved_peek = parser->peek;
+            
+            // Advance past async
+            advance(parser);
+            
+            // Check if followed by arrow function pattern
+            int is_async_arrow = 0;
+            if (check(parser, TOKEN_IDENT) && parser->peek.type == TOKEN_FAT_ARROW) {
+                is_async_arrow = 1;
+            } else if (check(parser, TOKEN_LPAREN)) {
+                is_async_arrow = is_arrow_function_start(parser);
+            }
+            
+            // Restore parser state
+            parser->lexer->pos = saved_pos;
+            parser->lexer->line = saved_line;
+            parser->lexer->col = saved_col;
+            parser->current = saved_current;
+            parser->peek = saved_peek;
+            
+            if (is_async_arrow) {
+                // Parse async arrow function
+                Token async_tok = advance(parser);
+                token_free(&async_tok);
+                ASTNode *func = parse_arrow_function(parser);
+                func->data.func_def.is_async = 1;
+                return func;
+            }
+        }
+    }
+    
+    // Check if this is a regular arrow function
     if (is_arrow_function_start(parser)) {
         return parse_arrow_function(parser);
     }
@@ -653,7 +702,8 @@ static ASTNode *parse_const(Parser *parser) {
 
 static ASTNode *parse_func_def(Parser *parser) {
     int line = parser->current.line;
-    Token fn_tok = consume(parser, TOKEN_FN);
+    int is_async = 0;
+    Token fn_tok;
     Token name_tok;
     char *fname;
     char **param_names = NULL;
@@ -662,6 +712,15 @@ static ASTNode *parse_func_def(Parser *parser) {
     int param_cap = 0;
     char *return_type = NULL;
     ASTNode *func;
+    
+    /* Check for async keyword before fn */
+    if (check(parser, TOKEN_ASYNC)) {
+        Token async_tok = advance(parser);
+        token_free(&async_tok);
+        is_async = 1;
+    }
+    
+    fn_tok = consume(parser, TOKEN_FN);
     token_free(&fn_tok);
     name_tok = consume(parser, TOKEN_IDENT);
     fname = strdup(name_tok.value);
@@ -715,6 +774,9 @@ static ASTNode *parse_func_def(Parser *parser) {
         }
     }
     free(param_names);
+
+    /* Set async flag */
+    func->data.func_def.is_async = is_async;
 
     // Check if this is an abstract method (no body, just semicolon)
     if (check(parser, TOKEN_SEMICOLON)) {
@@ -923,6 +985,14 @@ static ASTNode *parse_statement(Parser *parser) {
             return class_node;
         }
     }
+    
+    /* Handle async function declarations */
+    if (check(parser, TOKEN_ASYNC)) {
+        if (parser->peek.type == TOKEN_FN) {
+            return parse_func_def(parser);
+        }
+    }
+    
     if (check(parser, TOKEN_CLASS)) return parse_class_def(parser);
     if (check(parser, TOKEN_FN)) return parse_func_def(parser);
     if (check(parser, TOKEN_LET)) return parse_let(parser);

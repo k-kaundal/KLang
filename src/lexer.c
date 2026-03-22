@@ -240,6 +240,8 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "private") == 0) type = TOKEN_PRIVATE;
             else if (strcmp(buf, "protected") == 0) type = TOKEN_PROTECTED;
             else if (strcmp(buf, "abstract") == 0) type = TOKEN_ABSTRACT;
+            else if (strcmp(buf, "async") == 0) type = TOKEN_ASYNC;
+            else if (strcmp(buf, "await") == 0) type = TOKEN_AWAIT;
             t.type = type;
             t.value = buf;
             t.line = line;
@@ -354,6 +356,8 @@ const char *token_type_name(TokenType type) {
         case TOKEN_PRIVATE: return "PRIVATE";
         case TOKEN_PROTECTED: return "PROTECTED";
         case TOKEN_ABSTRACT: return "ABSTRACT";
+        case TOKEN_ASYNC: return "ASYNC";
+        case TOKEN_AWAIT: return "AWAIT";
         case TOKEN_PLUS: return "PLUS";
         case TOKEN_MINUS: return "MINUS";
         case TOKEN_STAR: return "STAR";
