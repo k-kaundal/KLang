@@ -1032,6 +1032,7 @@ static ASTNode *parse_func_def(Parser *parser) {
     ASTNode **param_defaults = NULL;
     int param_count = 0;
     int param_cap = 0;
+    int seen_default = 0; /* Track if we've seen a parameter with default */
     char *return_type = NULL;
     ASTNode *func = NULL;
     
@@ -1063,6 +1064,7 @@ static ASTNode *parse_func_def(Parser *parser) {
 
     while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
         int is_rest = 0;
+        int has_default = 0;
         
         /* Check for rest parameter */
         if (check(parser, TOKEN_SPREAD)) {
@@ -1092,6 +1094,13 @@ static ASTNode *parse_func_def(Parser *parser) {
         /* Check for default value: name = expr */
         if (match(parser, TOKEN_ASSIGN)) {
             param_defaults[param_count] = parse_expression(parser);
+            has_default = 1;
+            seen_default = 1;
+        } else if (seen_default && !is_rest) {
+            /* Required parameter after default parameter */
+            fprintf(stderr, "Parse error at line %d: Required parameter '%s' cannot follow parameter with default value\n", 
+                    parser->current.line, param_names[param_count]);
+            parser->had_error = 1;
         }
         
         param_count++;

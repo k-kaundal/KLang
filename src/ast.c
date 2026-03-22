@@ -469,10 +469,12 @@ void ast_free(ASTNode *node) {
                 ast_free(node->data.func_def.params.items[i]);
                 if (node->data.func_def.param_types && node->data.func_def.param_types[i])
                     free(node->data.func_def.param_types[i]);
+                /* Free default value expressions - AST owns these, not FunctionVal */
                 if (node->data.func_def.default_values && node->data.func_def.default_values[i])
                     ast_free(node->data.func_def.default_values[i]);
             }
             if (node->data.func_def.param_types) free(node->data.func_def.param_types);
+            /* Free default values array - the expressions inside are freed above */
             if (node->data.func_def.default_values) free(node->data.func_def.default_values);
             nodelist_free(&node->data.func_def.params);
             ast_free(node->data.func_def.body);
