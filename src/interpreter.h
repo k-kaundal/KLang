@@ -66,6 +66,7 @@ struct Value {
 typedef struct EnvEntry {
     char *name;
     Value value;
+    AccessModifier access;
     struct EnvEntry *next;
 } EnvEntry;
 

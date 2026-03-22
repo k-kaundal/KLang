@@ -38,6 +38,26 @@ Value *env_get(Env *env, const char *name) {
     return NULL;
 }
 
+EnvEntry *env_get_entry(Env *env, const char *name) {
+    Env *cur = env;
+    while (cur) {
+        EnvEntry *e = cur->entries;
+        while (e) {
+            if (strcmp(e->name, name) == 0) return e;
+            e = e->next;
+        }
+        cur = cur->parent;
+    }
+    return NULL;
+}
+
+int can_access_member(AccessModifier access, int is_same_class, int is_subclass) {
+    if (access == ACCESS_PUBLIC) return 1;
+    if (access == ACCESS_PRIVATE) return is_same_class;
+    if (access == ACCESS_PROTECTED) return is_same_class || is_subclass;
+    return 0;
+}
+
 void env_set_local(Env *env, const char *name, Value val) {
     // Deep copy strings to avoid double-free issues
     Value val_copy = val;
@@ -58,6 +78,34 @@ void env_set_local(Env *env, const char *name, Value val) {
         EnvEntry *ne = malloc(sizeof(EnvEntry));
         ne->name = strdup(name);
         ne->value = val_copy;
+        ne->access = ACCESS_PUBLIC;
+        ne->next = env->entries;
+        env->entries = ne;
+    }
+}
+
+void env_set_local_with_access(Env *env, const char *name, Value val, AccessModifier access) {
+    // Deep copy strings to avoid double-free issues
+    Value val_copy = val;
+    if (val.type == VAL_STRING && val.as.str_val) {
+        val_copy.as.str_val = strdup(val.as.str_val);
+    }
+    
+    EnvEntry *e = env->entries;
+    while (e) {
+        if (strcmp(e->name, name) == 0) {
+            value_free(&e->value);
+            e->value = val_copy;
+            e->access = access;
+            return;
+        }
+        e = e->next;
+    }
+    {
+        EnvEntry *ne = malloc(sizeof(EnvEntry));
+        ne->name = strdup(name);
+        ne->value = val_copy;
+        ne->access = access;
         ne->next = env->entries;
         env->entries = ne;
     }
@@ -846,18 +894,18 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     func.as.func_val.body = member->data.func_def.body;
                     func.as.func_val.closure = env;
                     if (member->data.func_def.is_static) {
-                        env_set_local(class_val.as.class_val.static_methods, member->data.func_def.name, func);
+                        env_set_local_with_access(class_val.as.class_val.static_methods, member->data.func_def.name, func, member->data.func_def.access);
                     } else {
-                        env_set_local(class_val.as.class_val.methods, member->data.func_def.name, func);
+                        env_set_local_with_access(class_val.as.class_val.methods, member->data.func_def.name, func, member->data.func_def.access);
                     }
                 } else if (member->type == NODE_LET) {
                     // Add field default value to class (static or instance)
                     Value field_val = member->data.let_stmt.value ? 
                         eval_node_env(interp, member->data.let_stmt.value, env) : make_null();
                     if (member->data.let_stmt.is_static) {
-                        env_set_local(class_val.as.class_val.static_fields, member->data.let_stmt.name, field_val);
+                        env_set_local_with_access(class_val.as.class_val.static_fields, member->data.let_stmt.name, field_val, member->data.let_stmt.access);
                     } else {
-                        env_set_local(class_val.as.class_val.fields, member->data.let_stmt.name, field_val);
+                        env_set_local_with_access(class_val.as.class_val.fields, member->data.let_stmt.name, field_val, member->data.let_stmt.access);
                     }
                 }
             }
@@ -936,6 +984,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             return obj;
         }
         case NODE_MEMBER_ACCESS: {
+            // Check if we're accessing from within a method (have 'this')
+            Value *this_val = env_get(env, "this");
+            int is_inside_class = (this_val && this_val->type == VAL_OBJECT);
+            
             // Check if this is a static member access (ClassName.member)
             if (node->data.member_access.obj->type == NODE_IDENT) {
                 Value *maybe_class = env_get(env, node->data.member_access.obj->data.ident.name);
@@ -944,18 +996,32 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     Value result = make_null();
                     
                     // Check static fields first
-                    Value *field = env_get(maybe_class->as.class_val.static_fields, node->data.member_access.member);
-                    if (field) {
-                        if (field->type == VAL_STRING) result = make_string(field->as.str_val);
-                        else result = *field;
+                    EnvEntry *field_entry = env_get_entry(maybe_class->as.class_val.static_fields, node->data.member_access.member);
+                    if (field_entry) {
+                        // Check access
+                        if (field_entry->access == ACCESS_PRIVATE && !is_inside_class) {
+                            fprintf(stderr, "Error at line %d: cannot access private static field '%s' of class '%s'\n",
+                                    node->line, node->data.member_access.member, node->data.member_access.obj->data.ident.name);
+                            interp->had_error = 1;
+                            return make_null();
+                        }
+                        if (field_entry->value.type == VAL_STRING) result = make_string(field_entry->value.as.str_val);
+                        else result = field_entry->value;
                         return result;
                     }
                     
                     // Check static methods
-                    Value *method = env_get(maybe_class->as.class_val.static_methods, node->data.member_access.member);
-                    if (method && method->type == VAL_FUNCTION) {
+                    EnvEntry *method_entry = env_get_entry(maybe_class->as.class_val.static_methods, node->data.member_access.member);
+                    if (method_entry && method_entry->value.type == VAL_FUNCTION) {
+                        // Check access
+                        if (method_entry->access == ACCESS_PRIVATE && !is_inside_class) {
+                            fprintf(stderr, "Error at line %d: cannot access private static method '%s' of class '%s'\n",
+                                    node->line, node->data.member_access.member, node->data.member_access.obj->data.ident.name);
+                            interp->had_error = 1;
+                            return make_null();
+                        }
                         // For static methods, just return the function (no 'this' binding)
-                        return *method;
+                        return method_entry->value;
                     }
                     
                     fprintf(stderr, "Error at line %d: class '%s' has no static member '%s'\n",
@@ -970,17 +1036,36 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             Value result = make_null();
             
             if (obj.type == VAL_OBJECT) {
+                // Determine if we're accessing our own object
+                int is_self_access = (is_inside_class && this_val && 
+                                     this_val->type == VAL_OBJECT &&
+                                     strcmp(this_val->as.object_val.class_name, obj.as.object_val.class_name) == 0);
+                
                 // Check fields first
-                Value *field = env_get(obj.as.object_val.fields, node->data.member_access.member);
-                if (field) {
-                    if (field->type == VAL_STRING) result = make_string(field->as.str_val);
-                    else result = *field;
+                EnvEntry *field_entry = env_get_entry(obj.as.object_val.fields, node->data.member_access.member);
+                if (field_entry) {
+                    // Check access
+                    if (field_entry->access == ACCESS_PRIVATE && !is_self_access) {
+                        fprintf(stderr, "Error at line %d: cannot access private field '%s'\n",
+                                node->line, node->data.member_access.member);
+                        interp->had_error = 1;
+                        return make_null();
+                    }
+                    if (field_entry->value.type == VAL_STRING) result = make_string(field_entry->value.as.str_val);
+                    else result = field_entry->value;
                 } else {
                     // Check methods
-                    Value *method = env_get(obj.as.object_val.methods, node->data.member_access.member);
-                    if (method && method->type == VAL_FUNCTION) {
+                    EnvEntry *method_entry = env_get_entry(obj.as.object_val.methods, node->data.member_access.member);
+                    if (method_entry && method_entry->value.type == VAL_FUNCTION) {
+                        // Check access
+                        if (method_entry->access == ACCESS_PRIVATE && !is_self_access) {
+                            fprintf(stderr, "Error at line %d: cannot access private method '%s'\n",
+                                    node->line, node->data.member_access.member);
+                            interp->had_error = 1;
+                            return make_null();
+                        }
                         // Return bound method
-                        result = make_method(obj, *method);
+                        result = make_method(obj, method_entry->value);
                         return result; // Don't free obj since it's part of method
                     }
                 }

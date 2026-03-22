@@ -96,6 +96,7 @@ ASTNode *ast_new_let(const char *name, const char *type_annot, ASTNode *value, i
     n->data.let_stmt.type_annot = type_annot ? strdup(type_annot) : NULL;
     n->data.let_stmt.value = value;
     n->data.let_stmt.is_static = 0;
+    n->data.let_stmt.access = ACCESS_PUBLIC;
     return n;
 }
 
@@ -158,6 +159,7 @@ ASTNode *ast_new_func_def(const char *name, const char *return_type, int line) {
     n->data.func_def.param_types = NULL;
     n->data.func_def.body = NULL;
     n->data.func_def.is_static = 0;
+    n->data.func_def.access = ACCESS_PUBLIC;
     return n;
 }
 

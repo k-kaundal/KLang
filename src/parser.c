@@ -588,8 +588,18 @@ static ASTNode *parse_class_def(Parser *parser) {
     while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
         ASTNode *member;
         int is_static = 0;
+        AccessModifier access = ACCESS_PUBLIC;
         while (match(parser, TOKEN_SEMICOLON)) {}
         if (check(parser, TOKEN_RBRACE) || check(parser, TOKEN_EOF)) break;
+        
+        /* Check for access modifier */
+        if (match(parser, TOKEN_PUBLIC)) {
+            access = ACCESS_PUBLIC;
+        } else if (match(parser, TOKEN_PRIVATE)) {
+            access = ACCESS_PRIVATE;
+        } else if (match(parser, TOKEN_PROTECTED)) {
+            access = ACCESS_PROTECTED;
+        }
         
         /* Check for static keyword */
         if (match(parser, TOKEN_STATIC)) {
@@ -601,12 +611,14 @@ static ASTNode *parse_class_def(Parser *parser) {
             member = parse_let(parser);
             if (member) {
                 member->data.let_stmt.is_static = is_static;
+                member->data.let_stmt.access = access;
                 nodelist_push(&class_node->data.class_def.members, member);
             }
         } else if (check(parser, TOKEN_FN)) {
             member = parse_func_def(parser);
             if (member) {
                 member->data.func_def.is_static = is_static;
+                member->data.func_def.access = access;
                 nodelist_push(&class_node->data.class_def.members, member);
             }
         } else {

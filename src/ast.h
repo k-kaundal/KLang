@@ -10,6 +10,12 @@ typedef enum {
     NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER
 } NodeType;
 
+typedef enum {
+    ACCESS_PUBLIC,
+    ACCESS_PRIVATE,
+    ACCESS_PROTECTED
+} AccessModifier;
+
 typedef struct ASTNode ASTNode;
 
 typedef struct {
@@ -30,7 +36,7 @@ struct ASTNode {
         struct { char op[4]; ASTNode *operand; } unop;
         struct { ASTNode *callee; NodeList args; } call;
         struct { ASTNode *obj; ASTNode *index; } index_expr;
-        struct { char *name; char *type_annot; ASTNode *value; int is_static; } let_stmt;
+        struct { char *name; char *type_annot; ASTNode *value; int is_static; AccessModifier access; } let_stmt;
         struct { char *name; ASTNode *value; } assign_stmt;
         struct { ASTNode *cond; ASTNode *then_block; ASTNode *else_block; } if_stmt;
         struct { ASTNode *cond; ASTNode *body; } while_stmt;
@@ -39,7 +45,7 @@ struct ASTNode {
         struct { } break_stmt;
         struct { } continue_stmt;
         struct { NodeList stmts; } block;
-        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; } func_def;
+        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; } func_def;
         struct { NodeList elements; } list;
         struct { char *name; char *parent_name; NodeList members; } class_def;
         struct { char *class_name; NodeList args; } new_expr;
