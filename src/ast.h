@@ -6,7 +6,7 @@ typedef enum {
     NODE_BINOP, NODE_UNOP, NODE_CALL, NODE_INDEX,
     NODE_LET, NODE_ASSIGN, NODE_IF, NODE_WHILE, NODE_FOR, NODE_FOR_OF,
     NODE_RETURN, NODE_BREAK, NODE_CONTINUE, NODE_BLOCK, NODE_FUNC_DEF, NODE_STRUCT_DEF, NODE_IMPORT,
-    NODE_LIST, NODE_OBJECT, NODE_SPREAD,
+    NODE_LIST, NODE_OBJECT, NODE_SPREAD, NODE_TUPLE,
     NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER,
     NODE_TEMPLATE_LITERAL, NODE_TERNARY, NODE_SWITCH, NODE_CASE,
     NODE_AWAIT, NODE_YIELD,
@@ -67,6 +67,7 @@ struct ASTNode {
         struct { NodeList stmts; } block;
         struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; int is_async; int is_generator; int has_rest_param; } func_def;
         struct { NodeList elements; } list;
+        struct { NodeList elements; } tuple;
         struct { ObjectProperty *props; int count; int capacity; } object;
         struct { ASTNode *argument; } spread;
         struct { char *name; char *parent_name; NodeList members; int is_abstract; } class_def;
@@ -158,6 +159,7 @@ ASTNode *ast_new_continue(int line);
 ASTNode *ast_new_block(int line);
 ASTNode *ast_new_func_def(const char *name, const char *return_type, int line);
 ASTNode *ast_new_list(int line);
+ASTNode *ast_new_tuple(int line);
 ASTNode *ast_new_object(int line);
 ASTNode *ast_new_spread(ASTNode *argument, int line);
 void ast_object_add_property(ASTNode *obj, const char *key, ASTNode *key_expr, ASTNode *value, int is_shorthand, int is_method);

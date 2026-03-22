@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 /* Forward declarations for helper functions */
 extern Value eval_block(Interpreter *interp, ASTNode *block, Env *env);
@@ -409,6 +410,255 @@ static Value builtin_repeat(Interpreter *interp, Value *args, int argc) {
     free(result);
     return v;
 }
+
+/* ============================================================
+ * MATH MODULE - Comprehensive mathematical functions
+ * ============================================================ */
+
+/* Basic arithmetic functions */
+static Value builtin_math_abs(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    if (args[0].type == VAL_INT) {
+        long long val = args[0].as.int_val;
+        return make_int(val < 0 ? -val : val);
+    }
+    if (args[0].type == VAL_FLOAT) {
+        return make_float(fabs(args[0].as.float_val));
+    }
+    return make_float(0.0);
+}
+
+static Value builtin_math_ceil(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(ceil(val));
+}
+
+static Value builtin_math_floor(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(floor(val));
+}
+
+static Value builtin_math_round(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(round(val));
+}
+
+static Value builtin_math_min(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double min_val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    for (int i = 1; i < argc; i++) {
+        double val = (args[i].type == VAL_FLOAT) ? args[i].as.float_val : (double)args[i].as.int_val;
+        if (val < min_val) min_val = val;
+    }
+    return make_float(min_val);
+}
+
+static Value builtin_math_max(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double max_val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    for (int i = 1; i < argc; i++) {
+        double val = (args[i].type == VAL_FLOAT) ? args[i].as.float_val : (double)args[i].as.int_val;
+        if (val > max_val) max_val = val;
+    }
+    return make_float(max_val);
+}
+
+/* Power and exponential functions */
+static Value builtin_math_pow(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2) return make_float(0.0);
+    double base = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    double exp = (args[1].type == VAL_FLOAT) ? args[1].as.float_val : (double)args[1].as.int_val;
+    return make_float(pow(base, exp));
+}
+
+static Value builtin_math_sqrt(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(sqrt(val));
+}
+
+static Value builtin_math_exp(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(1.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(exp(val));
+}
+
+static Value builtin_math_log(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(log(val));
+}
+
+static Value builtin_math_log10(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(log10(val));
+}
+
+/* Trigonometric functions */
+static Value builtin_math_sin(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(sin(val));
+}
+
+static Value builtin_math_cos(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(1.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(cos(val));
+}
+
+static Value builtin_math_tan(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(tan(val));
+}
+
+static Value builtin_math_asin(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(asin(val));
+}
+
+static Value builtin_math_acos(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(acos(val));
+}
+
+static Value builtin_math_atan(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(atan(val));
+}
+
+static Value builtin_math_atan2(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2) return make_float(0.0);
+    double y = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    double x = (args[1].type == VAL_FLOAT) ? args[1].as.float_val : (double)args[1].as.int_val;
+    return make_float(atan2(y, x));
+}
+
+/* Hyperbolic functions */
+static Value builtin_math_sinh(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(sinh(val));
+}
+
+static Value builtin_math_cosh(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(1.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(cosh(val));
+}
+
+static Value builtin_math_tanh(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc == 0) return make_float(0.0);
+    double val = (args[0].type == VAL_FLOAT) ? args[0].as.float_val : (double)args[0].as.int_val;
+    return make_float(tanh(val));
+}
+
+/* ============================================================
+ * END MATH MODULE
+ * ============================================================ */
+
+/* ============================================================
+ * RANGE FUNCTION - Python-style range iterator
+ * ============================================================ */
+
+static Value builtin_range(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    long long start = 0, stop = 0, step = 1;
+    
+    if (argc == 0) {
+        // range() with no arguments returns empty list
+        Value result;
+        result.type = VAL_LIST;
+        result.as.list_val.count = 0;
+        result.as.list_val.capacity = 0;
+        result.as.list_val.items = NULL;
+        return result;
+    } else if (argc == 1) {
+        // range(stop) -> range(0, stop, 1)
+        stop = (args[0].type == VAL_INT) ? args[0].as.int_val : (long long)args[0].as.float_val;
+    } else if (argc == 2) {
+        // range(start, stop) -> range(start, stop, 1)
+        start = (args[0].type == VAL_INT) ? args[0].as.int_val : (long long)args[0].as.float_val;
+        stop = (args[1].type == VAL_INT) ? args[1].as.int_val : (long long)args[1].as.float_val;
+    } else {
+        // range(start, stop, step)
+        start = (args[0].type == VAL_INT) ? args[0].as.int_val : (long long)args[0].as.float_val;
+        stop = (args[1].type == VAL_INT) ? args[1].as.int_val : (long long)args[1].as.float_val;
+        step = (args[2].type == VAL_INT) ? args[2].as.int_val : (long long)args[2].as.float_val;
+    }
+    
+    // Handle invalid step
+    if (step == 0) {
+        fprintf(stderr, "ValueError: range() step argument must not be zero\n");
+        Value result;
+        result.type = VAL_LIST;
+        result.as.list_val.count = 0;
+        result.as.list_val.capacity = 0;
+        result.as.list_val.items = NULL;
+        return result;
+    }
+    
+    // Calculate count
+    long long count = 0;
+    if (step > 0) {
+        if (stop > start) {
+            count = (stop - start + step - 1) / step;
+        }
+    } else {
+        if (stop < start) {
+            count = (start - stop - step - 1) / (-step);
+        }
+    }
+    
+    // Create result list
+    Value result;
+    result.type = VAL_LIST;
+    result.as.list_val.count = (int)count;
+    result.as.list_val.capacity = (int)count;
+    result.as.list_val.items = malloc((count > 0 ? count : 1) * sizeof(Value));
+    
+    // Fill the list
+    long long current = start;
+    for (int i = 0; i < count; i++) {
+        result.as.list_val.items[i] = make_int(current);
+        current += step;
+    }
+    
+    return result;
+}
+
+/* ============================================================
+ * END RANGE FUNCTION
+ * ============================================================ */
 
 /* Helper function to call a callback function with arguments */
 static Value call_function(Interpreter *interp, Value *func, Value *args, int argc) {
@@ -1570,6 +1820,94 @@ void runtime_init(Interpreter *interp) {
     
     v.as.builtin = builtin_repeat;
     env_set_local(interp->global_env, "repeat", v);
+    
+    /* Math module functions */
+    // Create Math object with constants and methods
+    Value math_obj = make_object("Math", NULL);
+    
+    // Math constants
+    Value pi_val = make_float(3.14159265358979323846);
+    env_set_local(math_obj.as.object_val.fields, "PI", pi_val);
+    
+    Value e_val = make_float(2.71828182845904523536);
+    env_set_local(math_obj.as.object_val.fields, "E", e_val);
+    
+    Value tau_val = make_float(6.28318530717958647692);
+    env_set_local(math_obj.as.object_val.fields, "TAU", tau_val);
+    
+    // Math functions as global (can also access via Math.func)
+    v.as.builtin = builtin_math_abs;
+    env_set_local(interp->global_env, "abs", v);
+    env_set_local(math_obj.as.object_val.fields, "abs", v);
+    
+    v.as.builtin = builtin_math_ceil;
+    env_set_local(math_obj.as.object_val.fields, "ceil", v);
+    
+    v.as.builtin = builtin_math_floor;
+    env_set_local(math_obj.as.object_val.fields, "floor", v);
+    
+    v.as.builtin = builtin_math_round;
+    env_set_local(math_obj.as.object_val.fields, "round", v);
+    
+    v.as.builtin = builtin_math_min;
+    env_set_local(interp->global_env, "min", v);
+    env_set_local(math_obj.as.object_val.fields, "min", v);
+    
+    v.as.builtin = builtin_math_max;
+    env_set_local(interp->global_env, "max", v);
+    env_set_local(math_obj.as.object_val.fields, "max", v);
+    
+    v.as.builtin = builtin_math_pow;
+    env_set_local(math_obj.as.object_val.fields, "pow", v);
+    
+    v.as.builtin = builtin_math_sqrt;
+    env_set_local(math_obj.as.object_val.fields, "sqrt", v);
+    
+    v.as.builtin = builtin_math_exp;
+    env_set_local(math_obj.as.object_val.fields, "exp", v);
+    
+    v.as.builtin = builtin_math_log;
+    env_set_local(math_obj.as.object_val.fields, "log", v);
+    
+    v.as.builtin = builtin_math_log10;
+    env_set_local(math_obj.as.object_val.fields, "log10", v);
+    
+    v.as.builtin = builtin_math_sin;
+    env_set_local(math_obj.as.object_val.fields, "sin", v);
+    
+    v.as.builtin = builtin_math_cos;
+    env_set_local(math_obj.as.object_val.fields, "cos", v);
+    
+    v.as.builtin = builtin_math_tan;
+    env_set_local(math_obj.as.object_val.fields, "tan", v);
+    
+    v.as.builtin = builtin_math_asin;
+    env_set_local(math_obj.as.object_val.fields, "asin", v);
+    
+    v.as.builtin = builtin_math_acos;
+    env_set_local(math_obj.as.object_val.fields, "acos", v);
+    
+    v.as.builtin = builtin_math_atan;
+    env_set_local(math_obj.as.object_val.fields, "atan", v);
+    
+    v.as.builtin = builtin_math_atan2;
+    env_set_local(math_obj.as.object_val.fields, "atan2", v);
+    
+    v.as.builtin = builtin_math_sinh;
+    env_set_local(math_obj.as.object_val.fields, "sinh", v);
+    
+    v.as.builtin = builtin_math_cosh;
+    env_set_local(math_obj.as.object_val.fields, "cosh", v);
+    
+    v.as.builtin = builtin_math_tanh;
+    env_set_local(math_obj.as.object_val.fields, "tanh", v);
+    
+    // Register Math object globally
+    env_set_local(interp->global_env, "Math", math_obj);
+    
+    /* Python-style utility functions */
+    v.as.builtin = builtin_range;
+    env_set_local(interp->global_env, "range", v);
     
     /* Array methods - Priority 1 */
     v.as.builtin = builtin_array_map;

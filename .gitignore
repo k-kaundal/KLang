@@ -28,3 +28,21 @@ temp/
 # Test packages
 test_package_*/
 *.sha256
+
+# Build artifacts and logs
+*.log
+build.log
+test_results.txt
+
+# Temporary test/debug executables (not source)
+test_lexer_debug
+test_parser_debug
+test_parser_debug2
+test_tuple_parser
+test_phase1_comprehensive
+test_var_let_const
+test_for_of
+test_examples
+
+# Build directory
+build/

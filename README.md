@@ -89,20 +89,39 @@ Source Code (.kl)
   * Single and double quote support (`'...'` and `"..."`)
   * Comprehensive string manipulation functions (uppercase, lowercase, trim, split, join, etc.)
   * Rich string operations (substring, contains, replace, repeat)
+* **Math Module** 🆕
+  * 20+ mathematical functions (sin, cos, sqrt, pow, log, etc.)
+  * Constants: Math.PI, Math.E, Math.TAU
+  * Full trigonometric, hyperbolic, and logarithmic support
+* **Python Utilities** 🆕
+  * `range()` function - Python-style range generation
+  * Support for range(n), range(start, stop), range(start, stop, step)
+  * Memory-efficient iteration patterns
+* **Array Methods**
+  * Functional: map, filter, reduce, forEach, find, some, every
+  * Manipulation: push, pop, slice, concat, reverse, sort
+  * Search: indexOf, includes
 * **Enhanced Comments**
   * Multiple comment styles: `#`, `//`, `/* */`, `///` (doc comments)
 * Interactive REPL with `exit()` function
-* Built-in functions (print, println, input, len, type conversion)
+* Built-in functions (print, println, input, len, type conversion, abs, min, max)
 
 ### 🚧 In Progress
 
+* Tuple type (90% complete - fixing bug)
+* Dictionary type
+* Set type
 * Type checker
 * Bytecode VM
 
 ### 📌 Planned
 
+* List comprehensions
+* File I/O module
+* JSON module
+* Regex module
 * Garbage collector
-* Module system
+* Module system enhancements
 * Native compilation
 * Package manager
 
@@ -160,22 +179,35 @@ klang run script.kl     # Run a script
 
 ### 📖 Documentation
 
+**Complete documentation is now organized in the `/docs` directory!**
+
 **Essential Guides:**
-- 🚀 [**Getting Started Guide**](docs/GETTING_STARTED.md) - Setup and installation
-- 🔧 [**PATH Troubleshooting**](docs/PATH_TROUBLESHOOTING.md) - Fix "command not found" errors
-- 📦 [**Distribution Guide**](docs/DISTRIBUTION.md) - Self-contained runtime info
-- 📘 [**Language Reference**](docs/LANGUAGE_REFERENCE.md) - Complete syntax reference
-- 🔧 [**Usage Guide**](docs/USAGE_GUIDE.md) - How to use KLang
-- 🔨 [**Compilation Guide**](docs/COMPILATION_GUIDE.md) - Building from source
-- 🎓 [**OOP Specification**](docs/OOP_LANGUAGE_SPEC.md) - Object-oriented features
-- ⚖️ [**JavaScript vs KLang Comparison**](docs/JS_KLANG_FEATURE_COMPARISON.md) - Complete feature comparison (1800+ lines)
-- 📊 [**Feature Comparison Summary**](docs/FEATURE_COMPARISON_SUMMARY.md) - Quick comparison overview
-- 🔄 [**JavaScript to KLang Migration**](docs/JS_TO_KLANG_MIGRATION.md) - Migration guide for JS developers
-- 🤝 [**Contributing Guide**](CONTRIBUTING.md) - How to contribute
+- 🚀 [**Getting Started Guide**](docs/guides/GETTING_STARTED.md) - Setup and installation
+- 📘 [**Language Reference**](docs/guides/LANGUAGE_REFERENCE.md) - Complete syntax reference
+- 🔧 [**Usage Guide**](docs/guides/USAGE_GUIDE.md) - How to use KLang
+- 📚 [**Complete Documentation Index**](docs/README.md) - Browse all docs
+
+**Features:**
+- 🎓 [**OOP Specification**](docs/guides/OOP_LANGUAGE_SPEC.md) - Object-oriented features
+- ⚡ [**Async/Await**](docs/features/ASYNC_AWAIT_IMPLEMENTATION.md) - Asynchronous programming
+- 🔄 [**Generators**](docs/features/GENERATOR_IMPLEMENTATION.md) - Lazy evaluation
+- 📦 [**Modules**](docs/features/ES6_MODULES_IMPLEMENTATION.md) - Code organization
+
+**API Reference:**
+- 🧮 [**Math Module**](docs/api/MATH_MODULE_DOCS.md) - Mathematical operations
+- 📊 [**Array Methods**](docs/guides/ARRAY_METHODS.md) - Array operations
+- 🔤 [**String Operations**](docs/guides/COMPLETE_FEATURE_GUIDE.md#strings) - String manipulation
+
+**For Developers:**
+- ⚖️ [**JavaScript vs KLang**](docs/guides/JS_KLANG_FEATURE_COMPARISON.md) - Feature comparison
+- 🔄 [**JS Migration Guide**](docs/guides/JS_TO_KLANG_MIGRATION.md) - Migrating from JavaScript
+- 🤝 [**Contributing Guide**](docs/development/CONTRIBUTING.md) - How to contribute
 
 **Quick Links:**
+- [Documentation Index](docs/README.md) - Complete navigation
 - [Examples](examples/) - Working code examples
-- [Tests](tests/) - Test suite
+- [Tests](tests/) - Test suite ([Test Guide](tests/README.md))
+- [Project Structure](PROJECT_STRUCTURE.md) - Repository organization
 - [Issues](https://github.com/k-kaundal/KLang/issues) - Bug reports & features
 - [Discussions](https://github.com/k-kaundal/KLang/discussions) - Q&A & ideas
 
@@ -202,6 +234,35 @@ klang run script.kl     # Run a script
 let x: int = 10   # explicit type
 let y = 20        # type inferred
 type(x)           # -> "int"
+```
+
+### Math Operations (NEW!)
+
+```klang
+// Mathematical calculations with full precision
+let radius = 5.0
+let area = Math.PI * Math.pow(radius, 2)
+println(area)  // 78.5398
+
+// Trigonometry
+let angle = Math.PI / 4  // 45 degrees
+println(Math.sin(angle))  // 0.707...
+
+// Distance calculation
+let distance = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2))
+```
+
+### Python-style range() (NEW!)
+
+```klang
+// Generate sequences easily
+let numbers = range(10)         // [0, 1, 2, ..., 9]
+let evens = range(0, 20, 2)     // [0, 2, 4, ..., 18]
+let countdown = range(10, 0, -1) // [10, 9, 8, ..., 1]
+
+// Use with array methods
+let squares = range(1, 11).map(x => x * x)
+// squares = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
 ```
 
 ### Functions & Parameters

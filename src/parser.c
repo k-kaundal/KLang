@@ -173,6 +173,11 @@ static ASTNode *parse_primary(Parser *parser) {
         token_free(&t);
         return ast_new_bool(0, line);
     }
+    if (check(parser, TOKEN_NULL)) {
+        Token t = advance(parser);
+        token_free(&t);
+        return ast_new_null(line);
+    }
     if (check(parser, TOKEN_IDENT)) {
         Token t = advance(parser);
         ASTNode *n = ast_new_ident(t.value, line);
@@ -181,13 +186,41 @@ static ASTNode *parse_primary(Parser *parser) {
     }
     if (check(parser, TOKEN_LPAREN)) {
         Token t = advance(parser);
-        ASTNode *expr;
-        Token t2;
+        int line_lparen = t.line;
         token_free(&t);
-        expr = parse_expression(parser);
-        t2 = consume(parser, TOKEN_RPAREN);
-        token_free(&t2);
-        return expr;
+        
+        /* Check for empty tuple () */
+        if (check(parser, TOKEN_RPAREN)) {
+            Token t2 = advance(parser);
+            token_free(&t2);
+            ASTNode *tuple = ast_new_tuple(line_lparen);
+            return tuple;
+        }
+        
+        /* Parse first expression */
+        ASTNode *expr = parse_expression(parser);
+        
+        /* Check if this is a tuple (has comma) or just grouping */
+        if (check(parser, TOKEN_COMMA)) {
+            /* It's a tuple */
+            ASTNode *tuple = ast_new_tuple(line_lparen);
+            nodelist_push(&tuple->data.tuple.elements, expr);
+            
+            /* Parse remaining elements */
+            while (match(parser, TOKEN_COMMA)) {
+                if (check(parser, TOKEN_RPAREN)) break; /* Trailing comma */
+                nodelist_push(&tuple->data.tuple.elements, parse_expression(parser));
+            }
+            
+            Token t2 = consume(parser, TOKEN_RPAREN);
+            token_free(&t2);
+            return tuple;
+        } else {
+            /* It's just a grouped expression */
+            Token t2 = consume(parser, TOKEN_RPAREN);
+            token_free(&t2);
+            return expr;
+        }
     }
     if (check(parser, TOKEN_LBRACKET)) {
         Token t = advance(parser);
@@ -866,6 +899,40 @@ static ASTNode *parse_var_decl(Parser *parser, TokenType decl_token, DeclType de
             }
             /* For let/var, allow uninitialized (will be undefined) */
             destructure->data.destructure_array.source = ast_new_list(line);
+        } else {
+            destructure->data.destructure_array.source = parse_expression(parser);
+        }
+        
+        return destructure;
+    }
+    
+    /* Check for tuple destructuring: const (a, b) = ... */
+    if (check(parser, TOKEN_LPAREN)) {
+        Token lparen = advance(parser);
+        token_free(&lparen);
+        
+        ASTNode *destructure = ast_new_destructure_array(NULL, decl_type, line);
+        
+        /* Parse tuple elements */
+        while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
+            ASTNode *elem = parse_destructure_array_element(parser);
+            if (elem) {
+                nodelist_push(&destructure->data.destructure_array.elements, elem);
+            }
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        Token rparen = consume(parser, TOKEN_RPAREN);
+        token_free(&rparen);
+        
+        /* Must have initializer */
+        if (!match(parser, TOKEN_ASSIGN)) {
+            if (decl_type == DECL_CONST) {
+                fprintf(stderr, "Error at line %d: const destructuring must be initialized\n", line);
+                parser->had_error = 1;
+            }
+            /* For let/var, allow uninitialized (will be undefined) */
+            destructure->data.destructure_array.source = ast_new_tuple(line);
         } else {
             destructure->data.destructure_array.source = parse_expression(parser);
         }

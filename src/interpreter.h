@@ -5,7 +5,7 @@
 
 typedef enum {
     VAL_INT, VAL_FLOAT, VAL_STRING, VAL_BOOL, VAL_NULL, VAL_FUNCTION, VAL_LIST, VAL_BUILTIN,
-    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE, VAL_GENERATOR
+    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE, VAL_GENERATOR, VAL_TUPLE
 } ValueType;
 
 typedef struct Value Value;
@@ -29,6 +29,11 @@ typedef struct {
     int count;
     int capacity;
 } ListVal;
+
+typedef struct {
+    Value *elements;
+    int count;
+} TupleVal;
 
 typedef struct {
     char *name;
@@ -99,6 +104,7 @@ struct Value {
         int bool_val;
         FunctionVal func_val;
         ListVal list_val;
+        TupleVal tuple_val;
         BuiltinFn builtin;
         ClassVal class_val;
         ObjectVal object_val;
