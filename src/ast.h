@@ -6,7 +6,7 @@ typedef enum {
     NODE_BINOP, NODE_UNOP, NODE_CALL, NODE_INDEX,
     NODE_LET, NODE_ASSIGN, NODE_IF, NODE_WHILE, NODE_FOR,
     NODE_RETURN, NODE_BREAK, NODE_CONTINUE, NODE_BLOCK, NODE_FUNC_DEF, NODE_STRUCT_DEF, NODE_IMPORT,
-    NODE_LIST,
+    NODE_LIST, NODE_OBJECT,
     NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER,
     NODE_TEMPLATE_LITERAL
 } NodeType;
@@ -31,6 +31,14 @@ typedef struct {
     int capacity;
 } NodeList;
 
+typedef struct {
+    char *key;           // Property key (NULL for computed)
+    ASTNode *key_expr;   // Computed key expression
+    ASTNode *value;      // Property value
+    int is_shorthand;    // Property shorthand
+    int is_method;       // Method shorthand
+} ObjectProperty;
+
 struct ASTNode {
     NodeType type;
     int line;
@@ -54,6 +62,7 @@ struct ASTNode {
         struct { NodeList stmts; } block;
         struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; } func_def;
         struct { NodeList elements; } list;
+        struct { ObjectProperty *props; int count; int capacity; } object;
         struct { char *name; char *parent_name; NodeList members; int is_abstract; } class_def;
         struct { char *class_name; NodeList args; } new_expr;
         struct { ASTNode *obj; char *member; } member_access;
@@ -88,6 +97,8 @@ ASTNode *ast_new_continue(int line);
 ASTNode *ast_new_block(int line);
 ASTNode *ast_new_func_def(const char *name, const char *return_type, int line);
 ASTNode *ast_new_list(int line);
+ASTNode *ast_new_object(int line);
+void ast_object_add_property(ASTNode *obj, const char *key, ASTNode *key_expr, ASTNode *value, int is_shorthand, int is_method);
 ASTNode *ast_new_class_def(const char *name, const char *parent_name, int line);
 ASTNode *ast_new_new(const char *class_name, int line);
 ASTNode *ast_new_member_access(ASTNode *obj, const char *member, int line);

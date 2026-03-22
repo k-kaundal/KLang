@@ -200,6 +200,100 @@ static ASTNode *parse_primary(Parser *parser) {
         token_free(&t2);
         return list;
     }
+    
+    /* Object literal */
+    if (check(parser, TOKEN_LBRACE)) {
+        Token t = advance(parser);
+        ASTNode *obj;
+        token_free(&t);
+        obj = ast_new_object(line);
+        
+        while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+            int is_shorthand = 0;
+            int is_method = 0;
+            char *key = NULL;
+            ASTNode *key_expr = NULL;
+            ASTNode *value = NULL;
+            
+            /* Check for computed property name [expr] */
+            if (check(parser, TOKEN_LBRACKET)) {
+                Token t2 = advance(parser);
+                token_free(&t2);
+                key_expr = parse_expression(parser);
+                {
+                    Token t3 = consume(parser, TOKEN_RBRACKET);
+                    token_free(&t3);
+                }
+                {
+                    Token t4 = consume(parser, TOKEN_COLON);
+                    token_free(&t4);
+                }
+                value = parse_expression(parser);
+            }
+            /* Check for identifier (could be shorthand, method, or regular) */
+            else if (check(parser, TOKEN_IDENT)) {
+                Token id_tok = advance(parser);
+                key = strdup(id_tok.value);
+                token_free(&id_tok);
+                
+                /* Method shorthand: key() { ... } */
+                if (check(parser, TOKEN_LPAREN)) {
+                    Token lparen_tok = advance(parser);
+                    ASTNode *func;
+                    token_free(&lparen_tok);
+                    is_method = 1;
+                    
+                    /* Create function definition */
+                    func = ast_new_func_def(key, NULL, line);
+                    
+                    /* Parse parameters */
+                    while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
+                        Token param_tok = consume(parser, TOKEN_IDENT);
+                        ASTNode *param = ast_new_ident(param_tok.value, line);
+                        nodelist_push(&func->data.func_def.params, param);
+                        token_free(&param_tok);
+                        if (!match(parser, TOKEN_COMMA)) break;
+                    }
+                    {
+                        Token rparen_tok = consume(parser, TOKEN_RPAREN);
+                        token_free(&rparen_tok);
+                    }
+                    
+                    /* Parse function body */
+                    func->data.func_def.body = parse_statement(parser);
+                    value = func;
+                }
+                /* Property shorthand or regular property */
+                else if (check(parser, TOKEN_COMMA) || check(parser, TOKEN_RBRACE)) {
+                    /* Shorthand: {x} means {x: x} */
+                    is_shorthand = 1;
+                    value = ast_new_ident(key, line);
+                }
+                else {
+                    /* Regular property: key: value */
+                    Token colon_tok = consume(parser, TOKEN_COLON);
+                    token_free(&colon_tok);
+                    value = parse_expression(parser);
+                }
+            }
+            else {
+                fprintf(stderr, "Syntax error: expected property key\n");
+                exit(1);
+            }
+            
+            ast_object_add_property(obj, key, key_expr, value, is_shorthand, is_method);
+            if (key) free(key);
+            
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        {
+            Token t2 = consume(parser, TOKEN_RBRACE);
+            token_free(&t2);
+        }
+        return obj;
+    }
+    
     if (check(parser, TOKEN_NEW)) {
         Token t = advance(parser);
         Token class_tok;

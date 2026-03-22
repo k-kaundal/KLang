@@ -877,6 +877,60 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 list.as.list_val.items[i] = eval_node_env(interp, node->data.list.elements.items[i], env);
             return list;
         }
+        case NODE_OBJECT: {
+            Value obj;
+            int i;
+            obj.type = VAL_OBJECT;
+            obj.as.object_val.class_name = strdup("Object");
+            obj.as.object_val.fields = env_new(NULL);
+            obj.as.object_val.methods = env_new(NULL);
+            
+            for (i = 0; i < node->data.object.count; i++) {
+                ObjectProperty *prop = &node->data.object.props[i];
+                char *key_str = NULL;
+                Value val;
+                
+                /* Compute the property key */
+                if (prop->key) {
+                    key_str = strdup(prop->key);
+                } else if (prop->key_expr) {
+                    /* Computed property name */
+                    Value key_val = eval_node_env(interp, prop->key_expr, env);
+                    key_str = value_to_string(&key_val);
+                    value_free(&key_val);
+                } else {
+                    continue;
+                }
+                
+                /* Evaluate the property value */
+                if (prop->is_shorthand) {
+                    /* Shorthand: {x} means {x: x} */
+                    Value *var_val = env_get(env, key_str);
+                    if (var_val) {
+                        if (var_val->type == VAL_STRING) {
+                            val = make_string(var_val->as.str_val);
+                        } else {
+                            val = *var_val;
+                        }
+                    } else {
+                        fprintf(stderr, "Runtime error: undefined variable '%s' in object shorthand\n", key_str);
+                        val = make_null();
+                    }
+                } else {
+                    val = eval_node_env(interp, prop->value, env);
+                }
+                
+                /* Add to object */
+                if (prop->is_method || val.type == VAL_FUNCTION) {
+                    env_set_local(obj.as.object_val.methods, key_str, val);
+                } else {
+                    env_set_local(obj.as.object_val.fields, key_str, val);
+                }
+                
+                free(key_str);
+            }
+            return obj;
+        }
         case NODE_INDEX: {
             Value obj = eval_node_env(interp, node->data.index_expr.obj, env);
             Value idx = eval_node_env(interp, node->data.index_expr.index, env);

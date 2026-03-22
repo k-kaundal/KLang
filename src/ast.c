@@ -183,6 +183,28 @@ ASTNode *ast_new_list(int line) {
     return n;
 }
 
+ASTNode *ast_new_object(int line) {
+    ASTNode *n = ast_alloc(NODE_OBJECT, line);
+    n->data.object.props = NULL;
+    n->data.object.count = 0;
+    n->data.object.capacity = 0;
+    return n;
+}
+
+void ast_object_add_property(ASTNode *obj, const char *key, ASTNode *key_expr, ASTNode *value, int is_shorthand, int is_method) {
+    if (obj->data.object.count >= obj->data.object.capacity) {
+        int new_cap = obj->data.object.capacity == 0 ? 8 : obj->data.object.capacity * 2;
+        obj->data.object.props = realloc(obj->data.object.props, new_cap * sizeof(ObjectProperty));
+        obj->data.object.capacity = new_cap;
+    }
+    ObjectProperty *prop = &obj->data.object.props[obj->data.object.count++];
+    prop->key = key ? strdup(key) : NULL;
+    prop->key_expr = key_expr;
+    prop->value = value;
+    prop->is_shorthand = is_shorthand;
+    prop->is_method = is_method;
+}
+
 ASTNode *ast_new_class_def(const char *name, const char *parent_name, int line) {
     ASTNode *n = ast_alloc(NODE_CLASS_DEF, line);
     n->data.class_def.name = strdup(name);
@@ -302,6 +324,15 @@ void ast_free(ASTNode *node) {
             for (i = 0; i < node->data.list.elements.count; i++)
                 ast_free(node->data.list.elements.items[i]);
             nodelist_free(&node->data.list.elements);
+            break;
+        case NODE_OBJECT:
+            for (i = 0; i < node->data.object.count; i++) {
+                ObjectProperty *prop = &node->data.object.props[i];
+                if (prop->key) free(prop->key);
+                if (prop->key_expr) ast_free(prop->key_expr);
+                if (prop->value) ast_free(prop->value);
+            }
+            free(node->data.object.props);
             break;
         case NODE_CLASS_DEF:
             free(node->data.class_def.name);
