@@ -15,11 +15,8 @@ void lexer_init(Lexer *lexer, const char *source) {
 
 void token_free(Token *tok) {
     if (tok && tok->value) {
-        fprintf(stderr, "[DEBUG token_free] About to free: type=%d (%s), value='%s', tok_ptr=%p, value_ptr=%p\n",
-                tok->type, token_type_name(tok->type), tok->value, (void*)tok, (void*)tok->value);
         free(tok->value);
         tok->value = NULL;
-        fprintf(stderr, "[DEBUG token_free] Freed successfully\n");
     }
 }
 

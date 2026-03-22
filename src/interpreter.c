@@ -2393,6 +2393,7 @@ Value load_module(Interpreter *interp, const char *module_path, Env *env) {
     ASTNode **nodes;
     int count, i;
     Env *module_env, *export_env;
+    (void)env; /* Parameter reserved for future use */
     char *old_module_dir;
     char *module_dir;
     Value result = make_null();

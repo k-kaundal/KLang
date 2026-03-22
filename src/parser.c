@@ -27,12 +27,8 @@ void parser_free(Parser *parser) {
 
 static Token advance(Parser *parser) {
     Token old = parser->current;
-    fprintf(stderr, "[DEBUG advance] Before assign: peek.type=%d\n", parser->peek.type);
     parser->current = parser->peek;
-    fprintf(stderr, "[DEBUG advance] After assign: current.type=%d\n", parser->current.type);
-    fprintf(stderr, "[DEBUG advance] Before lexer_next_token\n");
     parser->peek = lexer_next_token(parser->lexer);
-    fprintf(stderr, "[DEBUG advance] After lexer_next_token: peek.type=%d\n", parser->peek.type);
     return old;
 }
 
@@ -969,7 +965,7 @@ static ASTNode *parse_func_def(Parser *parser) {
     int param_count = 0;
     int param_cap = 0;
     char *return_type = NULL;
-    ASTNode *func;
+    ASTNode *func = NULL;
     
     /* Check for async keyword before fn */
     if (check(parser, TOKEN_ASYNC)) {
