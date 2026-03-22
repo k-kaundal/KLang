@@ -97,6 +97,18 @@ ASTNode *ast_new_let(const char *name, const char *type_annot, ASTNode *value, i
     n->data.let_stmt.value = value;
     n->data.let_stmt.is_static = 0;
     n->data.let_stmt.access = ACCESS_PUBLIC;
+    n->data.let_stmt.decl_type = DECL_LET;
+    return n;
+}
+
+ASTNode *ast_new_var_decl(const char *name, const char *type_annot, ASTNode *value, DeclType decl_type, int line) {
+    ASTNode *n = ast_alloc(NODE_LET, line);
+    n->data.let_stmt.name = strdup(name);
+    n->data.let_stmt.type_annot = type_annot ? strdup(type_annot) : NULL;
+    n->data.let_stmt.value = value;
+    n->data.let_stmt.is_static = 0;
+    n->data.let_stmt.access = ACCESS_PUBLIC;
+    n->data.let_stmt.decl_type = decl_type;
     return n;
 }
 

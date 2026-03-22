@@ -303,15 +303,15 @@ static ASTNode *parse_block(Parser *parser) {
     return block;
 }
 
-static ASTNode *parse_let(Parser *parser) {
+static ASTNode *parse_var_decl(Parser *parser, TokenType decl_token, DeclType decl_type) {
     int line = parser->current.line;
-    Token let_tok = consume(parser, TOKEN_LET);
+    Token decl_tok = consume(parser, decl_token);
     Token name_tok;
     char *varname;
     char *type_annot = NULL;
-    ASTNode *value;
+    ASTNode *value = NULL;
     ASTNode *n;
-    token_free(&let_tok);
+    token_free(&decl_tok);
     name_tok = consume(parser, TOKEN_IDENT);
     varname = strdup(name_tok.value);
     token_free(&name_tok);
@@ -322,15 +322,33 @@ static ASTNode *parse_let(Parser *parser) {
         token_free(&type_tok);
     }
 
-    {
-        Token eq_tok = consume(parser, TOKEN_ASSIGN);
-        token_free(&eq_tok);
+    /* Handle initialization */
+    if (match(parser, TOKEN_ASSIGN)) {
+        value = parse_expression(parser);
+    } else if (decl_type == DECL_CONST) {
+        /* const must be initialized */
+        fprintf(stderr, "Error at line %d: const declaration must be initialized\n", line);
+        free(varname);
+        if (type_annot) free(type_annot);
+        return NULL;
     }
-    value = parse_expression(parser);
-    n = ast_new_let(varname, type_annot, value, line);
+    
+    n = ast_new_var_decl(varname, type_annot, value, decl_type, line);
     free(varname);
     if (type_annot) free(type_annot);
     return n;
+}
+
+static ASTNode *parse_let(Parser *parser) {
+    return parse_var_decl(parser, TOKEN_LET, DECL_LET);
+}
+
+static ASTNode *parse_var(Parser *parser) {
+    return parse_var_decl(parser, TOKEN_VAR, DECL_VAR);
+}
+
+static ASTNode *parse_const(Parser *parser) {
+    return parse_var_decl(parser, TOKEN_CONST, DECL_CONST);
 }
 
 static ASTNode *parse_func_def(Parser *parser) {
@@ -493,6 +511,8 @@ static ASTNode *parse_statement(Parser *parser) {
     if (check(parser, TOKEN_CLASS)) return parse_class_def(parser);
     if (check(parser, TOKEN_FN)) return parse_func_def(parser);
     if (check(parser, TOKEN_LET)) return parse_let(parser);
+    if (check(parser, TOKEN_VAR)) return parse_var(parser);
+    if (check(parser, TOKEN_CONST)) return parse_const(parser);
     if (check(parser, TOKEN_IF)) return parse_if(parser);
     if (check(parser, TOKEN_WHILE)) return parse_while(parser);
     if (check(parser, TOKEN_FOR)) return parse_for(parser);

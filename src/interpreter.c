@@ -79,6 +79,8 @@ void env_set_local(Env *env, const char *name, Value val) {
         ne->name = strdup(name);
         ne->value = val_copy;
         ne->access = ACCESS_PUBLIC;
+        ne->decl_type = DECL_LET;
+        ne->is_const = 0;
         ne->next = env->entries;
         env->entries = ne;
     }
@@ -106,6 +108,8 @@ void env_set_local_with_access(Env *env, const char *name, Value val, AccessModi
         ne->name = strdup(name);
         ne->value = val_copy;
         ne->access = access;
+        ne->decl_type = DECL_LET;
+        ne->is_const = 0;
         ne->next = env->entries;
         env->entries = ne;
     }
@@ -117,6 +121,11 @@ void env_set(Env *env, const char *name, Value val) {
         EnvEntry *e = cur->entries;
         while (e) {
             if (strcmp(e->name, name) == 0) {
+                /* Check if trying to assign to const */
+                if (e->is_const) {
+                    fprintf(stderr, "Error: cannot assign to const variable '%s'\n", name);
+                    return;
+                }
                 value_free(&e->value);
                 e->value = val;
                 return;
@@ -126,6 +135,59 @@ void env_set(Env *env, const char *name, Value val) {
         cur = cur->parent;
     }
     env_set_local(env, name, val);
+}
+
+/* Check if a variable exists in the local scope only */
+int env_has_local(Env *env, const char *name) {
+    EnvEntry *e = env->entries;
+    while (e) {
+        if (strcmp(e->name, name) == 0) return 1;
+        e = e->next;
+    }
+    return 0;
+}
+
+/* Declare a new variable with const/let/var semantics */
+void env_declare(Env *env, const char *name, Value val, DeclType decl_type, int line, Interpreter *interp) {
+    Value val_copy = val;
+    if (val.type == VAL_STRING && val.as.str_val) {
+        val_copy.as.str_val = strdup(val.as.str_val);
+    }
+    
+    /* Check for redeclaration in local scope */
+    if (decl_type == DECL_LET || decl_type == DECL_CONST) {
+        if (env_has_local(env, name)) {
+            fprintf(stderr, "Error at line %d: identifier '%s' has already been declared\n", line, name);
+            interp->had_error = 1;
+            value_free(&val_copy);
+            return;
+        }
+    }
+    
+    /* var allows redeclaration, so check and update if exists locally */
+    if (decl_type == DECL_VAR && env_has_local(env, name)) {
+        EnvEntry *e = env->entries;
+        while (e) {
+            if (strcmp(e->name, name) == 0) {
+                value_free(&e->value);
+                e->value = val_copy;
+                return;
+            }
+            e = e->next;
+        }
+    }
+    
+    /* Create new entry */
+    {
+        EnvEntry *ne = malloc(sizeof(EnvEntry));
+        ne->name = strdup(name);
+        ne->value = val_copy;
+        ne->access = ACCESS_PUBLIC;
+        ne->decl_type = decl_type;
+        ne->is_const = (decl_type == DECL_CONST);
+        ne->next = env->entries;
+        env->entries = ne;
+    }
 }
 
 Value make_int(long long v) {
@@ -400,8 +462,13 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             return *v;
         }
         case NODE_LET: {
-            Value val = eval_node_env(interp, node->data.let_stmt.value, env);
-            env_set_local(env, node->data.let_stmt.name, val);
+            Value val = make_null();
+            /* Evaluate initial value if provided */
+            if (node->data.let_stmt.value) {
+                val = eval_node_env(interp, node->data.let_stmt.value, env);
+            }
+            /* Use env_declare to enforce const/let/var semantics */
+            env_declare(env, node->data.let_stmt.name, val, node->data.let_stmt.decl_type, node->line, interp);
             return make_null();
         }
         case NODE_ASSIGN: {

@@ -16,6 +16,12 @@ typedef enum {
     ACCESS_PROTECTED
 } AccessModifier;
 
+typedef enum {
+    DECL_LET,
+    DECL_VAR,
+    DECL_CONST
+} DeclType;
+
 typedef struct ASTNode ASTNode;
 
 typedef struct {
@@ -36,7 +42,7 @@ struct ASTNode {
         struct { char op[4]; ASTNode *operand; } unop;
         struct { ASTNode *callee; NodeList args; } call;
         struct { ASTNode *obj; ASTNode *index; } index_expr;
-        struct { char *name; char *type_annot; ASTNode *value; int is_static; AccessModifier access; } let_stmt;
+        struct { char *name; char *type_annot; ASTNode *value; int is_static; AccessModifier access; DeclType decl_type; } let_stmt;
         struct { char *name; ASTNode *value; } assign_stmt;
         struct { ASTNode *cond; ASTNode *then_block; ASTNode *else_block; } if_stmt;
         struct { ASTNode *cond; ASTNode *body; } while_stmt;
@@ -69,6 +75,7 @@ ASTNode *ast_new_unop(const char *op, ASTNode *operand, int line);
 ASTNode *ast_new_call(ASTNode *callee, int line);
 ASTNode *ast_new_index(ASTNode *obj, ASTNode *index, int line);
 ASTNode *ast_new_let(const char *name, const char *type_annot, ASTNode *value, int line);
+ASTNode *ast_new_var_decl(const char *name, const char *type_annot, ASTNode *value, DeclType decl_type, int line);
 ASTNode *ast_new_assign(const char *name, ASTNode *value, int line);
 ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_block, ASTNode *else_block, int line);
 ASTNode *ast_new_while(ASTNode *cond, ASTNode *body, int line);

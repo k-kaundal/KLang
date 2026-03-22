@@ -164,6 +164,8 @@ Token lexer_next_token(Lexer *lexer) {
             buf[len] = '\0';
             if (strcmp(buf, "fn") == 0) type = TOKEN_FN;
             else if (strcmp(buf, "let") == 0) type = TOKEN_LET;
+            else if (strcmp(buf, "var") == 0) type = TOKEN_VAR;
+            else if (strcmp(buf, "const") == 0) type = TOKEN_CONST;
             else if (strcmp(buf, "if") == 0) type = TOKEN_IF;
             else if (strcmp(buf, "else") == 0) type = TOKEN_ELSE;
             else if (strcmp(buf, "while") == 0) type = TOKEN_WHILE;
@@ -266,6 +268,8 @@ const char *token_type_name(TokenType type) {
         case TOKEN_IDENT: return "IDENT";
         case TOKEN_FN: return "FN";
         case TOKEN_LET: return "LET";
+        case TOKEN_VAR: return "VAR";
+        case TOKEN_CONST: return "CONST";
         case TOKEN_IF: return "IF";
         case TOKEN_ELSE: return "ELSE";
         case TOKEN_WHILE: return "WHILE";

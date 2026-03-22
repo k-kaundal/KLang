@@ -64,7 +64,13 @@ Source Code (.kl)
 * Lexer (tokenizer)
 * Parser (AST generation)
 * Expression evaluation
-* Variables (symbol table)
+* **Variable Declaration Semantics (JavaScript-style)**
+  * `let` - Block-scoped, mutable, prevents redeclaration
+  * `var` - Block-scoped, mutable, allows redeclaration
+  * `const` - Block-scoped, immutable, prevents redeclaration
+  * Optional initialization for `let`/`var`
+  * Enforced initialization for `const`
+  * Immutability enforcement and redeclaration checks
 * Functions with parameters and return values
 * **Object-Oriented Programming (Classes, Objects, Inheritance)**
   * Class definitions with fields and methods

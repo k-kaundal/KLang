@@ -68,6 +68,8 @@ typedef struct EnvEntry {
     char *name;
     Value value;
     AccessModifier access;
+    DeclType decl_type;
+    int is_const;
     struct EnvEntry *next;
 } EnvEntry;
 
@@ -107,7 +109,10 @@ char *value_to_string(Value *v);
 Env *env_new(Env *parent);
 void env_free(Env *env);
 Value *env_get(Env *env, const char *name);
+EnvEntry *env_get_entry(Env *env, const char *name);
 void env_set(Env *env, const char *name, Value val);
 void env_set_local(Env *env, const char *name, Value val);
+void env_declare(Env *env, const char *name, Value val, DeclType decl_type, int line, Interpreter *interp);
+int env_has_local(Env *env, const char *name);
 
 #endif
