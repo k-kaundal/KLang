@@ -170,7 +170,7 @@ void cmd_info_file(const char *path) {
                 p++;
                 continue;
             }
-            if (*p == '#' || (*p == '/' && (*(p+1) == '/' || *(p+1) == '*'))) {
+            if (*p == '#' || (*p == '/' && *(p+1) != '\0' && (*(p+1) == '/' || *(p+1) == '*'))) {
                 line_is_comment = 1;
             }
             line_has_content = 1;

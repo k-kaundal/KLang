@@ -136,6 +136,7 @@ void print_command_help(const char* command) {
         printf("    klang info script.kl\n\n");
     }
     else {
-        print_error("Unknown command. Use 'klang help' for available commands.");
+        print_error("Unknown command");
+        fprintf(stderr, "Use 'klang help' for available commands.\n");
     }
 }
