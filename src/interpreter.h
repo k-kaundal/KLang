@@ -5,7 +5,7 @@
 
 typedef enum {
     VAL_INT, VAL_FLOAT, VAL_STRING, VAL_BOOL, VAL_NULL, VAL_FUNCTION, VAL_LIST, VAL_BUILTIN,
-    VAL_CLASS, VAL_OBJECT, VAL_METHOD
+    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE
 } ValueType;
 
 typedef struct Value Value;
@@ -48,6 +48,25 @@ typedef struct {
     Value *method;     // The function to call (pointer to avoid incomplete type)
 } MethodVal;
 
+typedef enum {
+    PROMISE_PENDING,
+    PROMISE_FULFILLED,
+    PROMISE_REJECTED
+} PromiseState;
+
+typedef struct PromiseCallbackNode {
+    Value *on_fulfilled;       // Function to call on fulfillment (pointer to avoid incomplete type)
+    Value *on_rejected;        // Function to call on rejection (pointer to avoid incomplete type)
+    Value *promise_to_resolve; // The promise returned by then/catch/finally
+    struct PromiseCallbackNode *next;
+} PromiseCallbackNode;
+
+typedef struct {
+    PromiseState state;
+    Value *result;             // Fulfilled value or rejection reason (pointer to avoid incomplete type)
+    PromiseCallbackNode *callbacks;  // Linked list of callbacks
+} PromiseVal;
+
 struct Value {
     ValueType type;
     union {
@@ -61,6 +80,7 @@ struct Value {
         ClassVal class_val;
         ObjectVal object_val;
         MethodVal method_val;
+        PromiseVal promise_val;
     } as;
 };
 
@@ -85,10 +105,19 @@ typedef struct {
     int is_continue;
 } EvalResult;
 
+typedef struct MicrotaskNode {
+    Value callback;              // Function to execute
+    Value *args;                 // Arguments for the function
+    int argc;                    // Number of arguments
+    struct MicrotaskNode *next;
+} MicrotaskNode;
+
 struct Interpreter {
     Env *global_env;
     EvalResult last_result;
     int had_error;
+    MicrotaskNode *microtask_queue_head;
+    MicrotaskNode *microtask_queue_tail;
 };
 
 Interpreter *interpreter_new(void);
@@ -103,9 +132,13 @@ Value make_null(void);
 Value make_class(const char *name, const char *parent_name);
 Value make_object(const char *class_name, Env *methods);
 Value make_method(Value receiver, Value method);
+Value make_promise(void);
 void value_free(Value *v);
 void value_print(Value *v);
 char *value_to_string(Value *v);
+
+void microtask_queue_push(Interpreter *interp, Value callback, Value *args, int argc);
+void microtask_queue_process(Interpreter *interp);
 
 Env *env_new(Env *parent);
 void env_free(Env *env);

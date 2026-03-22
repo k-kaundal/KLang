@@ -1081,6 +1081,350 @@ static Value builtin_array_sort(Interpreter *interp, Value *args, int argc) {
     return *array;
 }
 
+/* ============================================================================
+ * Promise Implementation
+ * ============================================================================ */
+
+// Helper function to call a function value
+static Value call_function_helper(Interpreter *interp, Value *func, Value *args, int argc) {
+    if (func->type != VAL_FUNCTION) {
+        fprintf(stderr, "Error: callback is not a function\n");
+        return make_null();
+    }
+    
+    Env *call_env = env_new(func->as.func_val.closure);
+    
+    // Bind parameters
+    for (int i = 0; i < func->as.func_val.param_count && i < argc; i++) {
+        env_set_local(call_env, func->as.func_val.param_names[i], args[i]);
+    }
+    
+    // Execute function body
+    Value result = eval_block(interp, func->as.func_val.body, call_env);
+    
+    // Handle return value
+    if (interp->last_result.is_return) {
+        value_free(&result);
+        result = interp->last_result.return_value;
+        interp->last_result.is_return = 0;
+        interp->last_result.return_value = make_null();
+    }
+    
+    env_free(call_env);
+    return result;
+}
+
+// Helper to resolve a promise
+static void promise_resolve(Interpreter *interp, Value *promise, Value value) {
+    if (promise->type != VAL_PROMISE || promise->as.promise_val.state != PROMISE_PENDING) {
+        return; // Already settled
+    }
+    
+    promise->as.promise_val.state = PROMISE_FULFILLED;
+    *promise->as.promise_val.result = value;
+    
+    // Process all callbacks
+    PromiseCallbackNode *node = promise->as.promise_val.callbacks;
+    while (node) {
+        if (node->on_fulfilled && node->on_fulfilled->type == VAL_FUNCTION) {
+            Value args[1] = { value };
+            Value result = call_function_helper(interp, node->on_fulfilled, args, 1);
+            
+            // Resolve the chained promise
+            if (node->promise_to_resolve) {
+                promise_resolve(interp, node->promise_to_resolve, result);
+            } else {
+                value_free(&result);
+            }
+        } else if (node->promise_to_resolve) {
+            // No handler, propagate value
+            promise_resolve(interp, node->promise_to_resolve, value);
+        }
+        
+        node = node->next;
+    }
+}
+
+// Helper to reject a promise
+static void promise_reject(Interpreter *interp, Value *promise, Value reason) {
+    if (promise->type != VAL_PROMISE || promise->as.promise_val.state != PROMISE_PENDING) {
+        return; // Already settled
+    }
+    
+    promise->as.promise_val.state = PROMISE_REJECTED;
+    *promise->as.promise_val.result = reason;
+    
+    // Process all callbacks
+    PromiseCallbackNode *node = promise->as.promise_val.callbacks;
+    int handled = 0;
+    while (node) {
+        if (node->on_rejected && node->on_rejected->type == VAL_FUNCTION) {
+            handled = 1;
+            Value args[1] = { reason };
+            Value result = call_function_helper(interp, node->on_rejected, args, 1);
+            
+            // Resolve the chained promise (catch transforms rejection to fulfillment)
+            if (node->promise_to_resolve) {
+                promise_resolve(interp, node->promise_to_resolve, result);
+            } else {
+                value_free(&result);
+            }
+        } else if (node->promise_to_resolve) {
+            // No handler, propagate rejection
+            promise_reject(interp, node->promise_to_resolve, reason);
+        }
+        
+        node = node->next;
+    }
+    
+    // If no handler caught the rejection, print error
+    if (!handled) {
+        fprintf(stderr, "Unhandled promise rejection: ");
+        value_print(&reason);
+        fprintf(stderr, "\n");
+    }
+}
+
+// Promise constructor: new Promise((resolve, reject) => { ... })
+// For now, we'll use a special approach where resolve/reject are special builtins
+Value builtin_promise_resolve_fn(Interpreter *interp, Value *args, int argc);
+Value builtin_promise_reject_fn(Interpreter *interp, Value *args, int argc);
+
+// Global promise being constructed (for resolve/reject to access)
+static Value *g_current_promise = NULL;
+
+Value builtin_promise_resolve_fn(Interpreter *interp, Value *args, int argc) {
+    if (g_current_promise) {
+        Value value = (argc >= 1) ? args[0] : make_null();
+        promise_resolve(interp, g_current_promise, value);
+    }
+    return make_null();
+}
+
+Value builtin_promise_reject_fn(Interpreter *interp, Value *args, int argc) {
+    if (g_current_promise) {
+        Value reason = (argc >= 1) ? args[0] : make_null();
+        promise_reject(interp, g_current_promise, reason);
+    }
+    return make_null();
+}
+
+Value builtin_Promise_constructor(Interpreter *interp, Value *args, int argc) {
+    if (argc < 1 || args[0].type != VAL_FUNCTION) {
+        fprintf(stderr, "Error: Promise executor must be a function\n");
+        return make_null();
+    }
+    
+    Value promise = make_promise();
+    
+    // Create a copy of the promise for the resolve/reject functions to capture
+    Value *promise_ptr = malloc(sizeof(Value));
+    *promise_ptr = promise;
+    
+    // Set global promise
+    g_current_promise = promise_ptr;
+    
+    // Create resolve and reject functions
+    Value resolve_fn;
+    resolve_fn.type = VAL_BUILTIN;
+    resolve_fn.as.builtin = builtin_promise_resolve_fn;
+    
+    Value reject_fn;
+    reject_fn.type = VAL_BUILTIN;
+    reject_fn.as.builtin = builtin_promise_reject_fn;
+    
+    // Execute executor function with (resolve, reject)
+    Value executor = args[0];
+    Env *call_env = env_new(executor.as.func_val.closure);
+    
+    // Bind resolve and reject parameters
+    if (executor.as.func_val.param_count >= 1) {
+        env_set_local(call_env, executor.as.func_val.param_names[0], resolve_fn);
+    }
+    if (executor.as.func_val.param_count >= 2) {
+        env_set_local(call_env, executor.as.func_val.param_names[1], reject_fn);
+    }
+    
+    // Execute the executor
+    Value result = eval_block(interp, executor.as.func_val.body, call_env);
+    
+    // Handle return value
+    if (interp->last_result.is_return) {
+        value_free(&result);
+        result = interp->last_result.return_value;
+        interp->last_result.is_return = 0;
+        interp->last_result.return_value = make_null();
+    }
+    
+    value_free(&result);
+    env_free(call_env);
+    
+    // Clear global promise
+    g_current_promise = NULL;
+    
+    return *promise_ptr;
+}
+
+// Promise.then(onFulfilled, onRejected)
+static Value builtin_Promise_then(Interpreter *interp, Value *args, int argc) {
+    if (argc < 1 || args[0].type != VAL_PROMISE) {
+        fprintf(stderr, "Error: then() requires a promise as receiver\n");
+        return make_null();
+    }
+    
+    Value *promise = &args[0];
+    Value on_fulfilled = (argc >= 2 && args[1].type == VAL_FUNCTION) ? args[1] : make_null();
+    Value on_rejected = (argc >= 3 && args[2].type == VAL_FUNCTION) ? args[2] : make_null();
+    
+    // Create new promise for chaining
+    Value *new_promise = malloc(sizeof(Value));
+    *new_promise = make_promise();
+    
+    // Add callback to the promise
+    PromiseCallbackNode *node = malloc(sizeof(PromiseCallbackNode));
+    if (on_fulfilled.type == VAL_FUNCTION) {
+        node->on_fulfilled = malloc(sizeof(Value));
+        *node->on_fulfilled = on_fulfilled;
+    } else {
+        node->on_fulfilled = NULL;
+    }
+    if (on_rejected.type == VAL_FUNCTION) {
+        node->on_rejected = malloc(sizeof(Value));
+        *node->on_rejected = on_rejected;
+    } else {
+        node->on_rejected = NULL;
+    }
+    node->promise_to_resolve = new_promise;
+    node->next = NULL;
+    
+    // Append to callback list
+    if (promise->as.promise_val.callbacks == NULL) {
+        promise->as.promise_val.callbacks = node;
+    } else {
+        PromiseCallbackNode *tail = promise->as.promise_val.callbacks;
+        while (tail->next) tail = tail->next;
+        tail->next = node;
+    }
+    
+    // If promise is already settled, process callbacks immediately
+    if (promise->as.promise_val.state == PROMISE_FULFILLED) {
+        if (node->on_fulfilled) {
+            Value args_arr[1] = { *promise->as.promise_val.result };
+            Value result = call_function_helper(interp, node->on_fulfilled, args_arr, 1);
+            promise_resolve(interp, new_promise, result);
+        } else {
+            promise_resolve(interp, new_promise, *promise->as.promise_val.result);
+        }
+    } else if (promise->as.promise_val.state == PROMISE_REJECTED) {
+        if (node->on_rejected) {
+            Value args_arr[1] = { *promise->as.promise_val.result };
+            Value result = call_function_helper(interp, node->on_rejected, args_arr, 1);
+            promise_resolve(interp, new_promise, result);
+        } else {
+            promise_reject(interp, new_promise, *promise->as.promise_val.result);
+        }
+    }
+    
+    return *new_promise;
+}
+
+// Promise.catch(onRejected)
+static Value builtin_Promise_catch(Interpreter *interp, Value *args, int argc) {
+    if (argc < 1 || args[0].type != VAL_PROMISE) {
+        fprintf(stderr, "Error: catch() requires a promise as receiver\n");
+        return make_null();
+    }
+    
+    // catch(f) is equivalent to then(null, f)
+    Value then_args[3];
+    then_args[0] = args[0];
+    then_args[1] = make_null();
+    then_args[2] = (argc >= 2) ? args[1] : make_null();
+    
+    return builtin_Promise_then(interp, then_args, 3);
+}
+
+// Promise.finally(onFinally)
+static Value builtin_Promise_finally(Interpreter *interp, Value *args, int argc) {
+    if (argc < 1 || args[0].type != VAL_PROMISE) {
+        fprintf(stderr, "Error: finally() requires a promise as receiver\n");
+        return make_null();
+    }
+    
+    Value *promise = &args[0];
+    Value on_finally = (argc >= 2 && args[1].type == VAL_FUNCTION) ? args[1] : make_null();
+    
+    // Create new promise for chaining
+    Value *new_promise = malloc(sizeof(Value));
+    *new_promise = make_promise();
+    
+    // Add callback that runs on both fulfill and reject
+    PromiseCallbackNode *node = malloc(sizeof(PromiseCallbackNode));
+    if (on_finally.type == VAL_FUNCTION) {
+        node->on_fulfilled = malloc(sizeof(Value));
+        *node->on_fulfilled = on_finally;
+        node->on_rejected = malloc(sizeof(Value));
+        *node->on_rejected = on_finally;
+    } else {
+        node->on_fulfilled = NULL;
+        node->on_rejected = NULL;
+    }
+    node->promise_to_resolve = new_promise;
+    node->next = NULL;
+    
+    // Append to callback list
+    if (promise->as.promise_val.callbacks == NULL) {
+        promise->as.promise_val.callbacks = node;
+    } else {
+        PromiseCallbackNode *tail = promise->as.promise_val.callbacks;
+        while (tail->next) tail = tail->next;
+        tail->next = node;
+    }
+    
+    // If promise is already settled, process callbacks immediately
+    if (promise->as.promise_val.state != PROMISE_PENDING) {
+        if (on_finally.type == VAL_FUNCTION) {
+            Value result = call_function_helper(interp, &on_finally, NULL, 0);
+            value_free(&result);
+        }
+        
+        // Propagate original state and value
+        if (promise->as.promise_val.state == PROMISE_FULFILLED) {
+            promise_resolve(interp, new_promise, *promise->as.promise_val.result);
+        } else {
+            promise_reject(interp, new_promise, *promise->as.promise_val.result);
+        }
+    }
+    
+    return *new_promise;
+}
+
+// Promise.resolve(value)
+static Value builtin_Promise_resolve(Interpreter *interp, Value *args, int argc) {
+    Value promise = make_promise();
+    Value value = (argc >= 1) ? args[0] : make_null();
+    
+    Value *promise_ptr = malloc(sizeof(Value));
+    *promise_ptr = promise;
+    
+    promise_resolve(interp, promise_ptr, value);
+    
+    return *promise_ptr;
+}
+
+// Promise.reject(reason)
+static Value builtin_Promise_reject(Interpreter *interp, Value *args, int argc) {
+    Value promise = make_promise();
+    Value reason = (argc >= 1) ? args[0] : make_null();
+    
+    Value *promise_ptr = malloc(sizeof(Value));
+    *promise_ptr = promise;
+    
+    promise_reject(interp, promise_ptr, reason);
+    
+    return *promise_ptr;
+}
+
 void runtime_init(Interpreter *interp) {
     Value v;
     v.type = VAL_BUILTIN;
@@ -1195,6 +1539,31 @@ void runtime_init(Interpreter *interp) {
     
     v.as.builtin = builtin_array_sort;
     env_set_local(interp->global_env, "__array_sort", v);
+    
+    /* Promise methods */
+    v.as.builtin = builtin_Promise_then;
+    env_set_local(interp->global_env, "__promise_then", v);
+    
+    v.as.builtin = builtin_Promise_catch;
+    env_set_local(interp->global_env, "__promise_catch", v);
+    
+    v.as.builtin = builtin_Promise_finally;
+    env_set_local(interp->global_env, "__promise_finally", v);
+    
+    /* Promise static methods */
+    v.as.builtin = builtin_Promise_resolve;
+    env_set_local(interp->global_env, "__Promise_resolve", v);
+    
+    v.as.builtin = builtin_Promise_reject;
+    env_set_local(interp->global_env, "__Promise_reject", v);
+    
+    // Create Promise "class" with static methods
+    Value promise_class = make_class("Promise", NULL);
+    v.as.builtin = builtin_Promise_resolve;
+    env_set_local(promise_class.as.class_val.static_methods, "resolve", v);
+    v.as.builtin = builtin_Promise_reject;
+    env_set_local(promise_class.as.class_val.static_methods, "reject", v);
+    env_set_local(interp->global_env, "Promise", promise_class);
 }
 
 void runtime_free(Interpreter *interp) {

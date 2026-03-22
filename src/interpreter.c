@@ -6,6 +6,9 @@
 
 static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env);
 
+// Forward declaration for Promise constructor
+extern Value builtin_Promise_constructor(Interpreter *interp, Value *args, int argc);
+
 Env *env_new(Env *parent) {
     Env *e = calloc(1, sizeof(Env));
     e->parent = parent;
@@ -275,6 +278,16 @@ Value make_method(Value receiver, Value method) {
     return val;
 }
 
+Value make_promise(void) {
+    Value val;
+    val.type = VAL_PROMISE;
+    val.as.promise_val.state = PROMISE_PENDING;
+    val.as.promise_val.result = malloc(sizeof(Value));
+    *val.as.promise_val.result = make_null();
+    val.as.promise_val.callbacks = NULL;
+    return val;
+}
+
 void value_free(Value *v) {
     if (!v) return;
     if (v->type == VAL_STRING && v->as.str_val) {
@@ -298,30 +311,21 @@ void value_free(Value *v) {
         v->as.list_val.items = NULL;
     }
     if (v->type == VAL_CLASS) {
+        // Don't free Env structures to avoid double-free issues
+        // when class is copied/stored in multiple places
         if (v->as.class_val.name) {
-            free(v->as.class_val.name);
+            // free(v->as.class_val.name);  // Keep allocated
             v->as.class_val.name = NULL;
         }
         if (v->as.class_val.parent_name) {
-            free(v->as.class_val.parent_name);
+            // free(v->as.class_val.parent_name);  // Keep allocated
             v->as.class_val.parent_name = NULL;
         }
-        if (v->as.class_val.methods) {
-            env_free(v->as.class_val.methods);
-            v->as.class_val.methods = NULL;
-        }
-        if (v->as.class_val.fields) {
-            env_free(v->as.class_val.fields);
-            v->as.class_val.fields = NULL;
-        }
-        if (v->as.class_val.static_methods) {
-            env_free(v->as.class_val.static_methods);
-            v->as.class_val.static_methods = NULL;
-        }
-        if (v->as.class_val.static_fields) {
-            env_free(v->as.class_val.static_fields);
-            v->as.class_val.static_fields = NULL;
-        }
+        // Don't free env structures - they're shared
+        v->as.class_val.methods = NULL;
+        v->as.class_val.fields = NULL;
+        v->as.class_val.static_methods = NULL;
+        v->as.class_val.static_fields = NULL;
     }
     if (v->type == VAL_OBJECT) {
         // Don't free anything to avoid double-free issues
@@ -348,6 +352,31 @@ void value_free(Value *v) {
             value_free(v->as.method_val.method);
             free(v->as.method_val.method);
             v->as.method_val.method = NULL;
+        }
+    }
+    if (v->type == VAL_PROMISE) {
+        // Free promise callbacks
+        PromiseCallbackNode *node = v->as.promise_val.callbacks;
+        while (node) {
+            PromiseCallbackNode *next = node->next;
+            if (node->on_fulfilled) {
+                value_free(node->on_fulfilled);
+                free(node->on_fulfilled);
+            }
+            if (node->on_rejected) {
+                value_free(node->on_rejected);
+                free(node->on_rejected);
+            }
+            if (node->promise_to_resolve) {
+                value_free(node->promise_to_resolve);
+                free(node->promise_to_resolve);
+            }
+            free(node);
+            node = next;
+        }
+        if (v->as.promise_val.result) {
+            value_free(v->as.promise_val.result);
+            free(v->as.promise_val.result);
         }
     }
 }
@@ -407,6 +436,17 @@ char *value_to_string(Value *v) {
             return strdup(buf);
         case VAL_METHOD:
             return strdup("<method>");
+        case VAL_PROMISE: {
+            const char *state_str;
+            switch (v->as.promise_val.state) {
+                case PROMISE_PENDING: state_str = "pending"; break;
+                case PROMISE_FULFILLED: state_str = "fulfilled"; break;
+                case PROMISE_REJECTED: state_str = "rejected"; break;
+                default: state_str = "unknown"; break;
+            }
+            snprintf(buf, sizeof(buf), "Promise { <%s> }", state_str);
+            return strdup(buf);
+        }
         default:
             return strdup("<unknown>");
     }
@@ -421,10 +461,24 @@ void value_print(Value *v) {
 Interpreter *interpreter_new(void) {
     Interpreter *interp = calloc(1, sizeof(Interpreter));
     interp->global_env = env_new(NULL);
+    interp->microtask_queue_head = NULL;
+    interp->microtask_queue_tail = NULL;
     return interp;
 }
 
 void interpreter_free(Interpreter *interp) {
+    // Free microtask queue
+    MicrotaskNode *node = interp->microtask_queue_head;
+    while (node) {
+        MicrotaskNode *next = node->next;
+        value_free(&node->callback);
+        for (int i = 0; i < node->argc; i++) {
+            value_free(&node->args[i]);
+        }
+        free(node->args);
+        free(node);
+        node = next;
+    }
     env_free(interp->global_env);
     free(interp);
 }
@@ -542,6 +596,22 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             if (node->data.call.callee->type == NODE_NEW) {
                 ASTNode *new_node = node->data.call.callee;
                 char *class_name = new_node->data.new_expr.class_name;
+                
+                // Special handling for Promise constructor
+                if (strcmp(class_name, "Promise") == 0) {
+                    // Evaluate executor argument
+                    if (node->data.call.args.count < 1) {
+                        fprintf(stderr, "Error at line %d: Promise constructor requires an executor function\n", node->line);
+                        interp->had_error = 1;
+                        return make_null();
+                    }
+                    
+                    Value executor = eval_node_env(interp, node->data.call.args.items[0], env);
+                    Value args[1] = { executor };
+                    Value promise = builtin_Promise_constructor(interp, args, 1);
+                    value_free(&executor);
+                    return promise;
+                }
                 
                 // Get the class
                 Value *class_val = env_get(env, class_name);
@@ -1279,7 +1349,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     
                     // Check static methods
                     EnvEntry *method_entry = env_get_entry(maybe_class->as.class_val.static_methods, node->data.member_access.member);
-                    if (method_entry && method_entry->value.type == VAL_FUNCTION) {
+                    if (method_entry && (method_entry->value.type == VAL_FUNCTION || method_entry->value.type == VAL_BUILTIN)) {
                         // Check access
                         if (method_entry->access == ACCESS_PRIVATE && !is_inside_class) {
                             fprintf(stderr, "Error at line %d: cannot access private static method '%s' of class '%s'\n",
@@ -1349,6 +1419,32 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
                 
                 fprintf(stderr, "Error at line %d: array has no method '%s'\n",
+                        node->line, method_name);
+                interp->had_error = 1;
+                value_free(&obj);
+                return make_null();
+            }
+            
+            // Handle promise methods
+            if (obj.type == VAL_PROMISE) {
+                const char *method_name = node->data.member_access.member;
+                Value *builtin = NULL;
+                
+                if (strcmp(method_name, "then") == 0) {
+                    builtin = env_get(interp->global_env, "__promise_then");
+                } else if (strcmp(method_name, "catch") == 0) {
+                    builtin = env_get(interp->global_env, "__promise_catch");
+                } else if (strcmp(method_name, "finally") == 0) {
+                    builtin = env_get(interp->global_env, "__promise_finally");
+                }
+                
+                if (builtin && builtin->type == VAL_BUILTIN) {
+                    // Create a bound method with the promise as receiver
+                    result = make_method(obj, *builtin);
+                    return result;
+                }
+                
+                fprintf(stderr, "Error at line %d: promise has no method '%s'\n",
                         node->line, method_name);
                 interp->had_error = 1;
                 value_free(&obj);
@@ -1524,4 +1620,66 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
 
 Value eval_node(Interpreter *interp, ASTNode *node) {
     return eval_node_env(interp, node, interp->global_env);
+}
+
+// Microtask queue implementation
+void microtask_queue_push(Interpreter *interp, Value callback, Value *args, int argc) {
+    MicrotaskNode *node = malloc(sizeof(MicrotaskNode));
+    node->callback = callback;
+    node->argc = argc;
+    node->args = NULL;
+    node->next = NULL;
+    
+    if (argc > 0) {
+        node->args = malloc(argc * sizeof(Value));
+        for (int i = 0; i < argc; i++) {
+            node->args[i] = args[i];
+        }
+    }
+    
+    if (interp->microtask_queue_tail) {
+        interp->microtask_queue_tail->next = node;
+        interp->microtask_queue_tail = node;
+    } else {
+        interp->microtask_queue_head = node;
+        interp->microtask_queue_tail = node;
+    }
+}
+
+void microtask_queue_process(Interpreter *interp) {
+    while (interp->microtask_queue_head) {
+        MicrotaskNode *node = interp->microtask_queue_head;
+        interp->microtask_queue_head = node->next;
+        if (!interp->microtask_queue_head) {
+            interp->microtask_queue_tail = NULL;
+        }
+        
+        // Execute the callback
+        if (node->callback.type == VAL_FUNCTION) {
+            Env *call_env = env_new(node->callback.as.func_val.closure);
+            for (int i = 0; i < node->callback.as.func_val.param_count && i < node->argc; i++) {
+                env_set_local(call_env, node->callback.as.func_val.param_names[i], node->args[i]);
+            }
+            Value result = eval_block(interp, node->callback.as.func_val.body, call_env);
+            
+            // Handle return value
+            if (interp->last_result.is_return) {
+                value_free(&result);
+                result = interp->last_result.return_value;
+                interp->last_result.is_return = 0;
+                interp->last_result.return_value = make_null();
+            }
+            
+            value_free(&result);
+            env_free(call_env);
+        }
+        
+        // Free the node
+        value_free(&node->callback);
+        for (int i = 0; i < node->argc; i++) {
+            value_free(&node->args[i]);
+        }
+        free(node->args);
+        free(node);
+    }
 }
