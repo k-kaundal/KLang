@@ -74,6 +74,9 @@ Source Code (.kl)
   * Inheritance with `extends`
   * Method overriding
   * `super` keyword for parent access
+  * **Static members** (static fields and methods)
+  * **Access modifiers** (public, private, protected)
+  * **Abstract classes** and abstract methods
 * Control flow (if/else, while, for)
 * Lists and indexing
 * **String Features**
@@ -242,13 +245,13 @@ let name = "KLang" # trailing comments use '#'
 println("Hello " + name)
 ```
 
-### Object-Oriented Programming (NEW!)
+### Object-Oriented Programming
 
 ```klang
-# Define a class
+# Define a class with access modifiers
 class Point {
-    let x: int = 0
-    let y: int = 0
+    private let x: int = 0
+    private let y: int = 0
     
     # Constructor
     fn init(x_val: int, y_val: int) {
@@ -256,10 +259,16 @@ class Point {
         this.y = y_val
     }
     
-    # Method
-    fn display() {
+    # Public method
+    public fn display() {
         println(this.x)
         println(this.y)
+    }
+    
+    # Static utility method
+    public static fn distance(p1: Point, p2: Point) -> float {
+        # Calculate distance between two points
+        return 0.0  # Simplified
     }
 }
 
@@ -267,17 +276,34 @@ class Point {
 let p = new Point(3, 4)
 p.display()  # 3, 4
 
-# Inheritance
-class Point3D extends Point {
-    let z: int = 0
+# Call static method
+Point.distance(p, p)
+
+# Inheritance with abstract class
+abstract class Shape {
+    public abstract fn area() -> float;
     
-    fn init(x: int, y: int, z: int) {
-        super.init(x, y)  # Call parent constructor
-        this.z = z
+    public fn display() {
+        println("Shape with area: ")
+        println(this.area())
     }
 }
 
-let p3d = new Point3D(1, 2, 3)
+class Circle extends Shape {
+    private let radius: float = 0.0
+    
+    fn init(r: float) {
+        this.radius = r
+    }
+    
+    # Implement abstract method
+    public fn area() -> float {
+        return 3.14159 * this.radius * this.radius
+    }
+}
+
+let c = new Circle(5.0)
+c.display()  # Shape with area: 78.53975
 ```
 
 ---
@@ -332,7 +358,9 @@ let p3d = new Point3D(1, 2, 3)
 
 ## 🧩 Future Features
 
-* ~~Object-oriented constructs (classes/structs with methods)~~ ✅ **IMPLEMENTED**
+* ~~Object-oriented constructs~~ ✅ **IMPLEMENTED** with static members, access modifiers, and abstract classes
+* Method overloading
+* Interfaces (separate from classes)
 * Generics
 * Advanced closures
 * Async / await

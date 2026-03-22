@@ -1,0 +1,217 @@
+# Access Modifiers Demonstration
+
+# Example 1: Basic public/private fields
+class BankAccount {
+    public let account_number: int = 0
+    private let balance: float = 0.0
+    private let pin: int = 0
+    
+    fn init(acc_num: int, initial_balance: float, account_pin: int) {
+        this.account_number = acc_num
+        this.balance = initial_balance
+        this.pin = account_pin
+    }
+    
+    # Public method to check balance (with PIN verification)
+    public fn check_balance(entered_pin: int) -> float {
+        if entered_pin == this.pin {
+            return this.balance
+        } else {
+            println("Invalid PIN!")
+            return -1.0
+        }
+    }
+    
+    # Public method to deposit
+    public fn deposit(amount: float) {
+        this.balance = this.balance + amount
+        println("Deposited ")
+        println(amount)
+    }
+    
+    # Private internal validation
+    private fn validate_pin(entered_pin: int) -> int {
+        return entered_pin == this.pin
+    }
+    
+    # Public withdrawal with private validation
+    public fn withdraw(amount: float, entered_pin: int) -> int {
+        if this.validate_pin(entered_pin) {
+            if this.balance >= amount {
+                this.balance = this.balance - amount
+                println("Withdrew ")
+                println(amount)
+                return 1
+            } else {
+                println("Insufficient funds!")
+                return 0
+            }
+        } else {
+            println("Invalid PIN!")
+            return 0
+        }
+    }
+}
+
+println("=== Bank Account Example ===")
+let acc = new BankAccount(12345, 1000.0, 9999)
+
+# Can access public field
+println("Account number: ")
+println(acc.account_number)
+
+# Can use public methods
+acc.deposit(500.0)
+println("Balance: ")
+println(acc.check_balance(9999))
+
+acc.withdraw(200.0, 9999)
+println("Balance after withdrawal: ")
+println(acc.check_balance(9999))
+
+# Example 2: Private and public static members
+class Configuration {
+    public static let app_version: string = "2.0.0"
+    public static let max_users: int = 100
+    private static let instance_count: int = 0
+    
+    public let config_id: int = 0
+    
+    fn init() {
+        # Can access private static from within instance method
+        Configuration.instance_count = Configuration.instance_count + 1
+        this.config_id = Configuration.instance_count
+    }
+    
+    public static fn get_version() -> string {
+        return Configuration.app_version
+    }
+    
+    public fn get_instance_id() -> int {
+        return this.config_id
+    }
+    
+    public fn display_count() {
+        println("Total instances: ")
+        println(Configuration.instance_count)
+    }
+}
+
+println("")
+println("=== Configuration Example ===")
+println("App version: ")
+println(Configuration.get_version())
+println("Max users: ")
+println(Configuration.max_users)
+
+let cfg1 = new Configuration()
+let cfg2 = new Configuration()
+println("Config 1 ID: ")
+println(cfg1.get_instance_id())
+println("Config 2 ID: ")
+println(cfg2.get_instance_id())
+cfg2.display_count()
+
+# Example 3: Access control with inheritance
+class Vehicle {
+    public let brand: string = ""
+    private let engine_code: string = ""
+    protected let production_year: int = 0
+    
+    fn init(b: string, code: string, year: int) {
+        this.brand = b
+        this.engine_code = code
+        this.production_year = year
+    }
+    
+    public fn get_brand() -> string {
+        return this.brand
+    }
+    
+    private fn get_engine_code() -> string {
+        return this.engine_code
+    }
+    
+    protected fn get_year() -> int {
+        return this.production_year
+    }
+    
+    # Public method that uses private method
+    public fn display_info() {
+        println("Brand: ")
+        println(this.get_brand())
+        println("Engine: ")
+        println(this.get_engine_code())
+        println("Year: ")
+        println(this.get_year())
+    }
+}
+
+println("")
+println("=== Vehicle Example ===")
+let car = new Vehicle("Toyota", "ENG-2024-XYZ", 2024)
+car.display_info()
+
+# Can access public field directly
+println("Direct brand access: ")
+println(car.brand)
+
+# Example 4: Mixed access modifiers
+class User {
+    public let username: string = ""
+    private let password_hash: string = ""
+    private let email: string = ""
+    public let is_active: int = 1
+    
+    fn init(user: string, pass: string, mail: string) {
+        this.username = user
+        this.password_hash = pass
+        this.email = mail
+    }
+    
+    # Public getter for private field
+    public fn get_email() -> string {
+        return this.email
+    }
+    
+    # Public method to verify password
+    public fn verify_password(pass: string) -> int {
+        return pass == this.password_hash
+    }
+    
+    # Private helper
+    private fn log_action(action: string) {
+        println("User ")
+        println(this.username)
+        println(" ")
+        println(action)
+    }
+    
+    # Public method using private helper
+    public fn login(pass: string) -> int {
+        if this.verify_password(pass) {
+            this.log_action("logged in")
+            return 1
+        } else {
+            this.log_action("failed login attempt")
+            return 0
+        }
+    }
+}
+
+println("")
+println("=== User Example ===")
+let user = new User("alice", "secure123", "alice@example.com")
+println("Username: ")
+println(user.username)
+println("Email (via getter): ")
+println(user.get_email())
+
+if user.login("secure123") {
+    println("Login successful!")
+} else {
+    println("Login failed!")
+}
+
+println("")
+println("All access modifier examples completed!")

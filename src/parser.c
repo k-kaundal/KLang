@@ -398,7 +398,13 @@ static ASTNode *parse_func_def(Parser *parser) {
     }
     free(param_names);
 
-    func->data.func_def.body = parse_block(parser);
+    // Check if this is an abstract method (no body, just semicolon)
+    if (check(parser, TOKEN_SEMICOLON)) {
+        func->data.func_def.body = NULL;
+        // Don't consume semicolon here - let the class parsing handle it
+    } else {
+        func->data.func_def.body = parse_block(parser);
+    }
     return func;
 }
 
@@ -475,6 +481,15 @@ static ASTNode *parse_return(Parser *parser) {
 static ASTNode *parse_statement(Parser *parser) {
     while (match(parser, TOKEN_SEMICOLON)) {}
 
+    if (check(parser, TOKEN_ABSTRACT)) {
+        Token abstract_tok = advance(parser);
+        token_free(&abstract_tok);
+        if (check(parser, TOKEN_CLASS)) {
+            ASTNode *class_node = parse_class_def(parser);
+            if (class_node) class_node->data.class_def.is_abstract = 1;
+            return class_node;
+        }
+    }
     if (check(parser, TOKEN_CLASS)) return parse_class_def(parser);
     if (check(parser, TOKEN_FN)) return parse_func_def(parser);
     if (check(parser, TOKEN_LET)) return parse_let(parser);
@@ -587,16 +602,60 @@ static ASTNode *parse_class_def(Parser *parser) {
     
     while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
         ASTNode *member;
+        int is_static = 0;
+        int is_abstract = 0;
+        AccessModifier access = ACCESS_PUBLIC;
         while (match(parser, TOKEN_SEMICOLON)) {}
         if (check(parser, TOKEN_RBRACE) || check(parser, TOKEN_EOF)) break;
         
+        /* Check for access modifier */
+        if (match(parser, TOKEN_PUBLIC)) {
+            access = ACCESS_PUBLIC;
+        } else if (match(parser, TOKEN_PRIVATE)) {
+            access = ACCESS_PRIVATE;
+        } else if (match(parser, TOKEN_PROTECTED)) {
+            access = ACCESS_PROTECTED;
+        }
+        
+        /* Check for abstract keyword (for methods) */
+        if (match(parser, TOKEN_ABSTRACT)) {
+            is_abstract = 1;
+        }
+        
+        /* Check for static keyword */
+        if (match(parser, TOKEN_STATIC)) {
+            is_static = 1;
+        }
+        
         /* Parse class members (let statements and function definitions) */
         if (check(parser, TOKEN_LET)) {
+            if (is_abstract) {
+                fprintf(stderr, "Parse error at line %d: fields cannot be abstract\n",
+                        parser->current.line);
+                parser->had_error = 1;
+            }
             member = parse_let(parser);
-            if (member) nodelist_push(&class_node->data.class_def.members, member);
+            if (member) {
+                member->data.let_stmt.is_static = is_static;
+                member->data.let_stmt.access = access;
+                nodelist_push(&class_node->data.class_def.members, member);
+            }
         } else if (check(parser, TOKEN_FN)) {
             member = parse_func_def(parser);
-            if (member) nodelist_push(&class_node->data.class_def.members, member);
+            if (member) {
+                member->data.func_def.is_static = is_static;
+                member->data.func_def.access = access;
+                member->data.func_def.is_abstract = is_abstract;
+                if (is_abstract && member->data.func_def.body != NULL) {
+                    fprintf(stderr, "Warning at line %d: abstract method '%s' should not have a body\n",
+                            member->line, member->data.func_def.name);
+                }
+                if (is_abstract && member->data.func_def.body == NULL) {
+                    // Mark as abstract - it has no body
+                    member->data.func_def.is_abstract = 1;
+                }
+                nodelist_push(&class_node->data.class_def.members, member);
+            }
         } else {
             fprintf(stderr, "Parse error at line %d: expected 'let' or 'fn' in class body, got %s\n",
                     parser->current.line, token_type_name(parser->current.type));
