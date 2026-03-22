@@ -476,6 +476,15 @@ void value_free(Value *v) {
         /* TODO: Implement proper reference counting for generator lifecycle */
         /* This will leak memory but prevents crashes */
     }
+    if (v->type == VAL_FILE) {
+        /* Don't free FILE resources - files are reference types */
+        /* User should explicitly call fclose() */
+        /* This prevents double-free when file values are shared */
+        v->as.file_val.fp = NULL;
+        v->as.file_val.is_open = 0;
+        v->as.file_val.path = NULL;
+        v->as.file_val.mode = NULL;
+    }
 }
 
 char *value_to_string(Value *v) {
