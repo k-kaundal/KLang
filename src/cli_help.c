@@ -46,6 +46,12 @@ void print_help(void) {
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %sinfo%s <file>      Display file information and statistics\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("  %stest%s <path>      Run tests from file or directory\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("  %sinit%s <name>      Initialize a new KLang project\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("  %sconfig%s           Show current configuration\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %sversion%s          Show version information\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %shelp%s [command]   Show help for a command\n\n",
@@ -64,6 +70,8 @@ void print_help(void) {
     printf("  klang repl                     # Start REPL\n");
     printf("  klang check script.k           # Check syntax\n");
     printf("  klang fmt script.k             # Format code\n");
+    printf("  klang test tests/              # Run all tests\n");
+    printf("  klang init my-project --git    # Create new project\n");
     printf("  klang info myfile.klang        # Show file info\n");
     printf("  klang help run                 # Help for 'run' command\n\n");
 
@@ -155,6 +163,49 @@ void print_command_help(const char* command) {
         printf("    klang fmt script.kl --check      # Check only\n");
         printf("    klang fmt script.kl --indent=2   # Use 2-space indent\n");
         printf("    klang fmt script.kl --tabs       # Use tabs\n\n");
+    }
+    else if (strcmp(command, "test") == 0) {
+        printf("\n%sKLang Test Command%s\n\n", 
+               get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+        printf("%sUSAGE:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang test <file|directory>\n\n");
+        printf("%sDESCRIPTION:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    Run KLang test files.\n");
+        printf("    Discovers and runs all *_test.kl files in directories.\n\n");
+        printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang test tests/              # Run all tests in directory\n");
+        printf("    klang test tests/foo_test.kl   # Run specific test\n\n");
+    }
+    else if (strcmp(command, "init") == 0) {
+        printf("\n%sKLang Init Command%s\n\n", 
+               get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+        printf("%sUSAGE:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang init <project-name> [OPTIONS]\n\n");
+        printf("%sDESCRIPTION:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    Initialize a new KLang project with standard structure.\n");
+        printf("    Creates directories, template files, and configuration.\n\n");
+        printf("%sOPTIONS:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    --git             Initialize git repository\n\n");
+        printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang init my-project           # Create project\n");
+        printf("    klang init my-project --git     # Create with git\n\n");
+    }
+    else if (strcmp(command, "config") == 0) {
+        printf("\n%sKLang Config Command%s\n\n", 
+               get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+        printf("%sUSAGE:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang config\n\n");
+        printf("%sDESCRIPTION:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    Display current KLang configuration.\n");
+        printf("    Shows settings loaded from environment variables.\n\n");
+        printf("%sENVIRONMENT VARIABLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    KLANG_NO_COLOR        Disable colored output\n");
+        printf("    KLANG_DEBUG           Enable debug mode\n");
+        printf("    KLANG_INDENT_SIZE     Set default indent size (1-8)\n");
+        printf("    KLANG_USE_TABS        Use tabs instead of spaces\n");
+        printf("    KLANG_HISTORY_SIZE    REPL history size (0-10000)\n");
+        printf("    KLANG_PATH            Module search paths (colon-separated)\n");
+        printf("    KLANG_MAX_LINE_LENGTH Max line length for formatter\n\n");
     }
     else {
         print_error("Unknown command");

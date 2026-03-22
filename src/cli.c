@@ -11,6 +11,9 @@
 #include "cli_colors.h"
 #include "cli_help.h"
 #include "cli_commands.h"
+#include "config.h"
+#include "test_runner.h"
+#include "project_init.h"
 
 void run_repl(void);
 
@@ -137,10 +140,14 @@ static void build_file(const char *path) {
 int main(int argc, char **argv) {
     int i;
     
+    /* Initialize configuration */
+    config_init();
+    
     /* Check for --no-color flag first */
     for (i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--no-color") == 0) {
             enable_colors(0);
+            config_set_colors(0);
             break;
         }
     }
@@ -148,17 +155,20 @@ int main(int argc, char **argv) {
     /* No arguments - start REPL */
     if (argc < 2) {
         run_repl();
+        config_free();
         return 0;
     }
 
     /* Check for help and version flags */
     if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
         print_help();
+        config_free();
         return 0;
     }
     
     if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
         print_version();
+        config_free();
         return 0;
     }
 
@@ -231,6 +241,35 @@ int main(int argc, char **argv) {
         
         cmd_fmt_file(argv[2], check_only, indent_size, use_tabs);
     }
+    else if (strcmp(argv[1], "test") == 0) {
+        if (argc < 3) {
+            print_error("Missing path argument");
+            fprintf(stderr, "Usage: klang test <file|directory>\n");
+            fprintf(stderr, "Try 'klang help test' for more information.\n");
+            config_free();
+            return 1;
+        }
+        run_tests(argv[2]);
+    }
+    else if (strcmp(argv[1], "init") == 0) {
+        if (argc < 3) {
+            print_error("Missing project name");
+            fprintf(stderr, "Usage: klang init <project-name> [--git]\n");
+            fprintf(stderr, "Try 'klang help init' for more information.\n");
+            config_free();
+            return 1;
+        }
+        
+        int create_git = 0;
+        if (argc >= 4 && strcmp(argv[3], "--git") == 0) {
+            create_git = 1;
+        }
+        
+        init_project(argv[2], create_git);
+    }
+    else if (strcmp(argv[1], "config") == 0) {
+        config_print();
+    }
     else if (strcmp(argv[1], "version") == 0) {
         print_version();
     }
@@ -245,8 +284,10 @@ int main(int argc, char **argv) {
         print_error("Unknown command");
         fprintf(stderr, "Command: %s\n", argv[1]);
         fprintf(stderr, "Try 'klang --help' for available commands.\n");
+        config_free();
         return 1;
     }
     
+    config_free();
     return 0;
 }
