@@ -2004,9 +2004,17 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             Value obj = eval_node_env(interp, node->data.member_access.obj, env);
             Value result = make_null();
             
-            // Handle array methods
+            // Handle array methods and properties
             if (obj.type == VAL_LIST) {
                 const char *method_name = node->data.member_access.member;
+                
+                // Handle .length property
+                if (strcmp(method_name, "length") == 0) {
+                    result = make_int(obj.as.list_val.count);
+                    value_free(&obj);
+                    return result;
+                }
+                
                 Value *builtin = NULL;
                 
                 // Map method names to builtin functions
