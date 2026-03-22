@@ -243,6 +243,10 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "async") == 0) type = TOKEN_ASYNC;
             else if (strcmp(buf, "await") == 0) type = TOKEN_AWAIT;
             else if (strcmp(buf, "yield") == 0) type = TOKEN_YIELD;
+            else if (strcmp(buf, "try") == 0) type = TOKEN_TRY;
+            else if (strcmp(buf, "catch") == 0) type = TOKEN_CATCH;
+            else if (strcmp(buf, "finally") == 0) type = TOKEN_FINALLY;
+            else if (strcmp(buf, "throw") == 0) type = TOKEN_THROW;
             else if (strcmp(buf, "import") == 0) type = TOKEN_IMPORT;
             else if (strcmp(buf, "export") == 0) type = TOKEN_EXPORT;
             else if (strcmp(buf, "from") == 0) type = TOKEN_FROM;

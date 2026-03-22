@@ -296,6 +296,21 @@ ASTNode *ast_new_yield(ASTNode *value, int line) {
     return n;
 }
 
+ASTNode *ast_new_try_catch(ASTNode *try_block, const char *catch_param, ASTNode *catch_block, ASTNode *finally_block, int line) {
+    ASTNode *n = ast_alloc(NODE_TRY_CATCH, line);
+    n->data.try_catch.try_block = try_block;
+    n->data.try_catch.catch_param = catch_param ? strdup(catch_param) : NULL;
+    n->data.try_catch.catch_block = catch_block;
+    n->data.try_catch.finally_block = finally_block;
+    return n;
+}
+
+ASTNode *ast_new_throw(ASTNode *expression, int line) {
+    ASTNode *n = ast_alloc(NODE_THROW, line);
+    n->data.throw_stmt.expression = expression;
+    return n;
+}
+
 /* Module system constructors */
 ASTNode *ast_new_import_named(char **names, char **aliases, int count, const char *module_path, int line) {
     ASTNode *n = ast_alloc(NODE_IMPORT_NAMED, line);
@@ -571,6 +586,18 @@ void ast_free(ASTNode *node) {
                 ast_free(node->data.destructure_element.default_value);
             if (node->data.destructure_element.nested)
                 ast_free(node->data.destructure_element.nested);
+            break;
+        case NODE_TRY_CATCH:
+            ast_free(node->data.try_catch.try_block);
+            if (node->data.try_catch.catch_param)
+                free(node->data.try_catch.catch_param);
+            if (node->data.try_catch.catch_block)
+                ast_free(node->data.try_catch.catch_block);
+            if (node->data.try_catch.finally_block)
+                ast_free(node->data.try_catch.finally_block);
+            break;
+        case NODE_THROW:
+            ast_free(node->data.throw_stmt.expression);
             break;
         default:
             break;

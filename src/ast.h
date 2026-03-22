@@ -11,7 +11,8 @@ typedef enum {
     NODE_TEMPLATE_LITERAL, NODE_TERNARY, NODE_SWITCH, NODE_CASE,
     NODE_AWAIT, NODE_YIELD,
     NODE_EXPORT, NODE_IMPORT_NAMED, NODE_IMPORT_DEFAULT, NODE_IMPORT_NAMESPACE,
-    NODE_DESTRUCTURE_ARRAY, NODE_DESTRUCTURE_OBJECT, NODE_DESTRUCTURE_ELEMENT
+    NODE_DESTRUCTURE_ARRAY, NODE_DESTRUCTURE_OBJECT, NODE_DESTRUCTURE_ELEMENT,
+    NODE_TRY_CATCH, NODE_THROW
 } NodeType;
 
 typedef enum {
@@ -119,6 +120,15 @@ struct ASTNode {
             int is_hole;            // Is this a hole/skip in array destructuring
             ASTNode *nested;        // Nested destructuring pattern
         } destructure_element;
+        struct {
+            ASTNode *try_block;
+            char *catch_param;
+            ASTNode *catch_block;
+            ASTNode *finally_block;
+        } try_catch;
+        struct {
+            ASTNode *expression;
+        } throw_stmt;
     } data;
 };
 
@@ -162,6 +172,8 @@ ASTNode *ast_new_switch(ASTNode *expr, int line);
 ASTNode *ast_new_case(ASTNode *value, int line);
 ASTNode *ast_new_await(ASTNode *expr, int line);
 ASTNode *ast_new_yield(ASTNode *value, int line);
+ASTNode *ast_new_try_catch(ASTNode *try_block, const char *catch_param, ASTNode *catch_block, ASTNode *finally_block, int line);
+ASTNode *ast_new_throw(ASTNode *expression, int line);
 /* Module system constructors */
 ASTNode *ast_new_import_named(char **names, char **aliases, int count, const char *module_path, int line);
 ASTNode *ast_new_import_default(const char *name, const char *module_path, int line);
