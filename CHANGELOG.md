@@ -7,7 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Added - CLI Enhancements (v0.2.0) 🎉
+
+#### Professional CLI Interface
+- **Color Support** - Beautiful ANSI color output throughout the CLI
+  - Cyan for headers and info
+  - Green for success and commands
+  - Red for errors
+  - Yellow for warnings and tips
+  - `--no-color` flag to disable colors
+- **Comprehensive Help System**
+  - `klang --help` or `klang -h` - Full help with examples
+  - `klang help <command>` - Command-specific help
+  - Beautiful ASCII art headers and formatting
+  - Usage examples for every command
+- **Version Information**
+  - `klang --version` or `klang -v` - Show version, build date, and description
+
+#### New Commands
+- **Syntax Checker** - `klang check <file>`
+  - Validates syntax without executing code
+  - Reports errors with colored output
+  - Shows statement count on success
+  - Useful for CI/CD pipelines
+- **File Information** - `klang info <file>`
+  - Displays comprehensive file statistics
+  - Line counts (total, code, comments, empty)
+  - File size and path information
+  - Comment ratio percentage
+  - Extension validation
+
+#### Enhanced REPL
+- Professional welcome banner with ASCII art
+- Colored prompt (`>`) in green
+- Result indicator (`=>`) in cyan
+- Helpful tips on startup
+- Goodbye message on exit
+- Improved user experience
+
+#### Better Error Messages
+- Colored error labels (red "Error:")
+- Clear, descriptive error messages
+- Helpful suggestions for next steps
+- Examples: "Try 'klang --help' for available commands"
+- Invalid extension errors with file name
+- Missing argument errors with usage hints
+
+#### Implementation Details
+- New module: `cli_colors.c/h` - Color support system
+- New module: `cli_help.c/h` - Help system and documentation
+- New module: `cli_commands.c/h` - Check and info commands
+- Enhanced: `cli.c` - Main CLI with new command handling
+- Enhanced: `repl.c` - REPL with colors and improved UX
+- Updated: `Makefile` - Include new source files
+
+### Added - Previous Features
 - Single quote support for strings - both `'...'` and `"..."` are now supported
 - Enhanced escape sequence support including `\r` (carriage return)
 - Comprehensive string manipulation functions (Dart-like API):

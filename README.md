@@ -490,13 +490,49 @@ if fexists("/tmp/data.txt") {
 
 ## 🛠️ CLI
 
-The CLI is included in the repository and built by default:
+**New in v0.2.0!** The KLang CLI has been completely enhanced with professional features:
 
+### Core Commands
+```bash
+klang repl              # Interactive REPL with colored output
+klang run file.kl       # Interpret a source file
+klang build file.kl     # Compile & execute via VM
+klang check file.kl     # Check syntax without executing
+klang info file.kl      # Show file statistics and info
 ```
-klang repl           # interactive prompt
-klang run file.kl    # interpret a source file
-klang build file.kl  # compile & execute via VM
+
+### Help & Information
+```bash
+klang --help            # Show comprehensive help
+klang --version         # Show version information
+klang help <command>    # Get help for specific command
 ```
+
+### Features
+- ✨ **Beautiful colored output** - Professional ANSI color support
+- 📚 **Comprehensive help system** - Detailed help for every command
+- 🔍 **Syntax checker** - Validate code without running
+- 📊 **File statistics** - Analyze code metrics (lines, comments, etc.)
+- 🎯 **Smart error messages** - Clear errors with helpful suggestions
+- 🎨 **Enhanced REPL** - Interactive environment with colored prompts
+- ⚙️ **Flexible options** - `--no-color` flag for scripts
+
+### Examples
+```bash
+# Check syntax before running
+klang check myapp.kl
+
+# View file statistics
+klang info myapp.kl
+
+# Run with beautiful output
+klang run myapp.kl
+
+# Get command-specific help
+klang help run
+```
+
+**See the complete visual demo:** [CLI Visual Demo](docs/CLI_VISUAL_DEMO.md)
 
 ---
 
