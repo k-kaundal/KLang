@@ -1828,5 +1828,5 @@ The focus is on **practical, everyday JavaScript** rather than edge cases and le
 
 For the latest updates, see:
 - [README.md](../README.md)
-- [JAVASCRIPT_FEATURES_ROADMAP.md](../JAVASCRIPT_FEATURES_ROADMAP.md)
-- [Implementation Notes](../IMPLEMENTATION_NOTES.md)
+- [JAVASCRIPT_FEATURES_ROADMAP.md](roadmaps/JAVASCRIPT_FEATURES_ROADMAP.md)
+- [Implementation Notes](features/IMPLEMENTATION_NOTES.md)

@@ -4,7 +4,7 @@
 typedef enum {
     NODE_NUMBER, NODE_STRING, NODE_BOOL, NODE_IDENT, NODE_NULL,
     NODE_BINOP, NODE_UNOP, NODE_CALL, NODE_INDEX,
-    NODE_LET, NODE_ASSIGN, NODE_IF, NODE_WHILE, NODE_FOR, NODE_FOR_OF,
+    NODE_LET, NODE_ASSIGN, NODE_IF, NODE_WHILE, NODE_FOR, NODE_FOR_OF, NODE_FOR_C_STYLE,
     NODE_RETURN, NODE_BREAK, NODE_CONTINUE, NODE_BLOCK, NODE_FUNC_DEF, NODE_STRUCT_DEF, NODE_IMPORT,
     NODE_LIST, NODE_OBJECT, NODE_SPREAD, NODE_TUPLE,
     NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER,
@@ -61,11 +61,12 @@ struct ASTNode {
         struct { ASTNode *cond; ASTNode *body; } while_stmt;
         struct { char *var; ASTNode *start; ASTNode *end; ASTNode *body; } for_stmt;
         struct { char *var; ASTNode *iterable; ASTNode *body; DeclType decl_type; } for_of_stmt;
+        struct { ASTNode *init; ASTNode *cond; ASTNode *update; ASTNode *body; } for_c_style_stmt;
         struct { ASTNode *value; } return_stmt;
         struct { } break_stmt;
         struct { } continue_stmt;
         struct { NodeList stmts; } block;
-        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; int is_async; int is_generator; int has_rest_param; } func_def;
+        struct { char *name; NodeList params; char **param_types; ASTNode **default_values; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; int is_async; int is_generator; int has_rest_param; } func_def;
         struct { NodeList elements; } list;
         struct { NodeList elements; } tuple;
         struct { ObjectProperty *props; int count; int capacity; } object;
@@ -153,6 +154,7 @@ ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_block, ASTNode *else_block, int
 ASTNode *ast_new_while(ASTNode *cond, ASTNode *body, int line);
 ASTNode *ast_new_for(const char *var, ASTNode *start, ASTNode *end, ASTNode *body, int line);
 ASTNode *ast_new_for_of(const char *var, ASTNode *iterable, ASTNode *body, DeclType decl_type, int line);
+ASTNode *ast_new_for_c_style(ASTNode *init, ASTNode *cond, ASTNode *update, ASTNode *body, int line);
 ASTNode *ast_new_return(ASTNode *value, int line);
 ASTNode *ast_new_break(int line);
 ASTNode *ast_new_continue(int line);

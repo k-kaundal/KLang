@@ -212,7 +212,7 @@ build/
 
 ## Navigation Tips
 
-- **New users**: Start with `README.md` then `docs/guides/GETTING_STARTED.md`
+- **New users**: Start with `README.md` then `docs/GETTING_STARTED.md`
 - **Developers**: See `docs/development/` and `docs/architecture/`
 - **Contributors**: Read `docs/development/CONTRIBUTING.md`
 - **Feature lookup**: Browse `docs/features/` or `docs/api/`

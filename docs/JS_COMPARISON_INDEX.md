@@ -293,7 +293,7 @@ import { func } from './module.js';    // import/export
 
 1. **Understand Status**: Read all three comparison documents
 2. **Pick a Feature**: Check Phase 2-3 priorities
-3. **Read Guidelines**: [CONTRIBUTING.md](../CONTRIBUTING.md)
+3. **Read Guidelines**: [CONTRIBUTING.md](development/CONTRIBUTING.md)
 4. **Join Discussion**: [GitHub Discussions](https://github.com/k-kaundal/KLang/discussions)
 
 ---
@@ -365,7 +365,7 @@ Features where KLang **improves** on JavaScript:
 - Issues: [Report bugs](https://github.com/k-kaundal/KLang/issues)
 
 **Want to Help?**
-- Read: [CONTRIBUTING.md](../CONTRIBUTING.md)
+- Read: [CONTRIBUTING.md](development/CONTRIBUTING.md)
 - Check: [Good First Issues](https://github.com/k-kaundal/KLang/labels/good%20first%20issue)
 
 ---
@@ -394,8 +394,8 @@ Features where KLang **improves** on JavaScript:
 - [GETTING_STARTED.md](GETTING_STARTED.md) - Installation and setup
 - [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md) - Complete language reference
 - [OOP_LANGUAGE_SPEC.md](OOP_LANGUAGE_SPEC.md) - OOP features specification
-- [JAVASCRIPT_FEATURES_ROADMAP.md](../JAVASCRIPT_FEATURES_ROADMAP.md) - Detailed roadmap
-- [CONTRIBUTING.md](../CONTRIBUTING.md) - How to contribute
+- [JAVASCRIPT_FEATURES_ROADMAP.md](roadmaps/JAVASCRIPT_FEATURES_ROADMAP.md) - Detailed roadmap
+- [CONTRIBUTING.md](development/CONTRIBUTING.md) - How to contribute
 
 ---
 

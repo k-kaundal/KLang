@@ -157,10 +157,10 @@ Only needed if you want to modify KLang or pre-built binaries aren't available:
 # Clone and build
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
-./build.sh              # Cross-platform build script
+scripts/build.sh        # Cross-platform build script
 
 # Install
-./install.sh            # Install to system
+scripts/install.sh      # Install to system
 
 # Use
 klang repl              # Interactive shell
@@ -171,9 +171,9 @@ klang run script.kl     # Run a script
 
 | Platform | Status | Installation |
 |----------|--------|--------------|
-| 🐧 Linux (x64, ARM64) | ✅ Tested | `./build.sh` |
-| 🍎 macOS (Intel, Apple Silicon) | ✅ Supported | `./build.sh` |
-| 🪟 Windows (x64) | ✅ Supported | `build.bat` + `install-windows.ps1` |
+| 🐧 Linux (x64, ARM64) | ✅ Tested | `scripts/build.sh` |
+| 🍎 macOS (Intel, Apple Silicon) | ✅ Supported | `scripts/build.sh` |
+| 🪟 Windows (x64) | ✅ Supported | `scripts/build.bat` + `scripts/install-windows.ps1` |
 
 **Key Point:** Once you have the `klang` binary, you can run KLang programs **without any dependencies** - no gcc, no make, no compilers needed!
 
@@ -182,32 +182,36 @@ klang run script.kl     # Run a script
 **Complete documentation is now organized in the `/docs` directory!**
 
 **Essential Guides:**
-- 🚀 [**Getting Started Guide**](docs/guides/GETTING_STARTED.md) - Setup and installation
-- 📘 [**Language Reference**](docs/guides/LANGUAGE_REFERENCE.md) - Complete syntax reference
-- 🔧 [**Usage Guide**](docs/guides/USAGE_GUIDE.md) - How to use KLang
+- 🚀 [**Getting Started Guide**](docs/GETTING_STARTED.md) - Setup and installation
+- 📘 [**Language Reference**](docs/LANGUAGE_REFERENCE.md) - Complete syntax reference
+- 🔧 [**Usage Guide**](docs/USAGE_GUIDE.md) - How to use KLang
 - 📚 [**Complete Documentation Index**](docs/README.md) - Browse all docs
 
 **Features:**
-- 🎓 [**OOP Specification**](docs/guides/OOP_LANGUAGE_SPEC.md) - Object-oriented features
+- 🎓 [**OOP Specification**](docs/OOP_LANGUAGE_SPEC.md) - Object-oriented features
 - ⚡ [**Async/Await**](docs/features/ASYNC_AWAIT_IMPLEMENTATION.md) - Asynchronous programming
 - 🔄 [**Generators**](docs/features/GENERATOR_IMPLEMENTATION.md) - Lazy evaluation
 - 📦 [**Modules**](docs/features/ES6_MODULES_IMPLEMENTATION.md) - Code organization
 
 **API Reference:**
 - 🧮 [**Math Module**](docs/api/MATH_MODULE_DOCS.md) - Mathematical operations
-- 📊 [**Array Methods**](docs/guides/ARRAY_METHODS.md) - Array operations
-- 🔤 [**String Operations**](docs/guides/COMPLETE_FEATURE_GUIDE.md#strings) - String manipulation
+- 📊 [**Array Methods**](docs/ARRAY_METHODS.md) - Array operations
+- 🔤 [**String Operations**](docs/COMPLETE_FEATURE_GUIDE.md#strings) - String manipulation
 
 **For Developers:**
-- ⚖️ [**JavaScript vs KLang**](docs/guides/JS_KLANG_FEATURE_COMPARISON.md) - Feature comparison
-- 🔄 [**JS Migration Guide**](docs/guides/JS_TO_KLANG_MIGRATION.md) - Migrating from JavaScript
+- ⚖️ [**JavaScript vs KLang**](docs/JS_KLANG_FEATURE_COMPARISON.md) - Feature comparison
+- 🔄 [**JS Migration Guide**](docs/JS_TO_KLANG_MIGRATION.md) - Migrating from JavaScript
 - 🤝 [**Contributing Guide**](docs/development/CONTRIBUTING.md) - How to contribute
 
 **Quick Links:**
 - [Documentation Index](docs/README.md) - Complete navigation
+- [All Documentation Files](ALL_DOCUMENTATION_INDEX.md) - Comprehensive A-Z index (112 files)
+- [Documentation Status](DOCUMENTATION_COMPLETENESS.md) - What's complete and what's not
+- [Scripts Guide](SCRIPTS_GUIDE.md) - Complete guide to all build & install scripts
 - [Examples](examples/) - Working code examples
 - [Tests](tests/) - Test suite ([Test Guide](tests/README.md))
 - [Project Structure](PROJECT_STRUCTURE.md) - Repository organization
+- [Path Fix Summary](PATH_FIX_SUMMARY.md) - All documentation paths are now correct
 - [Issues](https://github.com/k-kaundal/KLang/issues) - Bug reports & features
 - [Discussions](https://github.com/k-kaundal/KLang/discussions) - Q&A & ideas
 

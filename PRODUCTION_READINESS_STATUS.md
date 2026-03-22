@@ -347,8 +347,8 @@ make
 
 ### Documentation
 - [Complete Index](docs/README.md)
-- [Getting Started](docs/guides/GETTING_STARTED.md)
-- [Language Reference](docs/guides/LANGUAGE_REFERENCE.md)
+- [Getting Started](docs/GETTING_STARTED.md)
+- [Language Reference](docs/LANGUAGE_REFERENCE.md)
 - [Project Structure](PROJECT_STRUCTURE.md)
 
 ---

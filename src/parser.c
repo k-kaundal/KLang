@@ -1029,8 +1029,10 @@ static ASTNode *parse_func_def(Parser *parser) {
     char *fname;
     char **param_names = NULL;
     char **param_types = NULL;
+    ASTNode **param_defaults = NULL;
     int param_count = 0;
     int param_cap = 0;
+    int seen_default = 0; /* Track if we've seen a parameter with default */
     char *return_type = NULL;
     ASTNode *func = NULL;
     
@@ -1062,6 +1064,7 @@ static ASTNode *parse_func_def(Parser *parser) {
 
     while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
         int is_rest = 0;
+        int has_default = 0;
         
         /* Check for rest parameter */
         if (check(parser, TOKEN_SPREAD)) {
@@ -1075,15 +1078,31 @@ static ASTNode *parse_func_def(Parser *parser) {
             param_cap = param_cap == 0 ? 4 : param_cap * 2;
             param_names = realloc(param_names, param_cap * sizeof(char *));
             param_types = realloc(param_types, param_cap * sizeof(char *));
+            param_defaults = realloc(param_defaults, param_cap * sizeof(ASTNode *));
         }
         param_names[param_count] = strdup(pname_tok.value);
         token_free(&pname_tok);
         param_types[param_count] = NULL;
+        param_defaults[param_count] = NULL;
+        
         if (match(parser, TOKEN_COLON)) {
             Token ptype_tok = consume(parser, TOKEN_IDENT);
             param_types[param_count] = strdup(ptype_tok.value);
             token_free(&ptype_tok);
         }
+        
+        /* Check for default value: name = expr */
+        if (match(parser, TOKEN_ASSIGN)) {
+            param_defaults[param_count] = parse_expression(parser);
+            has_default = 1;
+            seen_default = 1;
+        } else if (seen_default && !is_rest) {
+            /* Required parameter after default parameter */
+            fprintf(stderr, "Parse error at line %d: Required parameter '%s' cannot follow parameter with default value\n", 
+                    parser->current.line, param_names[param_count]);
+            parser->had_error = 1;
+        }
+        
         param_count++;
         
         /* Rest parameter must be last */
@@ -1119,6 +1138,7 @@ static ASTNode *parse_func_def(Parser *parser) {
     if (return_type) free(return_type);
 
     func->data.func_def.param_types = param_types;
+    func->data.func_def.default_values = param_defaults;
     {
         int i;
         for (i = 0; i < param_count; i++) {
@@ -1264,12 +1284,253 @@ static ASTNode *parse_switch(Parser *parser) {
 static ASTNode *parse_for(Parser *parser) {
     int line = parser->current.line;
     Token t = consume(parser, TOKEN_FOR);
+    token_free(&t);
+    
+    // Check if this is a for loop with parentheses
+    if (check(parser, TOKEN_LPAREN)) {
+        Token lparen = consume(parser, TOKEN_LPAREN);
+        token_free(&lparen);
+        
+        // Now we need to distinguish between:
+        // 1. C-style: for (let i = 0; i < 5; i++)
+        // 2. for-of with parens: for (item of arr) or for (const item of arr)
+        
+        // Try to determine which one by parsing the beginning
+        DeclType decl_type = DECL_LET;
+        
+        // Check for optional declaration keyword
+        if (check(parser, TOKEN_VAR) || check(parser, TOKEN_LET) || check(parser, TOKEN_CONST)) {
+            Token decl_tok = advance(parser);
+            if (decl_tok.type == TOKEN_VAR) decl_type = DECL_VAR;
+            else if (decl_tok.type == TOKEN_LET) decl_type = DECL_LET;
+            else if (decl_tok.type == TOKEN_CONST) decl_type = DECL_CONST;
+            token_free(&decl_tok);
+        }
+        
+        // After optional decl keyword, we should have an identifier
+        if (check(parser, TOKEN_IDENT)) {
+            Token ident_tok = advance(parser);
+            char *varname = strdup(ident_tok.value);
+            token_free(&ident_tok);
+            
+            // Now check what comes next
+            if (check(parser, TOKEN_OF)) {
+                // This is a for-of loop: for (item of arr) or for (let item of arr)
+                Token of_tok = consume(parser, TOKEN_OF);
+                token_free(&of_tok);
+                
+                ASTNode *iterable = parse_expression(parser);
+                Token rparen = consume(parser, TOKEN_RPAREN);
+                token_free(&rparen);
+                
+                ASTNode *body = parse_block(parser);
+                ASTNode *n = ast_new_for_of(varname, iterable, body, decl_type, line);
+                free(varname);
+                return n;
+            } else if (check(parser, TOKEN_ASSIGN) || check(parser, TOKEN_COLON)) {
+                // This is C-style: for (let i = 0; ...) or for (i = 0; ...)
+                
+                // We need to create the init node
+                ASTNode *init = NULL;
+                
+                // Handle type annotation if present
+                char *type_annot = NULL;
+                if (check(parser, TOKEN_COLON)) {
+                    Token colon_tok = advance(parser);
+                    token_free(&colon_tok);
+                    Token type_tok = consume(parser, TOKEN_IDENT);
+                    type_annot = strdup(type_tok.value);
+                    token_free(&type_tok);
+                }
+                
+                // Now we should have ASSIGN
+                Token assign_tok = consume(parser, TOKEN_ASSIGN);
+                token_free(&assign_tok);
+                
+                ASTNode *value = parse_expression(parser);
+                
+                // Create the appropriate node based on whether we had a decl keyword
+                if (decl_type != DECL_LET || type_annot != NULL) {
+                    // We had a declaration keyword or type annotation
+                    init = ast_new_var_decl(varname, type_annot, value, decl_type, line);
+                } else {
+                    // Plain assignment (e.g., for (i = 0; ...))
+                    init = ast_new_assign(varname, value, line);
+                }
+                
+                if (type_annot) free(type_annot);
+                free(varname);
+                
+                // Now continue parsing the C-style for loop
+                Token semi1 = consume(parser, TOKEN_SEMICOLON);
+                token_free(&semi1);
+                
+                // Parse condition expression
+                ASTNode *cond = NULL;
+                if (!check(parser, TOKEN_SEMICOLON)) {
+                    cond = parse_expression(parser);
+                }
+                
+                Token semi2 = consume(parser, TOKEN_SEMICOLON);
+                token_free(&semi2);
+                
+                // Parse update expression (can be assignment)
+                ASTNode *update = NULL;
+                if (!check(parser, TOKEN_RPAREN)) {
+                    update = parse_expression(parser);
+                    
+                    // Handle assignment in update clause
+                    if (update && check(parser, TOKEN_ASSIGN)) {
+                        if (update->type == NODE_IDENT) {
+                            char *name = strdup(update->data.ident.name);
+                            ASTNode *val;
+                            ast_free(update);
+                            {
+                                Token t = advance(parser);
+                                token_free(&t);
+                            }
+                            val = parse_expression(parser);
+                            update = ast_new_assign(name, val, line);
+                            free(name);
+                        } else if (update->type == NODE_MEMBER_ACCESS || update->type == NODE_INDEX) {
+                            // Handle member/index assignment
+                            Token asn_tok = advance(parser);
+                            ASTNode *val = parse_expression(parser);
+                            update = ast_new_binop("=", update, val, line);
+                            token_free(&asn_tok);
+                        }
+                    }
+                }
+                
+                Token rparen = consume(parser, TOKEN_RPAREN);
+                token_free(&rparen);
+                
+                // Parse body
+                ASTNode *body = parse_block(parser);
+                
+                return ast_new_for_c_style(init, cond, update, body, line);
+            } else if (check(parser, TOKEN_SEMICOLON)) {
+                // C-style with just identifier as init (e.g., for (i; i < 10; i++))
+                // This is unusual but valid - treat 'i' as an expression statement
+                // We already consumed the identifier, so init is just that identifier
+                ASTNode *init = ast_new_ident(varname, line);
+                free(varname);
+                
+                Token semi1 = consume(parser, TOKEN_SEMICOLON);
+                token_free(&semi1);
+                
+                // Parse condition expression
+                ASTNode *cond = NULL;
+                if (!check(parser, TOKEN_SEMICOLON)) {
+                    cond = parse_expression(parser);
+                }
+                
+                Token semi2 = consume(parser, TOKEN_SEMICOLON);
+                token_free(&semi2);
+                
+                // Parse update expression (can be assignment)
+                ASTNode *update = NULL;
+                if (!check(parser, TOKEN_RPAREN)) {
+                    update = parse_expression(parser);
+                    
+                    // Handle assignment in update clause
+                    if (update && check(parser, TOKEN_ASSIGN)) {
+                        if (update->type == NODE_IDENT) {
+                            char *name = strdup(update->data.ident.name);
+                            ASTNode *val;
+                            ast_free(update);
+                            {
+                                Token t = advance(parser);
+                                token_free(&t);
+                            }
+                            val = parse_expression(parser);
+                            update = ast_new_assign(name, val, line);
+                            free(name);
+                        } else if (update->type == NODE_MEMBER_ACCESS || update->type == NODE_INDEX) {
+                            // Handle member/index assignment
+                            Token asn_tok = advance(parser);
+                            ASTNode *val = parse_expression(parser);
+                            update = ast_new_binop("=", update, val, line);
+                            token_free(&asn_tok);
+                        }
+                    }
+                }
+                
+                Token rparen = consume(parser, TOKEN_RPAREN);
+                token_free(&rparen);
+                
+                // Parse body
+                ASTNode *body = parse_block(parser);
+                
+                return ast_new_for_c_style(init, cond, update, body, line);
+            } else {
+                fprintf(stderr, "Parse error at line %d: unexpected token after identifier in for loop\n", line);
+                parser->had_error = 1;
+                free(varname);
+                return NULL;
+            }
+        } else if (check(parser, TOKEN_SEMICOLON)) {
+            // C-style with empty init: for (; cond; update)
+            Token semi1 = consume(parser, TOKEN_SEMICOLON);
+            token_free(&semi1);
+            
+            // Parse condition expression
+            ASTNode *cond = NULL;
+            if (!check(parser, TOKEN_SEMICOLON)) {
+                cond = parse_expression(parser);
+            }
+            
+            Token semi2 = consume(parser, TOKEN_SEMICOLON);
+            token_free(&semi2);
+            
+            // Parse update expression (can be assignment)
+            ASTNode *update = NULL;
+            if (!check(parser, TOKEN_RPAREN)) {
+                update = parse_expression(parser);
+                
+                // Handle assignment in update clause
+                if (update && check(parser, TOKEN_ASSIGN)) {
+                    if (update->type == NODE_IDENT) {
+                        char *name = strdup(update->data.ident.name);
+                        ASTNode *val;
+                        ast_free(update);
+                        {
+                            Token t = advance(parser);
+                            token_free(&t);
+                        }
+                        val = parse_expression(parser);
+                        update = ast_new_assign(name, val, line);
+                        free(name);
+                    } else if (update->type == NODE_MEMBER_ACCESS || update->type == NODE_INDEX) {
+                        // Handle member/index assignment
+                        Token asn_tok = advance(parser);
+                        ASTNode *val = parse_expression(parser);
+                        update = ast_new_binop("=", update, val, line);
+                        token_free(&asn_tok);
+                    }
+                }
+            }
+            
+            Token rparen = consume(parser, TOKEN_RPAREN);
+            token_free(&rparen);
+            
+            // Parse body
+            ASTNode *body = parse_block(parser);
+            
+            return ast_new_for_c_style(NULL, cond, update, body, line);
+        } else {
+            fprintf(stderr, "Parse error at line %d: unexpected token in for loop\n", line);
+            parser->had_error = 1;
+            return NULL;
+        }
+    }
+    
+    // Otherwise, it's a range-based or collection-based for loop
     Token var_tok;
     char *varname;
     DeclType decl_type = DECL_LET;  // Default to let for simple for loops
     ASTNode *body;
     ASTNode *n;
-    token_free(&t);
     
     // Check if we have var/let/const declaration
     if (check(parser, TOKEN_VAR) || check(parser, TOKEN_LET) || check(parser, TOKEN_CONST)) {

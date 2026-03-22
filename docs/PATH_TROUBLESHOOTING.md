@@ -164,7 +164,7 @@ If you prefer system-wide installation (requires sudo):
 
 ```bash
 cd /path/to/KLang/repo
-./build.sh
+scripts/build.sh
 sudo ./install.sh --system
 ```
 
@@ -176,8 +176,8 @@ Install to `~/.local/bin` (no sudo required):
 
 ```bash
 cd /path/to/KLang/repo
-./build.sh
-./install.sh --user
+scripts/build.sh
+scripts/install.sh --user
 ```
 
 Then ensure `~/.local/bin` is in your PATH:
@@ -211,7 +211,7 @@ Test-Path "$env:LOCALAPPDATA\KLang\bin\klang.exe"
 From the KLang repository directory:
 
 ```powershell
-.\install-windows.ps1 -User
+scripts\install-windows.ps1 -User
 ```
 
 This automatically adds KLang to your PATH.
@@ -307,7 +307,7 @@ source ~/.bashrc
 ```powershell
 # 1. Build KLang
 cd \path\to\KLang\repo
-.\build.bat
+scripts\build.bat
 
 # 2. Create installation directory
 New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\KLang\bin"

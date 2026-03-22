@@ -273,35 +273,104 @@ while i < 10 {
 }
 ```
 
-### For Loop (Range-based)
+### For Loops
+
+KLang supports three types of for loops:
+
+#### 1. C-Style For Loop
 ```klang
-# Basic for loop
-for i in 0 .. 10 {
+# Basic C-style for loop
+for (let i = 0; i < 10; i = i + 1) {
     println(i)    # Prints 0 to 9
 }
 
-# For loop with list (future feature)
-# for item in items {
-#     println(item)
-# }
+# With var declaration
+for (var j = 5; j > 0; j = j - 1) {
+    println(j)    # Counts down from 5 to 1
+}
+
+# Empty init (variable declared outside)
+let k = 0
+for (; k < 3; k = k + 1) {
+    println(k)
+}
+
+# Empty update (manual increment in body)
+for (let m = 0; m < 3; ) {
+    println(m)
+    m = m + 1
+}
+
+# Infinite loop with break
+for (let n = 0; ; n = n + 1) {
+    if (n >= 5) {
+        break
+    }
+    println(n)
+}
+```
+
+#### 2. Range-Based For Loop
+```klang
+# Basic range-based for loop
+for i in 0..10 {
+    println(i)    # Prints 0 to 9
+}
+
+# With let/var/const
+for let i in 0..5 {
+    println(i)
+}
+```
+
+#### 3. For-Of Loop (Iteration)
+```klang
+# Iterate over array elements
+let numbers = [10, 20, 30, 40]
+for (item of numbers) {
+    println(item)    # Prints each number
+}
+
+# With const declaration
+for (const num of numbers) {
+    println(num)
+}
+
+# Without parentheses
+for x of [1, 2, 3] {
+    println(x)
+}
+
+# Iterate over string characters
+for (char of "hello") {
+    println(char)    # Prints each character
+}
 ```
 
 ### Break and Continue
 ```klang
-# Break: exit loop
-for i in 0 .. 100 {
-    if i > 10 {
+# Break: exit loop early
+for (let i = 0; i < 100; i = i + 1) {
+    if (i > 10) {
         break
     }
     println(i)
 }
 
-# Continue: skip iteration
-for i in 0 .. 10 {
-    if i % 2 == 0 {
+# Continue: skip current iteration
+for (let i = 0; i < 10; i = i + 1) {
+    if (i % 2 == 0) {
         continue
     }
     println(i)    # Only prints odd numbers
+}
+
+# Works with all for loop types
+for item of [1, 2, 3, 4, 5] {
+    if (item == 3) {
+        continue
+    }
+    println(item)    # Prints 1, 2, 4, 5
 }
 ```
 

@@ -152,6 +152,15 @@ ASTNode *ast_new_for_of(const char *var, ASTNode *iterable, ASTNode *body, DeclT
     return n;
 }
 
+ASTNode *ast_new_for_c_style(ASTNode *init, ASTNode *cond, ASTNode *update, ASTNode *body, int line) {
+    ASTNode *n = ast_alloc(NODE_FOR_C_STYLE, line);
+    n->data.for_c_style_stmt.init = init;
+    n->data.for_c_style_stmt.cond = cond;
+    n->data.for_c_style_stmt.update = update;
+    n->data.for_c_style_stmt.body = body;
+    return n;
+}
+
 ASTNode *ast_new_return(ASTNode *value, int line) {
     ASTNode *n = ast_alloc(NODE_RETURN, line);
     n->data.return_stmt.value = value;
@@ -178,6 +187,7 @@ ASTNode *ast_new_func_def(const char *name, const char *return_type, int line) {
     n->data.func_def.return_type = return_type ? strdup(return_type) : NULL;
     nodelist_init(&n->data.func_def.params);
     n->data.func_def.param_types = NULL;
+    n->data.func_def.default_values = NULL;
     n->data.func_def.body = NULL;
     n->data.func_def.is_static = 0;
     n->data.func_def.access = ACCESS_PUBLIC;
@@ -435,6 +445,12 @@ void ast_free(ASTNode *node) {
             ast_free(node->data.for_of_stmt.iterable);
             ast_free(node->data.for_of_stmt.body);
             break;
+        case NODE_FOR_C_STYLE:
+            ast_free(node->data.for_c_style_stmt.init);
+            ast_free(node->data.for_c_style_stmt.cond);
+            ast_free(node->data.for_c_style_stmt.update);
+            ast_free(node->data.for_c_style_stmt.body);
+            break;
         case NODE_RETURN:
             ast_free(node->data.return_stmt.value);
             break;
@@ -453,8 +469,13 @@ void ast_free(ASTNode *node) {
                 ast_free(node->data.func_def.params.items[i]);
                 if (node->data.func_def.param_types && node->data.func_def.param_types[i])
                     free(node->data.func_def.param_types[i]);
+                /* Free default value expressions - AST owns these, not FunctionVal */
+                if (node->data.func_def.default_values && node->data.func_def.default_values[i])
+                    ast_free(node->data.func_def.default_values[i]);
             }
             if (node->data.func_def.param_types) free(node->data.func_def.param_types);
+            /* Free default values array - the expressions inside are freed above */
+            if (node->data.func_def.default_values) free(node->data.func_def.default_values);
             nodelist_free(&node->data.func_def.params);
             ast_free(node->data.func_def.body);
             break;
