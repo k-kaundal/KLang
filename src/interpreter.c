@@ -1331,6 +1331,60 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             value_free(&iterable);
             return make_null();
         }
+        case NODE_FOR_C_STYLE: {
+            // Create a new environment for the for loop
+            Env *for_env = env_new(env);
+            
+            // Execute the initialization statement
+            if (node->data.for_c_style_stmt.init) {
+                Value init_val = eval_node_env(interp, node->data.for_c_style_stmt.init, for_env);
+                value_free(&init_val);
+            }
+            
+            // Loop while condition is true
+            while (1) {
+                // Evaluate the condition (if present, otherwise infinite loop)
+                if (node->data.for_c_style_stmt.cond) {
+                    Value cond_val = eval_node_env(interp, node->data.for_c_style_stmt.cond, for_env);
+                    int cond_result = 0;
+                    if (cond_val.type == VAL_BOOL) cond_result = cond_val.as.bool_val;
+                    else if (cond_val.type == VAL_INT) cond_result = cond_val.as.int_val != 0;
+                    else if (cond_val.type == VAL_FLOAT) cond_result = cond_val.as.float_val != 0.0;
+                    else if (cond_val.type == VAL_STRING) cond_result = cond_val.as.str_val && cond_val.as.str_val[0] != '\0';
+                    else if (cond_val.type == VAL_NULL) cond_result = 0;
+                    else cond_result = 1;
+                    value_free(&cond_val);
+                    
+                    if (!cond_result) {
+                        break;
+                    }
+                }
+                
+                // Execute the body
+                {
+                    Value r = eval_block(interp, node->data.for_c_style_stmt.body, for_env);
+                    value_free(&r);
+                }
+                
+                // Check for break/continue/return
+                if (interp->last_result.is_return || interp->last_result.is_break) {
+                    interp->last_result.is_break = 0;
+                    break;
+                }
+                if (interp->last_result.is_continue) {
+                    interp->last_result.is_continue = 0;
+                }
+                
+                // Execute the update expression
+                if (node->data.for_c_style_stmt.update) {
+                    Value update_val = eval_node_env(interp, node->data.for_c_style_stmt.update, for_env);
+                    value_free(&update_val);
+                }
+            }
+            
+            env_free(for_env);
+            return make_null();
+        }
         case NODE_BINOP: {
             const char *op = node->data.binop.op;
             

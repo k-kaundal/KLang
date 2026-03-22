@@ -1,0 +1,57 @@
+// KLang For Loop Examples
+// Demonstrating all three types of for loops supported
+
+println("=== KLang For Loop Examples ===\n");
+
+// 1. C-Style For Loop
+println("1. C-Style For Loop:");
+println("   for (let i = 0; i < 5; i = i + 1)");
+for (let i = 0; i < 5; i = i + 1) {
+    println("   Count: " + i);
+}
+
+// 2. Range-Based For Loop
+println("\n2. Range-Based For Loop:");
+println("   for i in 0..5");
+for i in 0..5 {
+    println("   Value: " + i);
+}
+
+// 3. For-Of Loop (Array Iteration)
+println("\n3. For-Of Loop:");
+println("   for item of [10, 20, 30]");
+let numbers = [10, 20, 30];
+for item of numbers {
+    println("   Item: " + item);
+}
+
+// Advanced: Nested C-Style For Loops
+println("\n4. Nested C-Style For Loops:");
+println("   Multiplication table 2x2:");
+for (let i = 1; i <= 2; i = i + 1) {
+    for (let j = 1; j <= 2; j = j + 1) {
+        println("   " + i + " x " + j + " = " + (i * j));
+    }
+}
+
+// Advanced: C-Style with break
+println("\n5. C-Style with break:");
+for (let i = 0; i < 10; i = i + 1) {
+    if (i == 5) {
+        println("   Breaking at i = " + i);
+        break;
+    }
+    println("   i = " + i);
+}
+
+// Advanced: C-Style with continue
+println("\n6. C-Style with continue:");
+for (let i = 0; i < 5; i = i + 1) {
+    if (i == 2) {
+        println("   Skipping i = " + i);
+        continue;
+    }
+    println("   Processing i = " + i);
+}
+
+println("\n=== All examples completed successfully! ===");

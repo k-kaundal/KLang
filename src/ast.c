@@ -152,6 +152,15 @@ ASTNode *ast_new_for_of(const char *var, ASTNode *iterable, ASTNode *body, DeclT
     return n;
 }
 
+ASTNode *ast_new_for_c_style(ASTNode *init, ASTNode *cond, ASTNode *update, ASTNode *body, int line) {
+    ASTNode *n = ast_alloc(NODE_FOR_C_STYLE, line);
+    n->data.for_c_style_stmt.init = init;
+    n->data.for_c_style_stmt.cond = cond;
+    n->data.for_c_style_stmt.update = update;
+    n->data.for_c_style_stmt.body = body;
+    return n;
+}
+
 ASTNode *ast_new_return(ASTNode *value, int line) {
     ASTNode *n = ast_alloc(NODE_RETURN, line);
     n->data.return_stmt.value = value;
@@ -434,6 +443,12 @@ void ast_free(ASTNode *node) {
             free(node->data.for_of_stmt.var);
             ast_free(node->data.for_of_stmt.iterable);
             ast_free(node->data.for_of_stmt.body);
+            break;
+        case NODE_FOR_C_STYLE:
+            ast_free(node->data.for_c_style_stmt.init);
+            ast_free(node->data.for_c_style_stmt.cond);
+            ast_free(node->data.for_c_style_stmt.update);
+            ast_free(node->data.for_c_style_stmt.body);
             break;
         case NODE_RETURN:
             ast_free(node->data.return_stmt.value);
