@@ -1,0 +1,117 @@
+# KLang String Functions Demo
+# This example demonstrates all new string manipulation features
+
+println("═══════════════════════════════════════════════════")
+println("     KLang String Functions Demonstration")
+println("═══════════════════════════════════════════════════")
+
+# Quote Support
+println("\n1. Quote Support")
+println("   Both 'single' and \"double\" quotes work!")
+
+# Case Transformation
+println("\n2. Case Transformation")
+let name = "klang programming"
+println("   Original: " + name)
+println("   Uppercase: " + uppercase(name))
+println("   Lowercase: " + lowercase(uppercase(name)))
+
+# Whitespace Handling
+println("\n3. Whitespace Handling")
+let messy = "   too   much   space   "
+println("   Before trim: [" + messy + "]")
+println("   After trim:  [" + trim(messy) + "]")
+
+# String Splitting
+println("\n4. String Splitting")
+let csv = "apple,banana,cherry,date"
+let fruits = split(csv, ",")
+println("   CSV: " + csv)
+println("   Split count: " + str(len(fruits)))
+println("   First: " + fruits[0])
+println("   Last: " + fruits[3])
+
+# String Joining
+println("\n5. String Joining")
+let words = split("The quick brown fox", " ")
+println("   Original: The quick brown fox")
+println("   With dashes: " + join(words, "-"))
+println("   With arrows: " + join(words, " -> "))
+
+# Substring Extraction
+println("\n6. Substring Extraction")
+let sentence = "Hello KLang World"
+println("   Full: " + sentence)
+println("   First 5: " + substring(sentence, 0, 5))
+println("   Middle: " + substring(sentence, 6, 11))
+println("   Last 5: " + substring(sentence, 12, 17))
+
+# String Search
+println("\n7. String Search")
+let text = "Programming in KLang is fun!"
+println("   Text: " + text)
+println("   Contains 'KLang': " + str(contains(text, "KLang")))
+println("   Starts with 'Programming': " + str(startswith(text, "Programming")))
+println("   Ends with 'fun!': " + str(endswith(text, "fun!")))
+println("   Index of 'KLang': " + str(indexof(text, "KLang")))
+
+# String Replacement
+println("\n8. String Replacement")
+let template = "I love X and X is great!"
+println("   Template: " + template)
+println("   Python: " + replace(template, "X", "Python"))
+println("   JavaScript: " + replace(template, "X", "JavaScript"))
+println("   KLang: " + replace(template, "X", "KLang"))
+
+# String Repetition
+println("\n9. String Repetition")
+println("   Header: " + repeat("=", 40))
+println("   Emphasis: " + repeat("!", 5))
+println("   Pattern: " + repeat("+-", 10))
+
+# Real-world Example: Email Processing
+println("\n10. Real-world Example: Email Validation")
+let email = "  USER@EXAMPLE.COM  "
+println("   Raw input: [" + email + "]")
+
+let cleaned = trim(email)
+println("   Cleaned: " + cleaned)
+
+let normalized = lowercase(cleaned)
+println("   Normalized: " + normalized)
+
+if contains(normalized, "@") {
+    let parts = split(normalized, "@")
+    println("   Username: " + parts[0])
+    println("   Domain: " + parts[1])
+    
+    if endswith(parts[1], ".com") {
+        println("   ✓ Valid .com email")
+    }
+}
+
+# Real-world Example: Text Formatting
+println("\n11. Real-world Example: Text Formatting")
+let title = "klang - a modern programming language"
+let formatted = uppercase(substring(title, 0, 1)) + substring(title, 1, len(title))
+println("   Title case: " + formatted)
+
+let words_list = split(formatted, " ")
+let emphasized = join(words_list, " * ")
+println("   Emphasized: " + emphasized)
+
+# Real-world Example: Data Processing
+println("\n12. Real-world Example: Log Processing")
+let log_entry = "2024-03-21,ERROR,Database connection failed"
+let log_parts = split(log_entry, ",")
+println("   Date: " + log_parts[0])
+println("   Level: " + log_parts[1])
+println("   Message: " + log_parts[2])
+
+if contains(log_parts[1], "ERROR") {
+    println("   ⚠ Alert: Error detected!")
+}
+
+println("\n═══════════════════════════════════════════════════")
+println("     Demo Complete - All Features Working!")
+println("═══════════════════════════════════════════════════")

@@ -76,7 +76,14 @@ Source Code (.kl)
   * `super` keyword for parent access
 * Control flow (if/else, while, for)
 * Lists and indexing
-* Basic REPL
+* **String Features**
+  * Single and double quote support (`'...'` and `"..."`)
+  * Comprehensive string manipulation functions (uppercase, lowercase, trim, split, join, etc.)
+  * Rich string operations (substring, contains, replace, repeat)
+* **Enhanced Comments**
+  * Multiple comment styles: `#`, `//`, `/* */`, `///` (doc comments)
+* Interactive REPL with `exit()` function
+* Built-in functions (print, println, input, len, type conversion)
 
 ### 🚧 In Progress
 
