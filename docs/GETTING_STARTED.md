@@ -60,7 +60,13 @@ source ~/.zshrc
 # Download from releases
 wget https://github.com/k-kaundal/KLang/releases/latest/download/klang-linux-x64.tar.gz
 tar -xzf klang-linux-x64.tar.gz
-./install.sh
+cd klang-*
+# The binary is ready to use - just add to PATH or move to a bin directory
+sudo cp klang /usr/local/bin/
+# Or for user install:
+mkdir -p ~/.local/bin
+cp klang ~/.local/bin/
+export PATH="$PATH:~/.local/bin"
 ```
 
 #### Option 3: Build from Source
@@ -69,8 +75,8 @@ tar -xzf klang-linux-x64.tar.gz
 ```bash
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
-./build.sh
-./install.sh
+scripts/build.sh
+scripts/install.sh
 ```
 
 **Windows:**
@@ -80,15 +86,15 @@ git clone https://github.com/k-kaundal/KLang.git
 cd KLang
 
 # Build
-.\build.bat
+scripts\build.bat
 
 # Install (run PowerShell as your regular user, not admin)
-.\install-windows.ps1 -User
+scripts\install-windows.ps1 -User
 ```
 
 For system-wide installation on Windows (requires admin):
 ```powershell
-.\install-windows.ps1 -System
+scripts\install-windows.ps1 -System
 ```
 
 ### System Requirements (Runtime)

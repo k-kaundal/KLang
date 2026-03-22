@@ -157,10 +157,10 @@ Only needed if you want to modify KLang or pre-built binaries aren't available:
 # Clone and build
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
-./build.sh              # Cross-platform build script
+scripts/build.sh        # Cross-platform build script
 
 # Install
-./install.sh            # Install to system
+scripts/install.sh      # Install to system
 
 # Use
 klang repl              # Interactive shell
@@ -171,9 +171,9 @@ klang run script.kl     # Run a script
 
 | Platform | Status | Installation |
 |----------|--------|--------------|
-| 🐧 Linux (x64, ARM64) | ✅ Tested | `./build.sh` |
-| 🍎 macOS (Intel, Apple Silicon) | ✅ Supported | `./build.sh` |
-| 🪟 Windows (x64) | ✅ Supported | `build.bat` + `install-windows.ps1` |
+| 🐧 Linux (x64, ARM64) | ✅ Tested | `scripts/build.sh` |
+| 🍎 macOS (Intel, Apple Silicon) | ✅ Supported | `scripts/build.sh` |
+| 🪟 Windows (x64) | ✅ Supported | `scripts/build.bat` + `scripts/install-windows.ps1` |
 
 **Key Point:** Once you have the `klang` binary, you can run KLang programs **without any dependencies** - no gcc, no make, no compilers needed!
 

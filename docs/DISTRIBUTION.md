@@ -34,7 +34,7 @@ chmod +x quick-install.sh
 # Linux/macOS
 tar -xzf klang-*.tar.gz
 cd klang-*/
-./install.sh
+scripts/install.sh
 ```
 
 #### Option 3: Build from Source
@@ -46,10 +46,10 @@ git clone https://github.com/k-kaundal/KLang.git
 cd KLang
 
 # Build (requires gcc/clang and make)
-./build.sh
+scripts/build.sh
 
 # Install
-./install.sh
+scripts/install.sh
 ```
 
 ### Using KLang
@@ -90,21 +90,21 @@ KLang includes build scripts for all major platforms:
 
 #### Linux/macOS: `build.sh`
 ```bash
-./build.sh              # Basic build
-./build.sh --with-tests # Build and test
-./build.sh --package    # Build and create distribution package
+scripts/build.sh              # Basic build
+scripts/build.sh --with-tests # Build and test
+scripts/build.sh --package    # Build and create distribution package
 ```
 
 #### Windows: `build.bat`
 ```bat
-build.bat              # Build with MinGW or MSVC
+scripts/build.bat              # Build with MinGW or MSVC
 ```
 
 ### Building for Distribution
 
 #### 1. Build for your platform
 ```bash
-./build.sh --package
+scripts/build.sh --package
 ```
 
 This creates a distribution package in `dist/`:
@@ -175,25 +175,25 @@ git push origin vX.Y.Z
 
 **Linux:**
 ```bash
-./build.sh --package
+scripts/build.sh --package
 # Creates: dist/klang-X.Y.Z-linux-x64.tar.gz
 ```
 
 **macOS (Intel):**
 ```bash
-./build.sh --package
+scripts/build.sh --package
 # Creates: dist/klang-X.Y.Z-macos-x64.tar.gz
 ```
 
 **macOS (Apple Silicon):**
 ```bash
-./build.sh --package
+scripts/build.sh --package
 # Creates: dist/klang-X.Y.Z-macos-arm64.tar.gz
 ```
 
 **Windows (on MinGW/MSYS2):**
 ```bash
-./build.sh --package
+scripts/build.sh --package
 # Creates: dist/klang-X.Y.Z-windows-x64.zip
 ```
 
@@ -211,8 +211,8 @@ git push origin vX.Y.Z
 ```bash
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
-./build.sh
-./install.sh
+scripts/build.sh
+scripts/install.sh
 klang repl
 ```
 
