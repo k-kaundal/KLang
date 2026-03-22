@@ -321,7 +321,7 @@ chmod +x klang
 - [Getting Started Guide](GETTING_STARTED.md)
 - [Language Reference](LANGUAGE_REFERENCE.md)
 - [Compilation Guide](COMPILATION_GUIDE.md)
-- [Contributing Guide](../CONTRIBUTING.md)
+- [Contributing Guide](development/CONTRIBUTING.md)
 
 ---
 

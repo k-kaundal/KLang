@@ -921,7 +921,7 @@ When porting JavaScript code to KLang:
 - **Quick Summary**: [FEATURE_COMPARISON_SUMMARY.md](FEATURE_COMPARISON_SUMMARY.md)
 - **Language Reference**: [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md)
 - **OOP Guide**: [OOP_LANGUAGE_SPEC.md](OOP_LANGUAGE_SPEC.md)
-- **Roadmap**: [JAVASCRIPT_FEATURES_ROADMAP.md](../JAVASCRIPT_FEATURES_ROADMAP.md)
+- **Roadmap**: [JAVASCRIPT_FEATURES_ROADMAP.md](roadmaps/JAVASCRIPT_FEATURES_ROADMAP.md)
 
 ---
 
@@ -958,7 +958,7 @@ When porting JavaScript code to KLang:
 
 ### Q: Can I contribute to missing features?
 
-**A**: Yes! See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+**A**: Yes! See [CONTRIBUTING.md](development/CONTRIBUTING.md) for guidelines.
 
 ---
 

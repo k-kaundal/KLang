@@ -608,7 +608,7 @@ make
 
 - 📖 [Getting Started Guide](GETTING_STARTED.md)
 - 💻 [Language Reference](LANGUAGE_REFERENCE.md)
-- 🔧 [Contributing Guide](../CONTRIBUTING.md)
+- 🔧 [Contributing Guide](development/CONTRIBUTING.md)
 
 ---
 

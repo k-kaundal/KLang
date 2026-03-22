@@ -472,7 +472,7 @@ make clean && make
 - [Concurrency](CONCURRENCY.md) (future)
 
 ### Contributing
-Want to contribute? See [CONTRIBUTING.md](../CONTRIBUTING.md)
+Want to contribute? See [CONTRIBUTING.md](development/CONTRIBUTING.md)
 
 ---
 

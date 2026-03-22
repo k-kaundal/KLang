@@ -5,9 +5,9 @@ Welcome to the comprehensive KLang documentation! This index will help you navig
 ## 📚 Quick Navigation
 
 ### For New Users
-- [Getting Started](guides/GETTING_STARTED.md) - Installation and first steps
-- [Language Basics](guides/LANGUAGE_REFERENCE.md) - Core syntax and concepts
-- [Quick Reference](guides/PHASE1_QUICK_REFERENCE.md) - Syntax cheat sheet
+- [Getting Started](GETTING_STARTED.md) - Installation and first steps
+- [Language Basics](LANGUAGE_REFERENCE.md) - Core syntax and concepts
+- [Quick Reference](PHASE1_QUICK_REFERENCE.md) - Syntax cheat sheet
 
 ### For Developers
 - [API Reference](api/) - Standard library and built-in functions
@@ -75,40 +75,40 @@ For contributors and maintainers:
 ## 🎯 Documentation by Topic
 
 ### Language Basics
-- [Variables & Types](guides/VAR_LET_CONST.md) - `let`, `var`, `const`
-- [Functions](guides/LANGUAGE_REFERENCE.md#functions) - Function syntax
-- [Control Flow](guides/LANGUAGE_REFERENCE.md#control-flow) - if/else, loops
-- [Comments](guides/COMPLETE_FEATURE_GUIDE.md#comments) - Comment styles
+- [Variables & Types](VAR_LET_CONST.md) - `let`, `var`, `const`
+- [Functions](LANGUAGE_REFERENCE.md#functions) - Function syntax
+- [Control Flow](LANGUAGE_REFERENCE.md#control-flow) - if/else, loops
+- [Comments](COMPLETE_FEATURE_GUIDE.md#comments) - Comment styles
 
 ### Object-Oriented Programming
-- [OOP Overview](guides/OOP_README.md) - OOP in KLang
-- [Classes](guides/OOP_LANGUAGE_SPEC.md) - Class definitions
-- [Inheritance](guides/OOP_QUICK_START.md#inheritance) - Extending classes
-- [Access Modifiers](guides/OOP_LANGUAGE_SPEC.md#access-modifiers) - public/private/protected
-- [Static Members](guides/OOP_LANGUAGE_SPEC.md#static) - Static fields/methods
-- [Abstract Classes](guides/OOP_LANGUAGE_SPEC.md#abstract) - Abstract patterns
+- [OOP Overview](OOP_README.md) - OOP in KLang
+- [Classes](OOP_LANGUAGE_SPEC.md) - Class definitions
+- [Inheritance](OOP_QUICK_START.md#inheritance) - Extending classes
+- [Access Modifiers](OOP_LANGUAGE_SPEC.md#access-modifiers) - public/private/protected
+- [Static Members](OOP_LANGUAGE_SPEC.md#static) - Static fields/methods
+- [Abstract Classes](OOP_LANGUAGE_SPEC.md#abstract) - Abstract patterns
 
 ### Advanced Features
-- [Arrow Functions](guides/arrow_functions.md) - `() => {}`
+- [Arrow Functions](arrow_functions.md) - `() => {}`
 - [Async/Await](features/ASYNC_AWAIT_IMPLEMENTATION.md) - Asynchronous code
 - [Promises](features/PROMISES_IMPLEMENTATION.md) - Promise API
 - [Generators](features/GENERATOR_IMPLEMENTATION.md) - `function*` and `yield`
 - [Destructuring](features/DESTRUCTURING_IMPLEMENTATION.md) - Array/object destructuring
 - [Spread/Rest](features/SPREAD_REST_IMPLEMENTATION.md) - `...` operator
-- [Template Literals](guides/COMPLETE_FEATURE_GUIDE.md#templates) - String interpolation
+- [Template Literals](COMPLETE_FEATURE_GUIDE.md#templates) - String interpolation
 - [Modules](features/ES6_MODULES_IMPLEMENTATION.md) - import/export
 
 ### Standard Library
 - [Math Module](api/MATH_MODULE_DOCS.md) - Mathematical functions
-- [Array Methods](guides/ARRAY_METHODS.md) - map, filter, reduce, etc.
-- [String Operations](guides/COMPLETE_FEATURE_GUIDE.md#strings) - String manipulation
+- [Array Methods](ARRAY_METHODS.md) - map, filter, reduce, etc.
+- [String Operations](COMPLETE_FEATURE_GUIDE.md#strings) - String manipulation
 
 ## 🔍 Find Documentation By...
 
 ### By Language Feature
 Looking for a specific feature? Check:
-- [JavaScript to KLang Migration](guides/JS_TO_KLANG_MIGRATION.md)
-- [Feature Comparison](guides/JS_KLANG_FEATURE_COMPARISON.md)
+- [JavaScript to KLang Migration](JS_TO_KLANG_MIGRATION.md)
+- [Feature Comparison](JS_KLANG_FEATURE_COMPARISON.md)
 - [Python Features](roadmaps/PYTHON_FEATURES_ROADMAP.md)
 
 ### By Use Case
