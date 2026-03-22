@@ -9,6 +9,9 @@ static ASTNode *parse_block(Parser *parser);
 static ASTNode *parse_break(Parser *parser);
 static ASTNode *parse_continue(Parser *parser);
 static ASTNode *parse_class_def(Parser *parser);
+static ASTNode *parse_import(Parser *parser);
+static ASTNode *parse_export(Parser *parser);
+static int check_ahead(Parser *parser, TokenType type);
 
 void parser_init(Parser *parser, Lexer *lexer) {
     parser->lexer = lexer;
@@ -51,6 +54,96 @@ static Token consume(Parser *parser, TokenType type) {
     return parser->current;
 }
 
+/* Parse a template literal and convert ${...} into expression nodes */
+static ASTNode *parse_template_literal(Parser *parser) {
+    int line = parser->current.line;
+    Token t = advance(parser);
+    const char *template_str = t.value;
+    ASTNode *node = ast_new_template_literal(line);
+    
+    /* Count parts and expressions */
+    int expr_count = 0;
+    int i, j;
+    for (i = 0; template_str[i]; i++) {
+        if (template_str[i] == '$' && template_str[i+1] == '{') {
+            expr_count++;
+        }
+    }
+    
+    /* Allocate arrays for parts and expressions */
+    int part_count = expr_count + 1;
+    node->data.template_literal.count = part_count;
+    node->data.template_literal.parts = malloc(part_count * sizeof(char*));
+    node->data.template_literal.exprs = malloc(expr_count * sizeof(ASTNode*));
+    
+    /* Initialize parts */
+    for (i = 0; i < part_count; i++) {
+        node->data.template_literal.parts[i] = NULL;
+    }
+    
+    /* Parse the template string */
+    int part_idx = 0;
+    int expr_idx = 0;
+    int part_cap = 64;
+    int part_len = 0;
+    char *part_buf = malloc(part_cap);
+    
+    for (i = 0; template_str[i]; ) {
+        if (template_str[i] == '$' && template_str[i+1] == '{') {
+            /* Found interpolation start */
+            /* Save current part */
+            part_buf[part_len] = '\0';
+            node->data.template_literal.parts[part_idx++] = strdup(part_buf);
+            part_len = 0;
+            
+            /* Find matching } */
+            i += 2; /* Skip ${ */
+            int expr_start = i;
+            int brace_depth = 1;
+            while (template_str[i] && brace_depth > 0) {
+                if (template_str[i] == '{') brace_depth++;
+                else if (template_str[i] == '}') brace_depth--;
+                if (brace_depth > 0) i++;
+            }
+            
+            /* Extract expression */
+            int expr_len = i - expr_start;
+            char *expr_str = malloc(expr_len + 1);
+            for (j = 0; j < expr_len; j++) {
+                expr_str[j] = template_str[expr_start + j];
+            }
+            expr_str[expr_len] = '\0';
+            
+            /* Parse expression */
+            Lexer expr_lexer;
+            Parser expr_parser;
+            lexer_init(&expr_lexer, expr_str);
+            parser_init(&expr_parser, &expr_lexer);
+            node->data.template_literal.exprs[expr_idx++] = parse_expression(&expr_parser);
+            parser_free(&expr_parser);
+            lexer_free(&expr_lexer);
+            free(expr_str);
+            
+            if (template_str[i] == '}') i++; /* Skip closing } */
+        } else {
+            /* Regular character */
+            if (part_len + 1 >= part_cap) {
+                part_cap *= 2;
+                part_buf = realloc(part_buf, part_cap);
+            }
+            part_buf[part_len++] = template_str[i++];
+        }
+    }
+    
+    /* Save final part */
+    part_buf[part_len] = '\0';
+    node->data.template_literal.parts[part_idx] = strdup(part_buf);
+    free(part_buf);
+    
+    token_free(&t);
+    return node;
+}
+
 static ASTNode *parse_primary(Parser *parser) {
     int line = parser->current.line;
 
@@ -66,6 +159,9 @@ static ASTNode *parse_primary(Parser *parser) {
         ASTNode *n = ast_new_string(t.value, line);
         token_free(&t);
         return n;
+    }
+    if (check(parser, TOKEN_TEMPLATE_LITERAL)) {
+        return parse_template_literal(parser);
     }
     if (check(parser, TOKEN_TRUE)) {
         Token t = advance(parser);
@@ -100,13 +196,128 @@ static ASTNode *parse_primary(Parser *parser) {
         token_free(&t);
         list = ast_new_list(line);
         while (!check(parser, TOKEN_RBRACKET) && !check(parser, TOKEN_EOF)) {
-            nodelist_push(&list->data.list.elements, parse_expression(parser));
+            /* Check for spread element */
+            if (check(parser, TOKEN_SPREAD)) {
+                Token spread_tok = advance(parser);
+                token_free(&spread_tok);
+                ASTNode *spread_expr = parse_expression(parser);
+                ASTNode *spread_node = ast_new_spread(spread_expr, line);
+                nodelist_push(&list->data.list.elements, spread_node);
+            } else {
+                nodelist_push(&list->data.list.elements, parse_expression(parser));
+            }
             if (!match(parser, TOKEN_COMMA)) break;
         }
         t2 = consume(parser, TOKEN_RBRACKET);
         token_free(&t2);
         return list;
     }
+    
+    /* Object literal */
+    if (check(parser, TOKEN_LBRACE)) {
+        Token t = advance(parser);
+        ASTNode *obj;
+        token_free(&t);
+        obj = ast_new_object(line);
+        
+        while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+            int is_shorthand = 0;
+            int is_method = 0;
+            char *key = NULL;
+            ASTNode *key_expr = NULL;
+            ASTNode *value = NULL;
+            
+            /* Check for spread property ...obj */
+            if (check(parser, TOKEN_SPREAD)) {
+                Token spread_tok = advance(parser);
+                token_free(&spread_tok);
+                ASTNode *spread_expr = parse_expression(parser);
+                ASTNode *spread_node = ast_new_spread(spread_expr, line);
+                /* Store spread as a special property with NULL key */
+                ast_object_add_property(obj, NULL, NULL, spread_node, 0, 0);
+                if (!match(parser, TOKEN_COMMA)) break;
+                continue;
+            }
+            
+            /* Check for computed property name [expr] */
+            if (check(parser, TOKEN_LBRACKET)) {
+                Token t2 = advance(parser);
+                token_free(&t2);
+                key_expr = parse_expression(parser);
+                {
+                    Token t3 = consume(parser, TOKEN_RBRACKET);
+                    token_free(&t3);
+                }
+                {
+                    Token t4 = consume(parser, TOKEN_COLON);
+                    token_free(&t4);
+                }
+                value = parse_expression(parser);
+            }
+            /* Check for identifier (could be shorthand, method, or regular) */
+            else if (check(parser, TOKEN_IDENT)) {
+                Token id_tok = advance(parser);
+                key = strdup(id_tok.value);
+                token_free(&id_tok);
+                
+                /* Method shorthand: key() { ... } */
+                if (check(parser, TOKEN_LPAREN)) {
+                    Token lparen_tok = advance(parser);
+                    ASTNode *func;
+                    token_free(&lparen_tok);
+                    is_method = 1;
+                    
+                    /* Create function definition */
+                    func = ast_new_func_def(key, NULL, line);
+                    
+                    /* Parse parameters */
+                    while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
+                        Token param_tok = consume(parser, TOKEN_IDENT);
+                        ASTNode *param = ast_new_ident(param_tok.value, line);
+                        nodelist_push(&func->data.func_def.params, param);
+                        token_free(&param_tok);
+                        if (!match(parser, TOKEN_COMMA)) break;
+                    }
+                    {
+                        Token rparen_tok = consume(parser, TOKEN_RPAREN);
+                        token_free(&rparen_tok);
+                    }
+                    
+                    /* Parse function body */
+                    func->data.func_def.body = parse_statement(parser);
+                    value = func;
+                }
+                /* Property shorthand or regular property */
+                else if (check(parser, TOKEN_COMMA) || check(parser, TOKEN_RBRACE)) {
+                    /* Shorthand: {x} means {x: x} */
+                    is_shorthand = 1;
+                    value = ast_new_ident(key, line);
+                }
+                else {
+                    /* Regular property: key: value */
+                    Token colon_tok = consume(parser, TOKEN_COLON);
+                    token_free(&colon_tok);
+                    value = parse_expression(parser);
+                }
+            }
+            else {
+                fprintf(stderr, "Syntax error: expected property key\n");
+                exit(1);
+            }
+            
+            ast_object_add_property(obj, key, key_expr, value, is_shorthand, is_method);
+            if (key) free(key);
+            
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        {
+            Token t2 = consume(parser, TOKEN_RBRACE);
+            token_free(&t2);
+        }
+        return obj;
+    }
+    
     if (check(parser, TOKEN_NEW)) {
         Token t = advance(parser);
         Token class_tok;
@@ -196,6 +407,30 @@ static ASTNode *parse_postfix(Parser *parser) {
 
 static ASTNode *parse_unary(Parser *parser) {
     int line = parser->current.line;
+    
+    /* Handle await expression */
+    if (check(parser, TOKEN_AWAIT)) {
+        Token t = advance(parser);
+        token_free(&t);
+        ASTNode *expr = parse_unary(parser);
+        return ast_new_await(expr, line);
+    }
+    
+    /* Handle yield expression */
+    if (check(parser, TOKEN_YIELD)) {
+        Token t = advance(parser);
+        token_free(&t);
+        /* Check if there's a value to yield (could be empty for "yield" without value) */
+        if (!check(parser, TOKEN_SEMICOLON) && !check(parser, TOKEN_RBRACE) && 
+            !check(parser, TOKEN_EOF) && !check(parser, TOKEN_RPAREN) &&
+            !check(parser, TOKEN_COMMA)) {
+            ASTNode *value = parse_unary(parser);
+            return ast_new_yield(value, line);
+        } else {
+            return ast_new_yield(NULL, line);
+        }
+    }
+    
     if (check(parser, TOKEN_MINUS)) {
         Token t = advance(parser);
         token_free(&t);
@@ -278,8 +513,161 @@ static ASTNode *parse_equality(Parser *parser) {
     return left;
 }
 
+static ASTNode *parse_ternary(Parser *parser) {
+    ASTNode *expr = parse_equality(parser);
+    
+    if (check(parser, TOKEN_QUESTION)) {
+        int line = parser->current.line;
+        Token q = advance(parser);
+        token_free(&q);
+        
+        ASTNode *true_expr = parse_ternary(parser);  // Right-associative, so call parse_ternary recursively
+        
+        Token colon = consume(parser, TOKEN_COLON);
+        token_free(&colon);
+        
+        ASTNode *false_expr = parse_ternary(parser);  // Right-associative
+        
+        expr = ast_new_ternary(expr, true_expr, false_expr, line);
+    }
+    
+    return expr;
+}
+
+static int is_arrow_function_start(Parser *parser) {
+    // Check for single param without parens: ident => ...
+    if (check(parser, TOKEN_IDENT) && parser->peek.type == TOKEN_FAT_ARROW) {
+        return 1;
+    }
+    
+    // Check for params with parens: () => ... or (params) => ...
+    if (!check(parser, TOKEN_LPAREN)) {
+        return 0;
+    }
+    
+    // Scan the source directly to check for the pattern
+    const char *src = parser->lexer->source;
+    int pos = parser->lexer->pos - 1; // Current position is at the character after '('
+    
+    // Find where the current '(' is in the source by going backwards
+    while (pos >= 0 && src[pos] != '(') pos--;
+    if (pos < 0 || src[pos] != '(') return 0;
+    
+    // Now scan forward to find the matching ')'
+    pos++; // Skip the '('
+    int paren_depth = 1;
+    while (src[pos] && paren_depth > 0) {
+        if (src[pos] == '(') paren_depth++;
+        else if (src[pos] == ')') paren_depth--;
+        pos++;
+    }
+    
+    if (paren_depth != 0) return 0; // Unmatched parens
+    
+    // Now pos is right after the ')', skip whitespace and check for =>
+    while (src[pos] && (src[pos] == ' ' || src[pos] == '\t' || src[pos] == '\r' || src[pos] == '\n'))
+        pos++;
+    
+    return (src[pos] == '=' && src[pos + 1] == '>');
+}
+
+static ASTNode *parse_arrow_function(Parser *parser);
+
 static ASTNode *parse_expression(Parser *parser) {
-    return parse_equality(parser);
+    // Check for async arrow function: async (x) => ... or async x => ...
+    if (check(parser, TOKEN_ASYNC)) {
+        // Peek ahead to see if this is an arrow function
+        if (parser->peek.type == TOKEN_IDENT || parser->peek.type == TOKEN_LPAREN) {
+            // Look for => after identifier or (params)
+            int saved_pos = parser->lexer->pos;
+            int saved_line = parser->lexer->line;
+            int saved_col = parser->lexer->col;
+            Token saved_current = parser->current;
+            Token saved_peek = parser->peek;
+            
+            // Advance past async
+            advance(parser);
+            
+            // Check if followed by arrow function pattern
+            int is_async_arrow = 0;
+            if (check(parser, TOKEN_IDENT) && parser->peek.type == TOKEN_FAT_ARROW) {
+                is_async_arrow = 1;
+            } else if (check(parser, TOKEN_LPAREN)) {
+                is_async_arrow = is_arrow_function_start(parser);
+            }
+            
+            // Restore parser state
+            parser->lexer->pos = saved_pos;
+            parser->lexer->line = saved_line;
+            parser->lexer->col = saved_col;
+            parser->current = saved_current;
+            parser->peek = saved_peek;
+            
+            if (is_async_arrow) {
+                // Parse async arrow function
+                Token async_tok = advance(parser);
+                token_free(&async_tok);
+                ASTNode *func = parse_arrow_function(parser);
+                func->data.func_def.is_async = 1;
+                return func;
+            }
+        }
+    }
+    
+    // Check if this is a regular arrow function
+    if (is_arrow_function_start(parser)) {
+        return parse_arrow_function(parser);
+    }
+    
+    return parse_ternary(parser);
+}
+
+static ASTNode *parse_arrow_function(Parser *parser) {
+    int line = parser->current.line;
+    ASTNode *func = ast_new_func_def("", NULL, line);
+    func->data.func_def.is_arrow = 1;
+    
+    // Parse parameters
+    if (check(parser, TOKEN_IDENT)) {
+        // Single param without parens: x => ...
+        Token param_tok = advance(parser);
+        nodelist_push(&func->data.func_def.params, ast_new_ident(param_tok.value, line));
+        token_free(&param_tok);
+    } else if (check(parser, TOKEN_LPAREN)) {
+        // Params with parens: () => ... or (x, y) => ...
+        Token lp = advance(parser);
+        token_free(&lp);
+        
+        while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
+            Token param_tok = consume(parser, TOKEN_IDENT);
+            nodelist_push(&func->data.func_def.params, ast_new_ident(param_tok.value, line));
+            token_free(&param_tok);
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        Token rp = consume(parser, TOKEN_RPAREN);
+        token_free(&rp);
+    }
+    
+    // Consume =>
+    Token arrow_tok = consume(parser, TOKEN_FAT_ARROW);
+    token_free(&arrow_tok);
+    
+    // Parse body
+    if (check(parser, TOKEN_LBRACE)) {
+        // Block body: x => { return x * 2 }
+        func->data.func_def.body = parse_block(parser);
+    } else {
+        // Expression body: x => x * 2 (or nested arrow: x => y => x + y)
+        // Wrap the expression in a return statement within a block
+        ASTNode *expr = parse_expression(parser);
+        ASTNode *ret = ast_new_return(expr, line);
+        ASTNode *block = ast_new_block(line);
+        nodelist_push(&block->data.block.stmts, ret);
+        func->data.func_def.body = block;
+    }
+    
+    return func;
 }
 
 static ASTNode *parse_block(Parser *parser) {
@@ -303,15 +691,229 @@ static ASTNode *parse_block(Parser *parser) {
     return block;
 }
 
-static ASTNode *parse_let(Parser *parser) {
+/* Parse destructuring array pattern element */
+static ASTNode *parse_destructure_array_element(Parser *parser) {
     int line = parser->current.line;
-    Token let_tok = consume(parser, TOKEN_LET);
+    
+    /* Check for hole/skip: const [a, , c] = arr */
+    if (check(parser, TOKEN_COMMA) || check(parser, TOKEN_RBRACKET)) {
+        return ast_new_destructure_element(NULL, NULL, NULL, 0, 1, line);
+    }
+    
+    /* Check for rest element: ...rest */
+    if (check(parser, TOKEN_SPREAD)) {
+        Token spread_tok = advance(parser);
+        token_free(&spread_tok);
+        
+        if (!check(parser, TOKEN_IDENT)) {
+            fprintf(stderr, "Parse error at line %d: expected identifier after ...\n", line);
+            parser->had_error = 1;
+            return NULL;
+        }
+        
+        Token name_tok = advance(parser);
+        ASTNode *elem = ast_new_destructure_element(name_tok.value, NULL, NULL, 1, 0, line);
+        token_free(&name_tok);
+        return elem;
+    }
+    
+    /* Check for nested array destructuring: const [[a, b], c] = arr */
+    if (check(parser, TOKEN_LBRACKET)) {
+        /* Parse nested array pattern */
+        Token lbracket = advance(parser);
+        token_free(&lbracket);
+        
+        ASTNode *nested = ast_new_destructure_array(NULL, DECL_LET, line);
+        while (!check(parser, TOKEN_RBRACKET) && !check(parser, TOKEN_EOF)) {
+            ASTNode *elem = parse_destructure_array_element(parser);
+            if (elem) nodelist_push(&nested->data.destructure_array.elements, elem);
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        Token rbracket = consume(parser, TOKEN_RBRACKET);
+        token_free(&rbracket);
+        
+        ASTNode *wrapper = ast_new_destructure_element(NULL, NULL, NULL, 0, 0, line);
+        wrapper->data.destructure_element.nested = nested;
+        return wrapper;
+    }
+    
+    /* Regular identifier with optional default */
+    if (!check(parser, TOKEN_IDENT)) {
+        fprintf(stderr, "Parse error at line %d: expected identifier in destructuring pattern\n", line);
+        parser->had_error = 1;
+        return NULL;
+    }
+    
+    Token name_tok = advance(parser);
+    char *name = strdup(name_tok.value);
+    token_free(&name_tok);
+    
+    ASTNode *default_value = NULL;
+    if (match(parser, TOKEN_ASSIGN)) {
+        default_value = parse_expression(parser);
+    }
+    
+    ASTNode *elem = ast_new_destructure_element(name, NULL, default_value, 0, 0, line);
+    free(name);
+    return elem;
+}
+
+/* Parse destructuring object pattern element */
+static ASTNode *parse_destructure_object_element(Parser *parser) {
+    int line = parser->current.line;
+    
+    /* Check for rest element: ...rest */
+    if (check(parser, TOKEN_SPREAD)) {
+        Token spread_tok = advance(parser);
+        token_free(&spread_tok);
+        
+        if (!check(parser, TOKEN_IDENT)) {
+            fprintf(stderr, "Parse error at line %d: expected identifier after ...\n", line);
+            parser->had_error = 1;
+            return NULL;
+        }
+        
+        Token name_tok = advance(parser);
+        ASTNode *elem = ast_new_destructure_element(name_tok.value, NULL, NULL, 1, 0, line);
+        token_free(&name_tok);
+        return elem;
+    }
+    
+    if (!check(parser, TOKEN_IDENT)) {
+        fprintf(stderr, "Parse error at line %d: expected identifier in object destructuring\n", line);
+        parser->had_error = 1;
+        return NULL;
+    }
+    
+    Token key_tok = advance(parser);
+    char *key = strdup(key_tok.value);
+    char *name = strdup(key_tok.value); /* Default: same as key */
+    token_free(&key_tok);
+    
+    /* Check for rename: {x: newX} */
+    if (match(parser, TOKEN_COLON)) {
+        /* Check for nested object destructuring: {outer: {inner}} */
+        if (check(parser, TOKEN_LBRACE)) {
+            Token lbrace = advance(parser);
+            token_free(&lbrace);
+            
+            ASTNode *nested = ast_new_destructure_object(NULL, DECL_LET, line);
+            while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+                ASTNode *elem = parse_destructure_object_element(parser);
+                if (elem) nodelist_push(&nested->data.destructure_object.properties, elem);
+                if (!match(parser, TOKEN_COMMA)) break;
+            }
+            
+            Token rbrace = consume(parser, TOKEN_RBRACE);
+            token_free(&rbrace);
+            
+            ASTNode *wrapper = ast_new_destructure_element(NULL, key, NULL, 0, 0, line);
+            wrapper->data.destructure_element.nested = nested;
+            free(key);
+            free(name);
+            return wrapper;
+        }
+        
+        /* Regular rename */
+        Token name_tok = consume(parser, TOKEN_IDENT);
+        free(name);
+        name = strdup(name_tok.value);
+        token_free(&name_tok);
+    }
+    
+    /* Check for default value */
+    ASTNode *default_value = NULL;
+    if (match(parser, TOKEN_ASSIGN)) {
+        default_value = parse_expression(parser);
+    }
+    
+    ASTNode *elem = ast_new_destructure_element(name, key, default_value, 0, 0, line);
+    free(key);
+    free(name);
+    return elem;
+}
+
+static ASTNode *parse_var_decl(Parser *parser, TokenType decl_token, DeclType decl_type) {
+    int line = parser->current.line;
+    Token decl_tok = consume(parser, decl_token);
+    token_free(&decl_tok);
+    
+    /* Check for array destructuring: const [a, b] = ... */
+    if (check(parser, TOKEN_LBRACKET)) {
+        Token lbracket = advance(parser);
+        token_free(&lbracket);
+        
+        ASTNode *destructure = ast_new_destructure_array(NULL, decl_type, line);
+        
+        /* Parse array elements */
+        while (!check(parser, TOKEN_RBRACKET) && !check(parser, TOKEN_EOF)) {
+            ASTNode *elem = parse_destructure_array_element(parser);
+            if (elem) {
+                nodelist_push(&destructure->data.destructure_array.elements, elem);
+            }
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        Token rbracket = consume(parser, TOKEN_RBRACKET);
+        token_free(&rbracket);
+        
+        /* Must have initializer */
+        if (!match(parser, TOKEN_ASSIGN)) {
+            if (decl_type == DECL_CONST) {
+                fprintf(stderr, "Error at line %d: const destructuring must be initialized\n", line);
+                parser->had_error = 1;
+            }
+            /* For let/var, allow uninitialized (will be undefined) */
+            destructure->data.destructure_array.source = ast_new_list(line);
+        } else {
+            destructure->data.destructure_array.source = parse_expression(parser);
+        }
+        
+        return destructure;
+    }
+    
+    /* Check for object destructuring: const {x, y} = ... */
+    if (check(parser, TOKEN_LBRACE)) {
+        Token lbrace = advance(parser);
+        token_free(&lbrace);
+        
+        ASTNode *destructure = ast_new_destructure_object(NULL, decl_type, line);
+        
+        /* Parse object properties */
+        while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+            ASTNode *elem = parse_destructure_object_element(parser);
+            if (elem) {
+                nodelist_push(&destructure->data.destructure_object.properties, elem);
+            }
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        Token rbrace = consume(parser, TOKEN_RBRACE);
+        token_free(&rbrace);
+        
+        /* Must have initializer */
+        if (!match(parser, TOKEN_ASSIGN)) {
+            if (decl_type == DECL_CONST) {
+                fprintf(stderr, "Error at line %d: const destructuring must be initialized\n", line);
+                parser->had_error = 1;
+            }
+            /* For let/var, allow uninitialized (will be undefined) */
+            destructure->data.destructure_object.source = ast_new_object(line);
+        } else {
+            destructure->data.destructure_object.source = parse_expression(parser);
+        }
+        
+        return destructure;
+    }
+    
+    /* Regular variable declaration */
     Token name_tok;
     char *varname;
     char *type_annot = NULL;
-    ASTNode *value;
+    ASTNode *value = NULL;
     ASTNode *n;
-    token_free(&let_tok);
+    
     name_tok = consume(parser, TOKEN_IDENT);
     varname = strdup(name_tok.value);
     token_free(&name_tok);
@@ -322,20 +924,40 @@ static ASTNode *parse_let(Parser *parser) {
         token_free(&type_tok);
     }
 
-    {
-        Token eq_tok = consume(parser, TOKEN_ASSIGN);
-        token_free(&eq_tok);
+    /* Handle initialization */
+    if (match(parser, TOKEN_ASSIGN)) {
+        value = parse_expression(parser);
+    } else if (decl_type == DECL_CONST) {
+        /* const must be initialized */
+        fprintf(stderr, "Error at line %d: const declaration must be initialized\n", line);
+        free(varname);
+        if (type_annot) free(type_annot);
+        return NULL;
     }
-    value = parse_expression(parser);
-    n = ast_new_let(varname, type_annot, value, line);
+    
+    n = ast_new_var_decl(varname, type_annot, value, decl_type, line);
     free(varname);
     if (type_annot) free(type_annot);
     return n;
 }
 
+static ASTNode *parse_let(Parser *parser) {
+    return parse_var_decl(parser, TOKEN_LET, DECL_LET);
+}
+
+static ASTNode *parse_var(Parser *parser) {
+    return parse_var_decl(parser, TOKEN_VAR, DECL_VAR);
+}
+
+static ASTNode *parse_const(Parser *parser) {
+    return parse_var_decl(parser, TOKEN_CONST, DECL_CONST);
+}
+
 static ASTNode *parse_func_def(Parser *parser) {
     int line = parser->current.line;
-    Token fn_tok = consume(parser, TOKEN_FN);
+    int is_async = 0;
+    int is_generator = 0;
+    Token fn_tok;
     Token name_tok;
     char *fname;
     char **param_names = NULL;
@@ -343,8 +965,25 @@ static ASTNode *parse_func_def(Parser *parser) {
     int param_count = 0;
     int param_cap = 0;
     char *return_type = NULL;
-    ASTNode *func;
+    ASTNode *func = NULL;
+    
+    /* Check for async keyword before fn */
+    if (check(parser, TOKEN_ASYNC)) {
+        Token async_tok = advance(parser);
+        token_free(&async_tok);
+        is_async = 1;
+    }
+    
+    fn_tok = consume(parser, TOKEN_FN);
     token_free(&fn_tok);
+    
+    /* Check for * after fn (generator function) */
+    if (check(parser, TOKEN_STAR)) {
+        Token star_tok = advance(parser);
+        token_free(&star_tok);
+        is_generator = 1;
+    }
+    
     name_tok = consume(parser, TOKEN_IDENT);
     fname = strdup(name_tok.value);
     token_free(&name_tok);
@@ -355,6 +994,15 @@ static ASTNode *parse_func_def(Parser *parser) {
     }
 
     while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
+        int is_rest = 0;
+        
+        /* Check for rest parameter */
+        if (check(parser, TOKEN_SPREAD)) {
+            Token spread_tok = advance(parser);
+            token_free(&spread_tok);
+            is_rest = 1;
+        }
+        
         Token pname_tok = consume(parser, TOKEN_IDENT);
         if (param_count >= param_cap) {
             param_cap = param_cap == 0 ? 4 : param_cap * 2;
@@ -370,6 +1018,18 @@ static ASTNode *parse_func_def(Parser *parser) {
             token_free(&ptype_tok);
         }
         param_count++;
+        
+        /* Rest parameter must be last */
+        if (is_rest) {
+            func = ast_new_func_def(fname, return_type, line);
+            func->data.func_def.has_rest_param = 1;
+            if (!check(parser, TOKEN_RPAREN)) {
+                fprintf(stderr, "Parse error at line %d: Rest parameter must be last\n", parser->current.line);
+                parser->had_error = 1;
+            }
+            break;
+        }
+        
         if (!match(parser, TOKEN_COMMA)) break;
     }
 
@@ -384,7 +1044,10 @@ static ASTNode *parse_func_def(Parser *parser) {
         token_free(&rtype_tok);
     }
 
-    func = ast_new_func_def(fname, return_type, line);
+    /* Create func if not already created (rest param creates it early) */
+    if (!func) {
+        func = ast_new_func_def(fname, return_type, line);
+    }
     free(fname);
     if (return_type) free(return_type);
 
@@ -397,6 +1060,10 @@ static ASTNode *parse_func_def(Parser *parser) {
         }
     }
     free(param_names);
+
+    /* Set async and generator flags */
+    func->data.func_def.is_async = is_async;
+    func->data.func_def.is_generator = is_generator;
 
     // Check if this is an abstract method (no body, just semicolon)
     if (check(parser, TOKEN_SEMICOLON)) {
@@ -438,33 +1105,148 @@ static ASTNode *parse_while(Parser *parser) {
     return ast_new_while(cond, body, line);
 }
 
+static ASTNode *parse_switch(Parser *parser) {
+    int line = parser->current.line;
+    Token t = consume(parser, TOKEN_SWITCH);
+    ASTNode *expr;
+    ASTNode *switch_node;
+    token_free(&t);
+    
+    /* Consume '(' */
+    {
+        Token lparen = consume(parser, TOKEN_LPAREN);
+        token_free(&lparen);
+    }
+    
+    expr = parse_expression(parser);
+    
+    /* Consume ')' */
+    {
+        Token rparen = consume(parser, TOKEN_RPAREN);
+        token_free(&rparen);
+    }
+    
+    switch_node = ast_new_switch(expr, line);
+    
+    /* Consume '{' */
+    {
+        Token lbrace = consume(parser, TOKEN_LBRACE);
+        token_free(&lbrace);
+    }
+    
+    /* Parse cases and default */
+    while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+        if (check(parser, TOKEN_CASE)) {
+            Token case_tok = consume(parser, TOKEN_CASE);
+            ASTNode *case_value = parse_expression(parser);
+            ASTNode *case_node;
+            token_free(&case_tok);
+            
+            /* Consume ':' */
+            {
+                Token colon = consume(parser, TOKEN_COLON);
+                token_free(&colon);
+            }
+            
+            case_node = ast_new_case(case_value, line);
+            
+            /* Parse statements until next case/default/closing brace */
+            while (!check(parser, TOKEN_CASE) && !check(parser, TOKEN_DEFAULT) && 
+                   !check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+                ASTNode *stmt = parse_statement(parser);
+                if (stmt) {
+                    nodelist_push(&case_node->data.case_stmt.body, stmt);
+                }
+            }
+            
+            nodelist_push(&switch_node->data.switch_stmt.cases, case_node);
+        } else if (check(parser, TOKEN_DEFAULT)) {
+            Token default_tok = consume(parser, TOKEN_DEFAULT);
+            ASTNode *default_block = ast_new_block(line);
+            token_free(&default_tok);
+            
+            /* Consume ':' */
+            {
+                Token colon = consume(parser, TOKEN_COLON);
+                token_free(&colon);
+            }
+            
+            /* Parse statements until closing brace */
+            while (!check(parser, TOKEN_CASE) && !check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+                ASTNode *stmt = parse_statement(parser);
+                if (stmt) {
+                    nodelist_push(&default_block->data.block.stmts, stmt);
+                }
+            }
+            
+            switch_node->data.switch_stmt.default_case = default_block;
+        } else {
+            break;
+        }
+    }
+    
+    /* Consume '}' */
+    {
+        Token rbrace = consume(parser, TOKEN_RBRACE);
+        token_free(&rbrace);
+    }
+    
+    return switch_node;
+}
+
 static ASTNode *parse_for(Parser *parser) {
     int line = parser->current.line;
     Token t = consume(parser, TOKEN_FOR);
     Token var_tok;
     char *varname;
-    ASTNode *start;
-    ASTNode *end;
+    DeclType decl_type = DECL_LET;  // Default to let for simple for loops
     ASTNode *body;
     ASTNode *n;
     token_free(&t);
+    
+    // Check if we have var/let/const declaration
+    if (check(parser, TOKEN_VAR) || check(parser, TOKEN_LET) || check(parser, TOKEN_CONST)) {
+        Token decl_tok = advance(parser);
+        if (decl_tok.type == TOKEN_VAR) decl_type = DECL_VAR;
+        else if (decl_tok.type == TOKEN_LET) decl_type = DECL_LET;
+        else if (decl_tok.type == TOKEN_CONST) decl_type = DECL_CONST;
+        token_free(&decl_tok);
+    }
+    
     var_tok = consume(parser, TOKEN_IDENT);
     varname = strdup(var_tok.value);
     token_free(&var_tok);
-    {
+    
+    // Check if it's for-of or for-in
+    if (check(parser, TOKEN_OF)) {
+        // for-of loop: for (item of iterable) { ... }
+        Token of_tok = consume(parser, TOKEN_OF);
+        ASTNode *iterable;
+        token_free(&of_tok);
+        
+        iterable = parse_expression(parser);
+        body = parse_block(parser);
+        n = ast_new_for_of(varname, iterable, body, decl_type, line);
+        free(varname);
+        return n;
+    } else {
+        // for-in loop: for (i in start..end) { ... }
+        ASTNode *start;
+        ASTNode *end;
         Token in_tok = consume(parser, TOKEN_IN);
         token_free(&in_tok);
+        
+        start = parse_expression(parser);
+        {
+            Token dd_tok = consume(parser, TOKEN_DOTDOT);
+            token_free(&dd_tok);
+        }
+        end = parse_expression(parser);
+        body = parse_block(parser);
+        n = ast_new_for(varname, start, end, body, line);
+        free(varname);
+        return n;
     }
-    start = parse_expression(parser);
-    {
-        Token dd_tok = consume(parser, TOKEN_DOTDOT);
-        token_free(&dd_tok);
-    }
-    end = parse_expression(parser);
-    body = parse_block(parser);
-    n = ast_new_for(varname, start, end, body, line);
-    free(varname);
-    return n;
 }
 
 static ASTNode *parse_return(Parser *parser) {
@@ -481,6 +1263,10 @@ static ASTNode *parse_return(Parser *parser) {
 static ASTNode *parse_statement(Parser *parser) {
     while (match(parser, TOKEN_SEMICOLON)) {}
 
+    /* Module system - must be at top level */
+    if (check(parser, TOKEN_IMPORT)) return parse_import(parser);
+    if (check(parser, TOKEN_EXPORT)) return parse_export(parser);
+
     if (check(parser, TOKEN_ABSTRACT)) {
         Token abstract_tok = advance(parser);
         token_free(&abstract_tok);
@@ -490,10 +1276,21 @@ static ASTNode *parse_statement(Parser *parser) {
             return class_node;
         }
     }
+    
+    /* Handle async function declarations */
+    if (check(parser, TOKEN_ASYNC)) {
+        if (parser->peek.type == TOKEN_FN) {
+            return parse_func_def(parser);
+        }
+    }
+    
     if (check(parser, TOKEN_CLASS)) return parse_class_def(parser);
     if (check(parser, TOKEN_FN)) return parse_func_def(parser);
     if (check(parser, TOKEN_LET)) return parse_let(parser);
+    if (check(parser, TOKEN_VAR)) return parse_var(parser);
+    if (check(parser, TOKEN_CONST)) return parse_const(parser);
     if (check(parser, TOKEN_IF)) return parse_if(parser);
+    if (check(parser, TOKEN_SWITCH)) return parse_switch(parser);
     if (check(parser, TOKEN_WHILE)) return parse_while(parser);
     if (check(parser, TOKEN_FOR)) return parse_for(parser);
     if (check(parser, TOKEN_RETURN)) return parse_return(parser);
@@ -697,3 +1494,194 @@ ASTNode **parse_program(Parser *parser, int *count) {
     }
     return nodes;
 }
+
+/* Check if the next token (peek) matches a type */
+static int check_ahead(Parser *parser, TokenType type) {
+    return parser->peek.type == type;
+}
+
+/* Module system parsing */
+
+/* Parse import statement:
+ * import {name1, name2 as alias} from "module"
+ * import defaultName from "module"
+ * import * as namespace from "module"
+ * import defaultName, {name1, name2} from "module"
+ */
+static ASTNode *parse_import(Parser *parser) {
+    Token import_tok = consume(parser, TOKEN_IMPORT);
+    int line = import_tok.line;
+    token_free(&import_tok);
+
+    /* import * as namespace from "module" */
+    if (check(parser, TOKEN_STAR)) {
+        Token star_tok = advance(parser);
+        Token as_tok, namespace_tok, from_tok, path_tok;
+        char *namespace, *module_path;
+        ASTNode *result;
+        token_free(&star_tok);
+        
+        as_tok = consume(parser, TOKEN_AS);
+        token_free(&as_tok);
+        
+        namespace_tok = consume(parser, TOKEN_IDENT);
+        namespace = strdup(namespace_tok.value);
+        token_free(&namespace_tok);
+        
+        from_tok = consume(parser, TOKEN_FROM);
+        token_free(&from_tok);
+        
+        path_tok = consume(parser, TOKEN_STRING);
+        module_path = strdup(path_tok.value);
+        token_free(&path_tok);
+        
+        result = ast_new_import_namespace(namespace, module_path, line);
+        free(namespace);
+        free(module_path);
+        return result;
+    }
+    
+    /* Check for default import */
+    if (check(parser, TOKEN_IDENT) && !check_ahead(parser, TOKEN_COMMA) && !check_ahead(parser, TOKEN_LBRACE)) {
+        Token name_tok = consume(parser, TOKEN_IDENT);
+        Token from_tok, path_tok;
+        char *name = strdup(name_tok.value);
+        char *module_path;
+        ASTNode *result;
+        token_free(&name_tok);
+        
+        from_tok = consume(parser, TOKEN_FROM);
+        token_free(&from_tok);
+        
+        path_tok = consume(parser, TOKEN_STRING);
+        module_path = strdup(path_tok.value);
+        token_free(&path_tok);
+        
+        result = ast_new_import_default(name, module_path, line);
+        free(name);
+        free(module_path);
+        return result;
+    }
+    
+    /* Named imports: import {a, b as c} from "module" */
+    if (check(parser, TOKEN_LBRACE)) {
+        Token brace_tok = advance(parser);
+        int cap = 4;
+        int count = 0;
+        char **names = malloc(cap * sizeof(char*));
+        char **aliases = malloc(cap * sizeof(char*));
+        Token from_tok, path_tok;
+        char *module_path;
+        ASTNode *result;
+        token_free(&brace_tok);
+        
+        while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+            Token name_tok = consume(parser, TOKEN_IDENT);
+            char *alias = NULL;
+            
+            if (count >= cap) {
+                cap *= 2;
+                names = realloc(names, cap * sizeof(char*));
+                aliases = realloc(aliases, cap * sizeof(char*));
+            }
+            
+            names[count] = strdup(name_tok.value);
+            token_free(&name_tok);
+            
+            /* Check for 'as' alias */
+            if (match(parser, TOKEN_AS)) {
+                Token alias_tok = consume(parser, TOKEN_IDENT);
+                alias = strdup(alias_tok.value);
+                token_free(&alias_tok);
+            }
+            
+            aliases[count] = alias;
+            count++;
+            
+            if (!check(parser, TOKEN_RBRACE)) {
+                Token comma = consume(parser, TOKEN_COMMA);
+                token_free(&comma);
+            }
+        }
+        
+        brace_tok = consume(parser, TOKEN_RBRACE);
+        token_free(&brace_tok);
+        
+        from_tok = consume(parser, TOKEN_FROM);
+        token_free(&from_tok);
+        
+        path_tok = consume(parser, TOKEN_STRING);
+        module_path = strdup(path_tok.value);
+        token_free(&path_tok);
+        
+        result = ast_new_import_named(names, aliases, count, module_path, line);
+        free(module_path);
+        return result;
+    }
+    
+    fprintf(stderr, "Syntax error at line %d: Invalid import syntax\n", line);
+    parser->had_error = 1;
+    return NULL;
+}
+
+/* Parse export statement:
+ * export const x = 1
+ * export fn foo() {}
+ * export default expression
+ * export {name1, name2}
+ */
+static ASTNode *parse_export(Parser *parser) {
+    Token export_tok = consume(parser, TOKEN_EXPORT);
+    int line = export_tok.line;
+    token_free(&export_tok);
+    
+    /* export default ... */
+    if (match(parser, TOKEN_DEFAULT)) {
+        /* Check if it's a function or class declaration */
+        if (check(parser, TOKEN_FN) || check(parser, TOKEN_CLASS) || 
+            check(parser, TOKEN_ASYNC)) {
+            ASTNode *decl = parse_statement(parser);
+            return ast_new_export(1, decl, NULL, 0, line);
+        } else {
+            /* Otherwise it's an expression */
+            ASTNode *expr = parse_expression(parser);
+            return ast_new_export(1, expr, NULL, 0, line);
+        }
+    }
+    
+    /* export { name1, name2 } */
+    if (check(parser, TOKEN_LBRACE)) {
+        Token brace_tok = advance(parser);
+        int cap = 4;
+        int count = 0;
+        char **names = malloc(cap * sizeof(char*));
+        token_free(&brace_tok);
+        
+        while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+            Token name_tok = consume(parser, TOKEN_IDENT);
+            
+            if (count >= cap) {
+                cap *= 2;
+                names = realloc(names, cap * sizeof(char*));
+            }
+            
+            names[count++] = strdup(name_tok.value);
+            token_free(&name_tok);
+            
+            if (!check(parser, TOKEN_RBRACE)) {
+                Token comma = consume(parser, TOKEN_COMMA);
+                token_free(&comma);
+            }
+        }
+        
+        brace_tok = consume(parser, TOKEN_RBRACE);
+        token_free(&brace_tok);
+        
+        return ast_new_export(0, NULL, names, count, line);
+    }
+    
+    /* export const/let/var/fn/class ... */
+    ASTNode *declaration = parse_statement(parser);
+    return ast_new_export(0, declaration, NULL, 0, line);
+}
+

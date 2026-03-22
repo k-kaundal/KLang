@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 #include "lexer.h"
 #include "parser.h"
 #include "interpreter.h"
@@ -46,6 +47,12 @@ static void run_file(const char *path) {
     if (!parser.had_error) {
         Interpreter *interp = interpreter_new();
         runtime_init(interp);
+        
+        /* Set the current module directory for relative imports */
+        char *path_copy = strdup(path);
+        char *dir = dirname(path_copy);
+        interp->current_module_dir = strdup(dir);
+        free(path_copy);
 
         for (i = 0; i < count; i++) {
             Value result = eval_node(interp, nodes[i]);

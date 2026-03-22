@@ -1,0 +1,50 @@
+// Arrow Function Examples for KLang
+// Demonstrates JavaScript-style arrow function syntax
+
+print("=== Basic Arrow Functions ===")
+
+// Single parameter without parentheses
+const square = x => x * x
+print(square(5))  // Output: 25
+
+// Multiple parameters with parentheses
+const add = (a, b) => a + b
+print(add(3, 7))  // Output: 10
+
+// No parameters
+const greet = () => "Hello from KLang!"
+print(greet())  // Output: Hello from KLang!
+
+print("=== Arrow Function with Block Body ===")
+
+// Block body with explicit return
+const complex = x => {
+    let doubled = x * 2
+    let result = doubled + 1
+    return result
+}
+print(complex(10))  // Output: 21
+
+print("=== Arrow Functions in Different Declaration Types ===")
+
+// Works with let, var, and const
+let f1 = x => x + 1
+var f2 = x => x + 2
+const f3 = x => x + 3
+
+print(f1(10))  // Output: 11
+print(f2(10))  // Output: 12
+print(f3(10))  // Output: 13
+
+print("=== Single Expression Bodies ===")
+
+const isPositive = x => x > 0
+const double = x => x * 2
+const negate = x => -x
+
+print(isPositive(5))   // Output: 1 (true)
+print(isPositive(-3))  // Output: 0 (false)
+print(double(21))      // Output: 42
+print(negate(42))      // Output: -42
+
+print("=== All tests passed! ===")

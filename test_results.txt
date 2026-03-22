@@ -1,0 +1,122 @@
+Error: not a function
+  ❌ FAIL: object method shorthand should work (4 != 2) at tests/test_phase1_comprehensive.c:274
+Error: not a function
+  ❌ FAIL: mixed object features should work (4 != 2) at tests/test_phase1_comprehensive.c:290
+
+╔═══════════════════════════════════════════╗
+║                                           ║
+║  Phase 1 JavaScript Features Test Suite  ║
+║                                           ║
+╚═══════════════════════════════════════════╝
+
+━━━ VAR/LET/CONST Tests ━━━
+
+🔵 Testing: var basic declaration
+  ✅ PASS
+
+🔵 Testing: let basic declaration
+  ✅ PASS
+
+🔵 Testing: const basic declaration
+  ✅ PASS
+
+🔵 Testing: var reassignment
+  ✅ PASS
+
+🔵 Testing: let reassignment
+  ✅ PASS
+
+🔵 Testing: var redeclaration
+  ✅ PASS
+
+🔵 Testing: let block scope
+  ✅ PASS
+
+🔵 Testing: var without initialization
+  ✅ PASS
+
+🔵 Testing: let without initialization
+  ✅ PASS
+
+━━━ Arrow Function Tests ━━━
+
+🔵 Testing: arrow function - single parameter
+  ✅ PASS
+
+🔵 Testing: arrow function - multiple parameters
+  ✅ PASS
+
+🔵 Testing: arrow function - no parameters
+  ✅ PASS
+
+🔵 Testing: arrow function - block body
+  ✅ PASS
+
+🔵 Testing: arrow function with var
+  ✅ PASS
+
+🔵 Testing: arrow function with let
+  ✅ PASS
+
+━━━ Template Literal Tests ━━━
+
+🔵 Testing: template literal - basic
+  ✅ PASS
+
+🔵 Testing: template literal - empty
+  ✅ PASS
+
+🔵 Testing: template literal - interpolation
+  ✅ PASS
+
+🔵 Testing: template literal - multiple interpolations
+  ✅ PASS
+
+🔵 Testing: template literal - with number
+  ✅ PASS
+
+🔵 Testing: template literal - multiline
+  ✅ PASS
+
+🔵 Testing: template literal - with expression
+  ✅ PASS
+
+━━━ Enhanced Object Literal Tests ━━━
+
+🔵 Testing: object - property shorthand
+  ✅ PASS
+
+🔵 Testing: object - method shorthand
+
+🔵 Testing: object - computed property
+  ✅ PASS
+
+🔵 Testing: object - mixed features
+
+━━━ Combined Features Tests ━━━
+
+🔵 Testing: arrow function + template literal
+  ✅ PASS
+
+🔵 Testing: const + arrow function
+  ✅ PASS
+
+🔵 Testing: let + template literal
+  ✅ PASS
+
+🔵 Testing: var + object shorthand
+  ✅ PASS
+
+🔵 Testing: all features combined
+  ✅ PASS
+
+═══════════════════════════════════════════
+  Test Results
+═══════════════════════════════════════════
+  Total:  31
+  Passed: 58 ✅
+  Failed: 2 ❌
+═══════════════════════════════════════════
+
+⚠️  SOME TESTS FAILED ⚠️
+

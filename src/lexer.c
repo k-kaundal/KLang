@@ -149,6 +149,56 @@ Token lexer_next_token(Lexer *lexer) {
         return t;
     }
 
+    /* Template literals with backticks */
+    if (c == '`') {
+        int cap = 256, len = 0;
+        char *buf = malloc(cap);
+        Token t;
+        lexer->pos++; lexer->col++;
+        
+        while (lexer->source[lexer->pos] && lexer->source[lexer->pos] != '`') {
+            char ch = lexer->source[lexer->pos];
+            
+            /* Handle newlines in template literals */
+            if (ch == '\n') {
+                lexer->line++;
+                lexer->col = 1;
+            } else {
+                lexer->col++;
+            }
+            
+            /* Handle escape sequences */
+            if (ch == '\\' && lexer->source[lexer->pos + 1] == '`') {
+                /* Escaped backtick */
+                lexer->pos++;
+                ch = '`';
+            } else if (ch == '\\' && lexer->source[lexer->pos + 1] == '\\') {
+                /* Escaped backslash */
+                lexer->pos++;
+                ch = '\\';
+            }
+            
+            /* Store the character */
+            if (len + 1 >= cap) { 
+                cap *= 2; 
+                buf = realloc(buf, cap); 
+            }
+            buf[len++] = ch;
+            lexer->pos++;
+        }
+        
+        if (lexer->source[lexer->pos] == '`') { 
+            lexer->pos++; 
+            lexer->col++; 
+        }
+        buf[len] = '\0';
+        t.type = TOKEN_TEMPLATE_LITERAL;
+        t.value = buf;
+        t.line = line;
+        t.col = col;
+        return t;
+    }
+
     /* Identifiers and keywords */
     if (isalpha((unsigned char)c) || c == '_') {
         int start = lexer->pos;
@@ -164,6 +214,8 @@ Token lexer_next_token(Lexer *lexer) {
             buf[len] = '\0';
             if (strcmp(buf, "fn") == 0) type = TOKEN_FN;
             else if (strcmp(buf, "let") == 0) type = TOKEN_LET;
+            else if (strcmp(buf, "var") == 0) type = TOKEN_VAR;
+            else if (strcmp(buf, "const") == 0) type = TOKEN_CONST;
             else if (strcmp(buf, "if") == 0) type = TOKEN_IF;
             else if (strcmp(buf, "else") == 0) type = TOKEN_ELSE;
             else if (strcmp(buf, "while") == 0) type = TOKEN_WHILE;
@@ -172,8 +224,12 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "break") == 0) type = TOKEN_BREAK;
             else if (strcmp(buf, "continue") == 0) type = TOKEN_CONTINUE;
             else if (strcmp(buf, "in") == 0) type = TOKEN_IN;
+            else if (strcmp(buf, "of") == 0) type = TOKEN_OF;
             else if (strcmp(buf, "true") == 0) type = TOKEN_TRUE;
             else if (strcmp(buf, "false") == 0) type = TOKEN_FALSE;
+            else if (strcmp(buf, "switch") == 0) type = TOKEN_SWITCH;
+            else if (strcmp(buf, "case") == 0) type = TOKEN_CASE;
+            else if (strcmp(buf, "default") == 0) type = TOKEN_DEFAULT;
             else if (strcmp(buf, "class") == 0) type = TOKEN_CLASS;
             else if (strcmp(buf, "new") == 0) type = TOKEN_NEW;
             else if (strcmp(buf, "this") == 0) type = TOKEN_THIS;
@@ -184,6 +240,17 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "private") == 0) type = TOKEN_PRIVATE;
             else if (strcmp(buf, "protected") == 0) type = TOKEN_PROTECTED;
             else if (strcmp(buf, "abstract") == 0) type = TOKEN_ABSTRACT;
+            else if (strcmp(buf, "async") == 0) type = TOKEN_ASYNC;
+            else if (strcmp(buf, "await") == 0) type = TOKEN_AWAIT;
+            else if (strcmp(buf, "yield") == 0) type = TOKEN_YIELD;
+            else if (strcmp(buf, "try") == 0) type = TOKEN_TRY;
+            else if (strcmp(buf, "catch") == 0) type = TOKEN_CATCH;
+            else if (strcmp(buf, "finally") == 0) type = TOKEN_FINALLY;
+            else if (strcmp(buf, "throw") == 0) type = TOKEN_THROW;
+            else if (strcmp(buf, "import") == 0) type = TOKEN_IMPORT;
+            else if (strcmp(buf, "export") == 0) type = TOKEN_EXPORT;
+            else if (strcmp(buf, "from") == 0) type = TOKEN_FROM;
+            else if (strcmp(buf, "as") == 0) type = TOKEN_AS;
             t.type = type;
             t.value = buf;
             t.line = line;
@@ -209,6 +276,10 @@ Token lexer_next_token(Lexer *lexer) {
             if (lexer->source[lexer->pos] == '=') {
                 lexer->pos++; lexer->col++;
                 return make_token(TOKEN_EQ, "==", line, col);
+            }
+            if (lexer->source[lexer->pos] == '>') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_FAT_ARROW, "=>", line, col);
             }
             return make_token(TOKEN_ASSIGN, "=", line, col);
         case '!':
@@ -241,9 +312,14 @@ Token lexer_next_token(Lexer *lexer) {
         case '.':
             if (lexer->source[lexer->pos] == '.') {
                 lexer->pos++; lexer->col++;
+                if (lexer->source[lexer->pos] == '.') {
+                    lexer->pos++; lexer->col++;
+                    return make_token(TOKEN_SPREAD, "...", line, col);
+                }
                 return make_token(TOKEN_DOTDOT, "..", line, col);
             }
             return make_token(TOKEN_DOT, ".", line, col);
+        case '?': return make_token(TOKEN_QUESTION, "?", line, col);
         default: {
             char buf[2] = {c, 0};
             return make_token(TOKEN_EOF, buf, line, col);
@@ -263,9 +339,12 @@ const char *token_type_name(TokenType type) {
     switch (type) {
         case TOKEN_NUMBER: return "NUMBER";
         case TOKEN_STRING: return "STRING";
+        case TOKEN_TEMPLATE_LITERAL: return "TEMPLATE_LITERAL";
         case TOKEN_IDENT: return "IDENT";
         case TOKEN_FN: return "FN";
         case TOKEN_LET: return "LET";
+        case TOKEN_VAR: return "VAR";
+        case TOKEN_CONST: return "CONST";
         case TOKEN_IF: return "IF";
         case TOKEN_ELSE: return "ELSE";
         case TOKEN_WHILE: return "WHILE";
@@ -274,8 +353,12 @@ const char *token_type_name(TokenType type) {
         case TOKEN_BREAK: return "BREAK";
         case TOKEN_CONTINUE: return "CONTINUE";
         case TOKEN_IN: return "IN";
+        case TOKEN_OF: return "OF";
         case TOKEN_TRUE: return "TRUE";
         case TOKEN_FALSE: return "FALSE";
+        case TOKEN_SWITCH: return "SWITCH";
+        case TOKEN_CASE: return "CASE";
+        case TOKEN_DEFAULT: return "DEFAULT";
         case TOKEN_CLASS: return "CLASS";
         case TOKEN_NEW: return "NEW";
         case TOKEN_THIS: return "THIS";
@@ -286,6 +369,17 @@ const char *token_type_name(TokenType type) {
         case TOKEN_PRIVATE: return "PRIVATE";
         case TOKEN_PROTECTED: return "PROTECTED";
         case TOKEN_ABSTRACT: return "ABSTRACT";
+        case TOKEN_ASYNC: return "ASYNC";
+        case TOKEN_AWAIT: return "AWAIT";
+        case TOKEN_YIELD: return "YIELD";
+        case TOKEN_TRY: return "TRY";
+        case TOKEN_CATCH: return "CATCH";
+        case TOKEN_FINALLY: return "FINALLY";
+        case TOKEN_THROW: return "THROW";
+        case TOKEN_IMPORT: return "IMPORT";
+        case TOKEN_EXPORT: return "EXPORT";
+        case TOKEN_FROM: return "FROM";
+        case TOKEN_AS: return "AS";
         case TOKEN_PLUS: return "PLUS";
         case TOKEN_MINUS: return "MINUS";
         case TOKEN_STAR: return "STAR";
@@ -309,8 +403,11 @@ const char *token_type_name(TokenType type) {
         case TOKEN_SEMICOLON: return "SEMICOLON";
         case TOKEN_COMMA: return "COMMA";
         case TOKEN_ARROW: return "ARROW";
+        case TOKEN_FAT_ARROW: return "FAT_ARROW";
+        case TOKEN_SPREAD: return "SPREAD";
         case TOKEN_DOTDOT: return "DOTDOT";
         case TOKEN_DOT: return "DOT";
+        case TOKEN_QUESTION: return "QUESTION";
         case TOKEN_EOF: return "EOF";
         default: return "UNKNOWN";
     }
