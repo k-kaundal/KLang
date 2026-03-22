@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200809L -Isrc -Iinclude -g
-SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/vm.c src/compiler.c src/gc.c src/runtime.c src/repl.c src/cli.c
+SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/vm.c src/compiler.c src/gc.c src/runtime.c src/repl.c src/cli.c src/cli_colors.c src/cli_help.c src/cli_commands.c
 OBJ = $(SRC:.c=.o)
 TARGET = klang
 

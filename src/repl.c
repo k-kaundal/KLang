@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "interpreter.h"
 #include "runtime.h"
+#include "cli_colors.h"
 
 static Value builtin_exit(Interpreter *interp, Value *args, int argc) {
     (void)interp;
@@ -30,8 +31,24 @@ void run_repl(void) {
     env_set_local(interp->global_env, "exit", exit_fn);
     env_set_local(interp->global_env, "quit", exit_fn);
 
-    printf("KLang REPL v0.1.0\n");
-    printf("Type 'exit' or 'exit()' to quit.\n");
+    printf("\n");
+    printf("%s╔═══════════════════════════════════════════════════════════╗%s\n",
+           get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+    printf("%s║              %sKLang REPL v0.2.0%s                       ║%s\n",
+           get_color(COLOR_BOLD_CYAN), get_color(COLOR_BOLD_WHITE),
+           get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+    printf("%s║        Interactive Programming Environment              ║%s\n",
+           get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+    printf("%s╚═══════════════════════════════════════════════════════════╝%s\n",
+           get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+    printf("\n");
+    printf("%sTip:%s Type %sexit%s or %squit%s to leave the REPL\n",
+           get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET),
+           get_color(COLOR_CYAN), get_color(COLOR_RESET),
+           get_color(COLOR_CYAN), get_color(COLOR_RESET));
+    printf("%sTip:%s Use %sexit(n)%s to exit with a specific code\n\n",
+           get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET),
+           get_color(COLOR_CYAN), get_color(COLOR_RESET));
 
     {
         char line[4096];
@@ -42,7 +59,7 @@ void run_repl(void) {
             ASTNode **nodes;
             int i;
 
-            printf("> ");
+            printf("%s>%s ", get_color(COLOR_BOLD_GREEN), get_color(COLOR_RESET));
             fflush(stdout);
             if (!fgets(line, sizeof(line), stdin)) break;
             {
@@ -60,6 +77,7 @@ void run_repl(void) {
             for (i = 0; i < count; i++) {
                 Value result = eval_node(interp, nodes[i]);
                 if (result.type != VAL_NULL) {
+                    printf("%s=> %s", get_color(COLOR_CYAN), get_color(COLOR_RESET));
                     value_print(&result);
                     printf("\n");
                 }
@@ -72,5 +90,6 @@ void run_repl(void) {
         }
     }
 
+    printf("\n%sGoodbye!%s\n", get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
     interpreter_free(interp);
 }

@@ -8,6 +8,9 @@
 #include "compiler.h"
 #include "vm.h"
 #include "runtime.h"
+#include "cli_colors.h"
+#include "cli_help.h"
+#include "cli_commands.h"
 
 void run_repl(void);
 
@@ -47,13 +50,16 @@ static void run_file(const char *path) {
     int i;
     
     if (!validate_file_extension(path)) {
-        fprintf(stderr, "Error: Invalid file extension. KLang files must have .kl, .k, or .klang extension\n");
+        print_error("Invalid file extension. KLang files must have .kl, .k, or .klang extension");
         fprintf(stderr, "Given file: %s\n", path);
         return;
     }
     
     source = read_file(path);
-    if (!source) return;
+    if (!source) {
+        print_error("Cannot open file");
+        return;
+    }
 
     lexer_init(&lexer, source);
     parser_init(&parser, &lexer);
@@ -95,13 +101,16 @@ static void build_file(const char *path) {
     int i;
     
     if (!validate_file_extension(path)) {
-        fprintf(stderr, "Error: Invalid file extension. KLang files must have .kl, .k, or .klang extension\n");
+        print_error("Invalid file extension. KLang files must have .kl, .k, or .klang extension");
         fprintf(stderr, "Given file: %s\n", path);
         return;
     }
     
     source = read_file(path);
-    if (!source) return;
+    if (!source) {
+        print_error("Cannot open file");
+        return;
+    }
 
     lexer_init(&lexer, source);
     parser_init(&parser, &lexer);
@@ -126,28 +135,89 @@ static void build_file(const char *path) {
 }
 
 int main(int argc, char **argv) {
+    int i;
+    
+    /* Check for --no-color flag first */
+    for (i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--no-color") == 0) {
+            enable_colors(0);
+            break;
+        }
+    }
+    
+    /* No arguments - start REPL */
     if (argc < 2) {
         run_repl();
         return 0;
     }
 
+    /* Check for help and version flags */
+    if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
+        print_help();
+        return 0;
+    }
+    
+    if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
+        print_version();
+        return 0;
+    }
+
+    /* Handle commands */
     if (strcmp(argv[1], "repl") == 0) {
         run_repl();
-    } else if (strcmp(argv[1], "run") == 0) {
+    } 
+    else if (strcmp(argv[1], "run") == 0) {
         if (argc < 3) {
+            print_error("Missing file argument");
             fprintf(stderr, "Usage: klang run <file.kl>\n");
+            fprintf(stderr, "Try 'klang help run' for more information.\n");
             return 1;
         }
         run_file(argv[2]);
-    } else if (strcmp(argv[1], "build") == 0) {
+    } 
+    else if (strcmp(argv[1], "build") == 0) {
         if (argc < 3) {
+            print_error("Missing file argument");
             fprintf(stderr, "Usage: klang build <file.kl>\n");
+            fprintf(stderr, "Try 'klang help build' for more information.\n");
             return 1;
         }
         build_file(argv[2]);
-    } else {
-        fprintf(stderr, "Unknown command: %s\n", argv[1]);
+    }
+    else if (strcmp(argv[1], "check") == 0) {
+        if (argc < 3) {
+            print_error("Missing file argument");
+            fprintf(stderr, "Usage: klang check <file.kl>\n");
+            fprintf(stderr, "Try 'klang help check' for more information.\n");
+            return 1;
+        }
+        cmd_check_file(argv[2]);
+    }
+    else if (strcmp(argv[1], "info") == 0) {
+        if (argc < 3) {
+            print_error("Missing file argument");
+            fprintf(stderr, "Usage: klang info <file.kl>\n");
+            fprintf(stderr, "Try 'klang help info' for more information.\n");
+            return 1;
+        }
+        cmd_info_file(argv[2]);
+    }
+    else if (strcmp(argv[1], "version") == 0) {
+        print_version();
+    }
+    else if (strcmp(argv[1], "help") == 0) {
+        if (argc >= 3) {
+            print_command_help(argv[2]);
+        } else {
+            print_help();
+        }
+    }
+    else {
+        print_error("Unknown command");
+        fprintf(stderr, "Command: %s\n", argv[1]);
+        fprintf(stderr, "Try 'klang --help' for available commands.\n");
         return 1;
     }
+    
     return 0;
 }
