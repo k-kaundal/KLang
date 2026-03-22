@@ -1,0 +1,366 @@
+# Comprehensive Advanced OOP Features Demo
+# Demonstrates static members, access modifiers, and abstract classes
+
+println("=== Advanced OOP Features Demo ===")
+println("")
+
+# Example 1: E-commerce System with all features
+
+# Abstract base class for products
+abstract class Product {
+    private let id: int = 0
+    protected let name: string = ""
+    protected let price: float = 0.0
+    public static let tax_rate: float = 0.08
+    private static let next_id: int = 1
+    
+    fn init(n: string, p: float) {
+        this.id = Product.next_id
+        Product.next_id = Product.next_id + 1
+        this.name = n
+        this.price = p
+    }
+    
+    # Abstract method - must be implemented
+    public abstract fn calculate_shipping() -> float;
+    
+    # Concrete method using abstract method
+    public fn get_total() -> float {
+        let subtotal: float = this.price + this.calculate_shipping()
+        let tax: float = subtotal * Product.tax_rate
+        return subtotal + tax
+    }
+    
+    # Public getter for private field
+    public fn get_id() -> int {
+        return this.id
+    }
+    
+    public fn display_info() {
+        println("ID: ")
+        println(this.id)
+        println("Name: ")
+        println(this.name)
+        println("Price: $")
+        println(this.price)
+    }
+    
+    # Static utility
+    public static fn set_tax_rate(rate: float) {
+        Product.tax_rate = rate
+    }
+}
+
+# Physical product with shipping
+class PhysicalProduct extends Product {
+    private let weight: float = 0.0
+    
+    fn init(n: string, p: float, w: float) {
+        super.init(n, p)
+        this.weight = w
+    }
+    
+    # Implement abstract method
+    public fn calculate_shipping() -> float {
+        return this.weight * 2.5
+    }
+    
+    public fn display_full_info() {
+        this.display_info()
+        println("Weight: ")
+        println(this.weight)
+        println("kg")
+        println("Shipping: $")
+        println(this.calculate_shipping())
+        println("Total: $")
+        println(this.get_total())
+    }
+}
+
+# Digital product with no shipping
+class DigitalProduct extends Product {
+    private let file_size: float = 0.0
+    
+    fn init(n: string, p: float, size: float) {
+        super.init(n, p)
+        this.file_size = size
+    }
+    
+    # Implement abstract method
+    public fn calculate_shipping() -> float {
+        return 0.0
+    }
+    
+    public fn display_full_info() {
+        this.display_info()
+        println("File Size: ")
+        println(this.file_size)
+        println("MB")
+        println("Shipping: $")
+        println(this.calculate_shipping())
+        println("Total: $")
+        println(this.get_total())
+    }
+}
+
+println("1. Product Catalog:")
+println("")
+
+let book = new PhysicalProduct("Programming Book", 39.99, 0.5)
+book.display_full_info()
+
+println("")
+
+let software = new DigitalProduct("Text Editor", 29.99, 150.0)
+software.display_full_info()
+
+println("")
+println("---")
+println("")
+
+# Example 2: User Management System
+
+abstract class User {
+    private let user_id: int = 0
+    private let username: string = ""
+    protected let email: string = ""
+    public static let total_users: int = 0
+    private static let next_user_id: int = 1000
+    
+    fn init(name: string, mail: string) {
+        this.user_id = User.next_user_id
+        User.next_user_id = User.next_user_id + 1
+        this.username = name
+        this.email = mail
+        User.total_users = User.total_users + 1
+    }
+    
+    # Abstract method
+    public abstract fn get_permissions() -> string;
+    
+    # Concrete methods
+    public fn get_username() -> string {
+        return this.username
+    }
+    
+    public fn get_id() -> int {
+        return this.user_id
+    }
+    
+    private fn log_activity(action: string) {
+        println("[LOG] User ")
+        println(this.username)
+        println(" ")
+        println(action)
+    }
+    
+    public fn login() {
+        this.log_activity("logged in")
+    }
+    
+    public fn logout() {
+        this.log_activity("logged out")
+    }
+    
+    # Static method
+    public static fn get_user_count() -> int {
+        return User.total_users
+    }
+}
+
+class AdminUser extends User {
+    private let admin_level: int = 1
+    
+    fn init(name: string, mail: string, level: int) {
+        super.init(name, mail)
+        this.admin_level = level
+    }
+    
+    public fn get_permissions() -> string {
+        return "full_access"
+    }
+    
+    public fn display_info() {
+        println("Admin: ")
+        println(this.get_username())
+        println(" (ID: ")
+        println(this.get_id())
+        println(")")
+        println("Level: ")
+        println(this.admin_level)
+        println("Permissions: ")
+        println(this.get_permissions())
+    }
+}
+
+class RegularUser extends User {
+    fn init(name: string, mail: string) {
+        super.init(name, mail)
+    }
+    
+    public fn get_permissions() -> string {
+        return "read_only"
+    }
+    
+    public fn display_info() {
+        println("User: ")
+        println(this.get_username())
+        println(" (ID: ")
+        println(this.get_id())
+        println(")")
+        println("Permissions: ")
+        println(this.get_permissions())
+    }
+}
+
+println("2. User Management System:")
+println("")
+
+let admin = new AdminUser("admin", "admin@example.com", 3)
+admin.display_info()
+admin.login()
+
+println("")
+
+let user1 = new RegularUser("john", "john@example.com")
+user1.display_info()
+user1.login()
+
+println("")
+
+let user2 = new RegularUser("jane", "jane@example.com")
+user2.display_info()
+
+println("")
+println("Total users in system: ")
+println(User.get_user_count())
+
+println("")
+println("---")
+println("")
+
+# Example 3: Banking System
+
+abstract class Account {
+    private let account_number: string = ""
+    private let balance: float = 0.0
+    protected let owner: string = ""
+    public static let bank_name: string = "KLang Bank"
+    public static let total_accounts: int = 0
+    
+    fn init(num: string, own: string, initial: float) {
+        this.account_number = num
+        this.owner = own
+        this.balance = initial
+        Account.total_accounts = Account.total_accounts + 1
+    }
+    
+    # Abstract method
+    public abstract fn calculate_interest() -> float;
+    
+    # Public methods
+    public fn deposit(amount: float) {
+        this.balance = this.balance + amount
+        println("Deposited $")
+        println(amount)
+        println("New balance: $")
+        println(this.balance)
+    }
+    
+    public fn get_balance() -> float {
+        return this.balance
+    }
+    
+    private fn validate_withdrawal(amount: float) -> int {
+        if amount > this.balance {
+            return 0
+        }
+        return 1
+    }
+    
+    public fn withdraw(amount: float) -> int {
+        if this.validate_withdrawal(amount) {
+            this.balance = this.balance - amount
+            println("Withdrew $")
+            println(amount)
+            println("New balance: $")
+            println(this.balance)
+            return 1
+        } else {
+            println("Insufficient funds!")
+            return 0
+        }
+    }
+    
+    public fn apply_interest() {
+        let interest: float = this.calculate_interest()
+        this.balance = this.balance + interest
+        println("Interest applied: $")
+        println(interest)
+        println("New balance: $")
+        println(this.balance)
+    }
+    
+    # Static method
+    public static fn get_account_count() -> int {
+        return Account.total_accounts
+    }
+}
+
+class SavingsAccount extends Account {
+    private let interest_rate: float = 0.03
+    
+    fn init(num: string, own: string, initial: float) {
+        super.init(num, own, initial)
+    }
+    
+    public fn calculate_interest() -> float {
+        return this.get_balance() * this.interest_rate
+    }
+}
+
+class CheckingAccount extends Account {
+    private let interest_rate: float = 0.01
+    private let free_withdrawals: int = 5
+    
+    fn init(num: string, own: string, initial: float) {
+        super.init(num, own, initial)
+    }
+    
+    public fn calculate_interest() -> float {
+        return this.get_balance() * this.interest_rate
+    }
+}
+
+println("3. Banking System:")
+println("Bank: ")
+println(Account.bank_name)
+println("")
+
+let savings = new SavingsAccount("SAV-001", "Alice", 1000.0)
+println("Savings Account:")
+println("Balance: $")
+println(savings.get_balance())
+savings.deposit(500.0)
+savings.apply_interest()
+
+println("")
+
+let checking = new CheckingAccount("CHK-001", "Bob", 500.0)
+println("Checking Account:")
+println("Balance: $")
+println(checking.get_balance())
+checking.withdraw(100.0)
+checking.apply_interest()
+
+println("")
+println("Total accounts: ")
+println(Account.get_account_count())
+
+println("")
+println("=== All Advanced OOP Features Demonstrated ===")
+println("✓ Static members (fields and methods)")
+println("✓ Access modifiers (public, private, protected)")
+println("✓ Abstract classes and methods")
+println("✓ Inheritance and polymorphism")
+println("✓ Encapsulation and information hiding")

@@ -210,16 +210,113 @@ println("Area: ")
 println(circle.area())
 ```
 
+## Advanced Features
+
+### Static Members
+
+KLang supports static fields and methods that belong to the class itself rather than instances:
+
+```klang
+class Math {
+    static let PI: float = 3.14159
+    static let E: float = 2.71828
+    
+    static fn square(x: int) -> int {
+        return x * x
+    }
+}
+
+# Access static members via class name
+println(Math.PI)           # 3.14159
+println(Math.square(5))    # 25
+```
+
+**Features:**
+- Static fields are shared across all instances
+- Static methods can be called without creating an instance
+- Static members are accessed using `ClassName.member` syntax
+- Static members can have access modifiers (public/private/protected)
+- Useful for factory methods, utility functions, and shared state
+
+### Access Modifiers
+
+KLang supports three access modifiers to control member visibility:
+
+```klang
+class BankAccount {
+    public let account_number: int = 0
+    private let balance: float = 0.0
+    protected let owner_id: int = 0
+    
+    public fn get_balance() -> float {
+        return this.balance  # Private field accessible within class
+    }
+    
+    private fn validate() -> int {
+        # Private method only accessible within class
+        return 1
+    }
+}
+
+let acc = new BankAccount()
+println(acc.account_number)  # OK - public
+# println(acc.balance)       # ERROR - private
+```
+
+**Access Control:**
+- `public` - Accessible from anywhere (default)
+- `private` - Only accessible within the same class
+- `protected` - Accessible within the class and subclasses
+- Access modifiers work with both instance and static members
+
+### Abstract Classes
+
+KLang supports abstract classes and methods for defining contracts:
+
+```klang
+abstract class Shape {
+    public let color: string = ""
+    
+    # Abstract method - no body
+    public abstract fn area() -> float;
+    
+    # Concrete method
+    public fn display() {
+        println(this.color)
+    }
+}
+
+class Circle extends Shape {
+    private let radius: float = 0.0
+    
+    # Must implement abstract method
+    public fn area() -> float {
+        return 3.14159 * this.radius * this.radius
+    }
+}
+
+let c = new Circle()      # OK
+# let s = new Shape()     # ERROR - cannot instantiate abstract class
+```
+
+**Features:**
+- Abstract classes cannot be instantiated
+- Abstract methods are declared without a body using semicolon
+- Child classes must implement all abstract methods
+- Abstract classes can have both abstract and concrete members
+- Useful for defining interfaces and base classes
+
 ## Limitations
 
 ### Current Limitations
 
 1. **Multi-level inheritance** (3+ levels) may have stability issues
-2. **No interfaces or abstract classes** yet
-3. **No static methods or class variables** yet
-4. **No access modifiers** (public/private) - all members are public
-5. **No method overloading** - method names must be unique
+2. ~~**No interfaces or abstract classes**~~ ✅ **Abstract classes now supported**
+3. ~~**No static methods or class variables**~~ ✅ **Static members now supported**
+4. ~~**No access modifiers (public/private)**~~ ✅ **Access modifiers now supported**
+5. **No method overloading** - method names must be unique within a class
 6. **No multiple inheritance** - only single inheritance supported
+7. **No interfaces** (separate from classes) - use abstract classes instead
 
 ### Memory Management
 
@@ -240,13 +337,18 @@ println(circle.area())
 | Feature | Syntax |
 |---------|--------|
 | Class definition | `class Name { }` |
+| Abstract class | `abstract class Name { }` |
 | Inheritance | `class Child extends Parent { }` |
 | Constructor | `fn init(params) { }` |
 | Field declaration | `let field: type = value` |
+| Static field | `static let field: type = value` |
 | Method definition | `fn method(params) -> type { }` |
+| Static method | `static fn method(params) -> type { }` |
+| Abstract method | `abstract fn method(params) -> type;` |
+| Access modifiers | `public`, `private`, `protected` |
 | Object creation | `let obj = new ClassName(args)` |
-| Field access | `obj.field` |
-| Method call | `obj.method(args)` |
+| Field access | `obj.field` or `ClassName.static_field` |
+| Method call | `obj.method(args)` or `ClassName.static_method(args)` |
 | Self-reference | `this.member` |
 | Parent access | `super.method(args)` |
 
@@ -258,6 +360,9 @@ See the `examples/` directory for working OOP examples:
 - `examples/point_class.kl` - Point class with methods
 - `examples/calculator_class.kl` - Method chaining example
 - `examples/inheritance_demo.kl` - Inheritance demonstration
+- `examples/static_members_demo.kl` - Static fields and methods
+- `examples/access_modifiers_demo.kl` - Encapsulation with access control
+- `examples/abstract_classes_demo.kl` - Abstract classes and methods
 
 ## Testing OOP Features
 
