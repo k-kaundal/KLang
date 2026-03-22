@@ -205,9 +205,11 @@ klang run script.kl     # Run a script
 
 **Quick Links:**
 - [Documentation Index](docs/README.md) - Complete navigation
+- [Documentation Status](DOCUMENTATION_COMPLETENESS.md) - What's complete and what's not
 - [Examples](examples/) - Working code examples
 - [Tests](tests/) - Test suite ([Test Guide](tests/README.md))
 - [Project Structure](PROJECT_STRUCTURE.md) - Repository organization
+- [Path Fix Summary](PATH_FIX_SUMMARY.md) - All documentation paths are now correct
 - [Issues](https://github.com/k-kaundal/KLang/issues) - Bug reports & features
 - [Discussions](https://github.com/k-kaundal/KLang/discussions) - Q&A & ideas
 
