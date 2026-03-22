@@ -341,6 +341,13 @@ void value_free(Value *v) {
         free(v->as.list_val.items);
         v->as.list_val.items = NULL;
     }
+    if (v->type == VAL_TUPLE) {
+        int i;
+        for (i = 0; i < v->as.tuple_val.count; i++)
+            value_free(&v->as.tuple_val.elements[i]);
+        free(v->as.tuple_val.elements);
+        v->as.tuple_val.elements = NULL;
+    }
     if (v->type == VAL_CLASS) {
         // Don't free Env structures to avoid double-free issues
         // when class is copied/stored in multiple places.
@@ -474,6 +481,43 @@ char *value_to_string(Value *v) {
                 free(item_strs[i]);
             }
             strcat(result, "]");
+            free(item_strs);
+            return result;
+        }
+        case VAL_TUPLE: {
+            // Build tuple string representation (1, 2, 3)
+            int count = v->as.tuple_val.count;
+            if (count == 0) {
+                return strdup("()");
+            }
+            if (count == 1) {
+                // Single element tuple needs trailing comma
+                char *item_str = value_to_string(&v->as.tuple_val.elements[0]);
+                int len = strlen(item_str) + 4; // (item,)
+                char *result = malloc(len);
+                snprintf(result, len, "(%s,)", item_str);
+                free(item_str);
+                return result;
+            }
+            
+            // Calculate total length needed
+            int total_len = 2; // For ( and )
+            char **item_strs = malloc(count * sizeof(char *));
+            for (int i = 0; i < count; i++) {
+                item_strs[i] = value_to_string(&v->as.tuple_val.elements[i]);
+                total_len += strlen(item_strs[i]);
+                if (i > 0) total_len += 2; // For ", "
+            }
+            
+            // Build the string
+            char *result = malloc(total_len + 1);
+            strcpy(result, "(");
+            for (int i = 0; i < count; i++) {
+                if (i > 0) strcat(result, ", ");
+                strcat(result, item_strs[i]);
+                free(item_strs[i]);
+            }
+            strcat(result, ")");
             free(item_strs);
             return result;
         }
@@ -644,11 +688,14 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             Value source = eval_node_env(interp, node->data.destructure_array.source, env);
             DeclType decl_type = node->data.destructure_array.decl_type;
             
-            if (source.type != VAL_LIST) {
-                fprintf(stderr, "Runtime error at line %d: cannot destructure non-array\n", node->line);
+            if (source.type != VAL_LIST && source.type != VAL_TUPLE) {
+                fprintf(stderr, "Runtime error at line %d: cannot destructure non-array/tuple\n", node->line);
                 value_free(&source);
                 return make_null();
             }
+            
+            int source_count = (source.type == VAL_LIST) ? source.as.list_val.count : source.as.tuple_val.count;
+            Value *source_items = (source.type == VAL_LIST) ? source.as.list_val.items : source.as.tuple_val.elements;
             
             int i;
             int source_idx = 0;
@@ -663,15 +710,15 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 if (elem->data.destructure_element.is_rest) {
                     /* Collect remaining elements into array */
                     Value rest_array;
-                    int rest_count = source.as.list_val.count - source_idx;
+                    int rest_count = source_count - source_idx;
                     if (rest_count < 0) rest_count = 0;
                     rest_array.type = VAL_LIST;
                     rest_array.as.list_val.count = rest_count;
                     rest_array.as.list_val.capacity = rest_count;
                     rest_array.as.list_val.items = malloc((rest_count > 0 ? rest_count : 1) * sizeof(Value));
                     int rest_idx = 0;
-                    while (source_idx < (int)source.as.list_val.count) {
-                        rest_array.as.list_val.items[rest_idx++] = source.as.list_val.items[source_idx];
+                    while (source_idx < source_count) {
+                        rest_array.as.list_val.items[rest_idx++] = source_items[source_idx];
                         source_idx++;
                     }
                     env_declare(env, elem->data.destructure_element.name, rest_array, decl_type, node->line, interp);
@@ -679,8 +726,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
                 
                 Value val = make_null();
-                if (source_idx < (int)source.as.list_val.count) {
-                    val = source.as.list_val.items[source_idx];
+                if (source_idx < source_count) {
+                    val = source_items[source_idx];
                 } else if (elem->data.destructure_element.default_value) {
                     val = eval_node_env(interp, elem->data.destructure_element.default_value, env);
                 }
@@ -1203,6 +1250,31 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         continue;
                     }
                 }
+            } else if (iterable.type == VAL_TUPLE) {
+                // Iterate over tuple elements
+                for (i = 0; i < iterable.as.tuple_val.count; i++) {
+                    Env *loop_env = env_new(env);
+                    Value elem = iterable.as.tuple_val.elements[i];
+                    // Copy strings to avoid double-free
+                    if (elem.type == VAL_STRING) {
+                        elem = make_string(elem.as.str_val);
+                    }
+                    env_set_local(loop_env, node->data.for_of_stmt.var, elem);
+                    {
+                        Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
+                        value_free(&r);
+                    }
+                    env_free(loop_env);
+                    
+                    if (interp->last_result.is_return || interp->last_result.is_break) {
+                        interp->last_result.is_break = 0;
+                        break;
+                    }
+                    if (interp->last_result.is_continue) {
+                        interp->last_result.is_continue = 0;
+                        continue;
+                    }
+                }
             } else if (iterable.type == VAL_STRING) {
                 // Iterate over string characters
                 const char *str = iterable.as.str_val;
@@ -1253,7 +1325,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     entry = entry->next;
                 }
             } else {
-                fprintf(stderr, "Runtime error: for-of requires an iterable (list, string, or object)\n");
+                fprintf(stderr, "Runtime error: for-of requires an iterable (list, tuple, string, or object)\n");
             }
             
             value_free(&iterable);
@@ -1469,6 +1541,22 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             return list;
         }
+        case NODE_TUPLE: {
+            Value tuple;
+            int i;
+            int count = node->data.tuple.elements.count;
+            
+            tuple.type = VAL_TUPLE;
+            tuple.as.tuple_val.count = count;
+            tuple.as.tuple_val.elements = malloc((count > 0 ? count : 1) * sizeof(Value));
+            
+            /* Evaluate each element */
+            for (i = 0; i < count; i++) {
+                tuple.as.tuple_val.elements[i] = eval_node_env(interp, node->data.tuple.elements.items[i], env);
+            }
+            
+            return tuple;
+        }
         case NODE_OBJECT: {
             Value obj;
             int i;
@@ -1559,6 +1647,13 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 long long i = idx.as.int_val;
                 if (i >= 0 && i < (long long)obj.as.list_val.count) {
                     Value *item = &obj.as.list_val.items[i];
+                    if (item->type == VAL_STRING) result = make_string(item->as.str_val);
+                    else result = *item;
+                }
+            } else if (obj.type == VAL_TUPLE && idx.type == VAL_INT) {
+                long long i = idx.as.int_val;
+                if (i >= 0 && i < (long long)obj.as.tuple_val.count) {
+                    Value *item = &obj.as.tuple_val.elements[i];
                     if (item->type == VAL_STRING) result = make_string(item->as.str_val);
                     else result = *item;
                 }

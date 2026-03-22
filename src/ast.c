@@ -192,6 +192,12 @@ ASTNode *ast_new_list(int line) {
     return n;
 }
 
+ASTNode *ast_new_tuple(int line) {
+    ASTNode *n = ast_alloc(NODE_TUPLE, line);
+    nodelist_init(&n->data.tuple.elements);
+    return n;
+}
+
 ASTNode *ast_new_object(int line) {
     ASTNode *n = ast_alloc(NODE_OBJECT, line);
     n->data.object.props = NULL;
@@ -456,6 +462,11 @@ void ast_free(ASTNode *node) {
             for (i = 0; i < node->data.list.elements.count; i++)
                 ast_free(node->data.list.elements.items[i]);
             nodelist_free(&node->data.list.elements);
+            break;
+        case NODE_TUPLE:
+            for (i = 0; i < node->data.tuple.elements.count; i++)
+                ast_free(node->data.tuple.elements.items[i]);
+            nodelist_free(&node->data.tuple.elements);
             break;
         case NODE_OBJECT:
             for (i = 0; i < node->data.object.count; i++) {
