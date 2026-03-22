@@ -1,0 +1,24 @@
+// Regex Module for KLang Standard Library
+// Wrapper for C-level regex functions using POSIX regex
+
+let regex = {
+    // Test if pattern matches string
+    test: func(pattern, str) {
+        return regexTest(pattern, str);
+    },
+    
+    // Match pattern in string, returns array of matches or null
+    match: func(pattern, str) {
+        return regexMatch(pattern, str);
+    },
+    
+    // Replace matches with replacement string
+    replace: func(pattern, str, replacement) {
+        return regexReplace(pattern, str, replacement);
+    },
+    
+    // Split string by pattern
+    split: func(pattern, str) {
+        return regexSplit(pattern, str);
+    }
+};

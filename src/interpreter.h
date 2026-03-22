@@ -6,7 +6,8 @@
 
 typedef enum {
     VAL_INT, VAL_FLOAT, VAL_STRING, VAL_BOOL, VAL_NULL, VAL_FUNCTION, VAL_LIST, VAL_BUILTIN,
-    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE, VAL_GENERATOR, VAL_TUPLE, VAL_FILE
+    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE, VAL_GENERATOR, VAL_TUPLE, VAL_FILE,
+    VAL_DICT, VAL_SET
 } ValueType;
 
 typedef struct Value Value;
@@ -104,6 +105,19 @@ typedef struct {
     int is_open;               // Track if file is still open
 } FileVal;
 
+typedef struct {
+    Value *keys;               // Array of keys (any type)
+    Value *values;             // Array of values (any type)
+    int count;                 // Number of key-value pairs
+    int capacity;              // Capacity of arrays
+} DictVal;
+
+typedef struct {
+    Value *items;              // Array of values (any type)
+    int count;                 // Number of items
+    int capacity;              // Capacity of array
+} SetVal;
+
 struct Value {
     ValueType type;
     union {
@@ -122,6 +136,8 @@ struct Value {
         ModuleVal module_val;
         GeneratorVal generator_val;
         FileVal file_val;
+        DictVal *dict_val;      // Pointer for reference semantics
+        SetVal *set_val;        // Pointer for reference semantics
     } as;
 };
 
@@ -189,6 +205,8 @@ Value make_object(const char *class_name, Env *methods);
 Value make_method(Value receiver, Value method);
 Value make_promise(void);
 Value make_module(const char *module_path, Env *exports, Env *module_env);
+Value make_dict(void);
+Value make_set(void);
 void value_free(Value *v);
 void value_print(Value *v);
 char *value_to_string(Value *v);

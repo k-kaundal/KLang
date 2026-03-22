@@ -97,6 +97,20 @@ Source Code (.kl)
   * `range()` function - Python-style range generation
   * Support for range(n), range(start, stop), range(start, stop, step)
   * Memory-efficient iteration patterns
+* **Tuple Type** 🆕
+  * Immutable ordered collections
+  * Support for indexing, unpacking, and iteration
+  * Single-element tuple syntax with trailing comma
+* **Dictionary Type** 🆕
+  * Key-value storage with dynamic sizing
+  * Methods: set(), get(), has(), delete(), keys(), values()
+  * Support for any type as keys/values
+  * For-of iteration over keys
+* **Set Type** 🆕
+  * Unique value collections with automatic deduplication
+  * Methods: add(), remove(), has(), clear()
+  * Support for any value type
+  * For-of iteration
 * **Array Methods**
   * Functional: map, filter, reduce, forEach, find, some, every
   * Manipulation: push, pop, slice, concat, reverse, sort
@@ -124,9 +138,6 @@ Source Code (.kl)
 
 ### 🚧 In Progress
 
-* Tuple type (90% complete - fixing bug)
-* Dictionary type
-* Set type
 * Type checker
 * Bytecode VM
 

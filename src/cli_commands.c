@@ -9,6 +9,7 @@
 #include "parser.h"
 #include "ast.h"
 #include "formatter.h"
+#include "../include/type_checker.h"
 
 /* Helper to validate file extension */
 static int validate_file_extension(const char *path) {
@@ -283,3 +284,94 @@ void cmd_fmt_file(const char *path, int check_only, int indent_size, int use_tab
         print_success("File formatted successfully");
     }
 }
+
+void cmd_typecheck_file(const char *path, int strict_mode) {
+    char *source;
+    Lexer lexer;
+    Parser parser;
+    int count = 0;
+    ASTNode **nodes;
+    int i;
+    TypeChecker *checker;
+    
+    printf("\n%sType Checking:%s %s\n", 
+           get_color(COLOR_BOLD_CYAN), 
+           get_color(COLOR_RESET), 
+           path);
+    
+    /* Validate extension */
+    if (!validate_file_extension(path)) {
+        print_error("Invalid file extension. KLang files must have .kl, .k, or .klang extension");
+        fprintf(stderr, "Given file: %s\n", path);
+        return;
+    }
+    
+    /* Read file */
+    source = read_file(path);
+    if (!source) {
+        print_error("Cannot open file");
+        fprintf(stderr, "File: %s\n", path);
+        return;
+    }
+
+    /* Lexical analysis */
+    printf("%s→%s Running lexical analysis...\n", 
+           get_color(COLOR_CYAN), get_color(COLOR_RESET));
+    lexer_init(&lexer, source);
+    
+    /* Parsing */
+    printf("%s→%s Running syntax analysis...\n", 
+           get_color(COLOR_CYAN), get_color(COLOR_RESET));
+    parser_init(&parser, &lexer);
+    nodes = parse_program(&parser, &count);
+
+    if (parser.had_error) {
+        print_error("Parsing failed - cannot type check");
+        printf("\n%sSummary:%s Fix syntax errors before type checking\n", 
+               get_color(COLOR_BOLD_RED), 
+               get_color(COLOR_RESET));
+        
+        for (i = 0; i < count; i++) {
+            if (nodes[i]) ast_free(nodes[i]);
+        }
+        free(nodes);
+        parser_free(&parser);
+        lexer_free(&lexer);
+        free(source);
+        return;
+    }
+    
+    /* Type checking */
+    printf("%s→%s Running type analysis...\n", 
+           get_color(COLOR_CYAN), get_color(COLOR_RESET));
+    
+    checker = type_checker_create();
+    type_checker_set_strict(checker, strict_mode);
+    
+    int passed = 1;
+    for (i = 0; i < count; i++) {
+        if (!type_check_ast(checker, nodes[i])) {
+            passed = 0;
+        }
+    }
+    
+    if (passed) {
+        print_success("Type checking passed");
+        if (strict_mode) {
+            printf("  • Strict mode enabled\n");
+        }
+    } else {
+        print_error("Type checking failed");
+    }
+    
+    /* Cleanup */
+    type_checker_destroy(checker);
+    for (i = 0; i < count; i++) {
+        if (nodes[i]) ast_free(nodes[i]);
+    }
+    free(nodes);
+    parser_free(&parser);
+    lexer_free(&lexer);
+    free(source);
+}
+

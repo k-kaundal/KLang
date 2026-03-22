@@ -273,6 +273,28 @@ int main(int argc, char **argv) {
         }
         cmd_check_file(argv[2]);
     }
+    else if (strcmp(argv[1], "typecheck") == 0) {
+        if (argc < 3) {
+            print_error("Missing file argument");
+            fprintf(stderr, "Usage: klang typecheck [--strict] <file.kl>\n");
+            fprintf(stderr, "Try 'klang help typecheck' for more information.\n");
+            return 1;
+        }
+        
+        int strict_mode = 0;
+        const char *file_path = argv[2];
+        
+        if (strcmp(argv[2], "--strict") == 0) {
+            if (argc < 4) {
+                print_error("Missing file argument after --strict");
+                return 1;
+            }
+            strict_mode = 1;
+            file_path = argv[3];
+        }
+        
+        cmd_typecheck_file(file_path, strict_mode);
+    }
     else if (strcmp(argv[1], "info") == 0) {
         if (argc < 3) {
             print_error("Missing file argument");

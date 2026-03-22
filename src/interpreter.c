@@ -342,6 +342,29 @@ Value make_module(const char *module_path, Env *exports, Env *module_env) {
     return val;
 }
 
+Value make_dict(void) {
+    Value val;
+    DictVal *dict = malloc(sizeof(DictVal));
+    val.type = VAL_DICT;
+    dict->count = 0;
+    dict->capacity = 8;
+    dict->keys = malloc(8 * sizeof(Value));
+    dict->values = malloc(8 * sizeof(Value));
+    val.as.dict_val = dict;
+    return val;
+}
+
+Value make_set(void) {
+    Value val;
+    SetVal *set = malloc(sizeof(SetVal));
+    val.type = VAL_SET;
+    set->count = 0;
+    set->capacity = 8;
+    set->items = malloc(8 * sizeof(Value));
+    val.as.set_val = set;
+    return val;
+}
+
 Value make_generator(FunctionVal *func, Env *env) {
     Value v;
     v.type = VAL_GENERATOR;
@@ -485,6 +508,20 @@ void value_free(Value *v) {
         v->as.file_val.path = NULL;
         v->as.file_val.mode = NULL;
     }
+    if (v->type == VAL_DICT) {
+        /* Don't free dict resources - dicts are reference types */
+        /* Like objects, they're shared across copies */
+        /* This prevents double-free when dict values are shared */
+        /* Memory will be reclaimed when the interpreter exits */
+        v->as.dict_val = NULL;
+    }
+    if (v->type == VAL_SET) {
+        /* Don't free set resources - sets are reference types */
+        /* Like objects, they're shared across copies */
+        /* This prevents double-free when set values are shared */
+        /* Memory will be reclaimed when the interpreter exits */
+        v->as.set_val = NULL;
+    }
 }
 
 char *value_to_string(Value *v) {
@@ -605,6 +642,68 @@ char *value_to_string(Value *v) {
             snprintf(buf, sizeof(buf), "<generator %s>", state_str);
             return strdup(buf);
         }
+        case VAL_DICT: {
+            // Build dictionary string representation {key: value, ...}
+            int count = v->as.dict_val->count;
+            if (count == 0) {
+                return strdup("{}");
+            }
+            
+            // Calculate total length needed
+            int total_len = 2; // For { and }
+            char **key_strs = malloc(count * sizeof(char *));
+            char **val_strs = malloc(count * sizeof(char *));
+            for (int i = 0; i < count; i++) {
+                key_strs[i] = value_to_string(&v->as.dict_val->keys[i]);
+                val_strs[i] = value_to_string(&v->as.dict_val->values[i]);
+                total_len += strlen(key_strs[i]) + strlen(val_strs[i]) + 2; // +2 for ": "
+                if (i > 0) total_len += 2; // For ", "
+            }
+            
+            // Build the string
+            char *result = malloc(total_len + 1);
+            strcpy(result, "{");
+            for (int i = 0; i < count; i++) {
+                if (i > 0) strcat(result, ", ");
+                strcat(result, key_strs[i]);
+                strcat(result, ": ");
+                strcat(result, val_strs[i]);
+                free(key_strs[i]);
+                free(val_strs[i]);
+            }
+            strcat(result, "}");
+            free(key_strs);
+            free(val_strs);
+            return result;
+        }
+        case VAL_SET: {
+            // Build set string representation {value, ...}
+            int count = v->as.set_val->count;
+            if (count == 0) {
+                return strdup("set()");
+            }
+            
+            // Calculate total length needed
+            int total_len = 2; // For { and }
+            char **item_strs = malloc(count * sizeof(char *));
+            for (int i = 0; i < count; i++) {
+                item_strs[i] = value_to_string(&v->as.set_val->items[i]);
+                total_len += strlen(item_strs[i]);
+                if (i > 0) total_len += 2; // For ", "
+            }
+            
+            // Build the string
+            char *result = malloc(total_len + 1);
+            strcpy(result, "{");
+            for (int i = 0; i < count; i++) {
+                if (i > 0) strcat(result, ", ");
+                strcat(result, item_strs[i]);
+                free(item_strs[i]);
+            }
+            strcat(result, "}");
+            free(item_strs);
+            return result;
+        }
         default:
             return strdup("<unknown>");
     }
@@ -714,6 +813,25 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
                 return copy;
             }
+            if (v->type == VAL_TUPLE) {
+                /* Deep copy tuple to avoid double-free issues */
+                Value copy;
+                int ii;
+                copy.type = VAL_TUPLE;
+                copy.as.tuple_val.count = v->as.tuple_val.count;
+                copy.as.tuple_val.elements = malloc((v->as.tuple_val.count > 0 ? v->as.tuple_val.count : 1) * sizeof(Value));
+                for (ii = 0; ii < v->as.tuple_val.count; ii++) {
+                    /* Recursively copy each item */
+                    if (v->as.tuple_val.elements[ii].type == VAL_STRING) {
+                        copy.as.tuple_val.elements[ii] = make_string(v->as.tuple_val.elements[ii].as.str_val);
+                    } else {
+                        copy.as.tuple_val.elements[ii] = v->as.tuple_val.elements[ii];
+                    }
+                }
+                return copy;
+            }
+            /* Dicts and sets are mutable reference types like objects - don't deep copy */
+            /* They need to be modified in-place by methods */
             if (v->type == VAL_FUNCTION) {
                 Value copy = *v;
                 /* Deep copy parameter names if they exist */
@@ -1438,8 +1556,58 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     
                     entry = entry->next;
                 }
+            } else if (iterable.type == VAL_DICT) {
+                // Iterate over dictionary keys
+                for (i = 0; i < iterable.as.dict_val->count; i++) {
+                    Env *loop_env = env_new(env);
+                    Value key = iterable.as.dict_val->keys[i];
+                    // Copy strings to avoid double-free
+                    if (key.type == VAL_STRING) {
+                        key = make_string(key.as.str_val);
+                    }
+                    env_set_local(loop_env, node->data.for_of_stmt.var, key);
+                    {
+                        Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
+                        value_free(&r);
+                    }
+                    env_release(loop_env);
+                    
+                    if (interp->last_result.is_return || interp->last_result.is_break) {
+                        interp->last_result.is_break = 0;
+                        break;
+                    }
+                    if (interp->last_result.is_continue) {
+                        interp->last_result.is_continue = 0;
+                        continue;
+                    }
+                }
+            } else if (iterable.type == VAL_SET) {
+                // Iterate over set elements
+                for (i = 0; i < iterable.as.set_val->count; i++) {
+                    Env *loop_env = env_new(env);
+                    Value elem = iterable.as.set_val->items[i];
+                    // Copy strings to avoid double-free
+                    if (elem.type == VAL_STRING) {
+                        elem = make_string(elem.as.str_val);
+                    }
+                    env_set_local(loop_env, node->data.for_of_stmt.var, elem);
+                    {
+                        Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
+                        value_free(&r);
+                    }
+                    env_release(loop_env);
+                    
+                    if (interp->last_result.is_return || interp->last_result.is_break) {
+                        interp->last_result.is_break = 0;
+                        break;
+                    }
+                    if (interp->last_result.is_continue) {
+                        interp->last_result.is_continue = 0;
+                        continue;
+                    }
+                }
             } else {
-                fprintf(stderr, "Runtime error: for-of requires an iterable (list, tuple, string, or object)\n");
+                fprintf(stderr, "Runtime error: for-of requires an iterable (list, tuple, string, dict, set, or object)\n");
             }
             
             value_free(&iterable);
@@ -2198,6 +2366,84 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
                 
                 fprintf(stderr, "Error at line %d: array has no method '%s'\n",
+                        node->line, method_name);
+                interp->had_error = 1;
+                value_free(&obj);
+                return make_null();
+            }
+            
+            // Handle dict methods
+            if (obj.type == VAL_DICT) {
+                const char *method_name = node->data.member_access.member;
+                
+                // Handle .size property
+                if (strcmp(method_name, "size") == 0) {
+                    result = make_int(obj.as.dict_val->count);
+                    value_free(&obj);
+                    return result;
+                }
+                
+                Value *builtin = NULL;
+                
+                // Map method names to builtin functions
+                if (strcmp(method_name, "set") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_set");
+                } else if (strcmp(method_name, "get") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_get");
+                } else if (strcmp(method_name, "has") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_has");
+                } else if (strcmp(method_name, "delete") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_delete");
+                } else if (strcmp(method_name, "keys") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_keys");
+                } else if (strcmp(method_name, "values") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_values");
+                }
+                
+                if (builtin && builtin->type == VAL_BUILTIN) {
+                    // Create a bound method with the dict as receiver
+                    result = make_method(obj, *builtin);
+                    return result;
+                }
+                
+                fprintf(stderr, "Error at line %d: dict has no method '%s'\n",
+                        node->line, method_name);
+                interp->had_error = 1;
+                value_free(&obj);
+                return make_null();
+            }
+            
+            // Handle set methods
+            if (obj.type == VAL_SET) {
+                const char *method_name = node->data.member_access.member;
+                
+                // Handle .size property
+                if (strcmp(method_name, "size") == 0) {
+                    result = make_int(obj.as.set_val->count);
+                    value_free(&obj);
+                    return result;
+                }
+                
+                Value *builtin = NULL;
+                
+                // Map method names to builtin functions
+                if (strcmp(method_name, "add") == 0) {
+                    builtin = env_get(interp->global_env, "__set_add");
+                } else if (strcmp(method_name, "remove") == 0) {
+                    builtin = env_get(interp->global_env, "__set_remove");
+                } else if (strcmp(method_name, "has") == 0) {
+                    builtin = env_get(interp->global_env, "__set_has");
+                } else if (strcmp(method_name, "clear") == 0) {
+                    builtin = env_get(interp->global_env, "__set_clear");
+                }
+                
+                if (builtin && builtin->type == VAL_BUILTIN) {
+                    // Create a bound method with the set as receiver
+                    result = make_method(obj, *builtin);
+                    return result;
+                }
+                
+                fprintf(stderr, "Error at line %d: set has no method '%s'\n",
                         node->line, method_name);
                 interp->had_error = 1;
                 value_free(&obj);

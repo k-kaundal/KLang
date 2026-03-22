@@ -1,0 +1,180 @@
+// JSON Module for KLang Standard Library
+// Provides JSON parsing and stringification
+
+let JSON = {
+    parse: func(str) {
+        let pos = 0;
+        let len = str.length();
+        
+        let skipWhitespace = func() {
+            while (pos < len && (str[pos] == " " || str[pos] == "\n" || str[pos] == "\r" || str[pos] == "\t")) {
+                pos = pos + 1;
+            }
+        };
+        
+        let parseValue = func() {
+            skipWhitespace();
+            if (pos >= len) return null;
+            
+            let ch = str[pos];
+            if (ch == "{") return parseObject();
+            if (ch == "[") return parseArray();
+            if (ch == "\"") return parseString();
+            if (ch == "t" || ch == "f") return parseBoolean();
+            if (ch == "n") return parseNull();
+            return parseNumber();
+        };
+        
+        let parseObject = func() {
+            let obj = {};
+            pos = pos + 1; // skip '{'
+            skipWhitespace();
+            
+            if (pos < len && str[pos] == "}") {
+                pos = pos + 1;
+                return obj;
+            }
+            
+            while (pos < len) {
+                skipWhitespace();
+                let key = parseString();
+                skipWhitespace();
+                if (str[pos] == ":") pos = pos + 1;
+                let value = parseValue();
+                obj[key] = value;
+                skipWhitespace();
+                if (str[pos] == ",") {
+                    pos = pos + 1;
+                } else {
+                    break;
+                }
+            }
+            if (str[pos] == "}") pos = pos + 1;
+            return obj;
+        };
+        
+        let parseArray = func() {
+            let arr = [];
+            pos = pos + 1; // skip '['
+            skipWhitespace();
+            
+            if (pos < len && str[pos] == "]") {
+                pos = pos + 1;
+                return arr;
+            }
+            
+            while (pos < len) {
+                arr.push(parseValue());
+                skipWhitespace();
+                if (str[pos] == ",") {
+                    pos = pos + 1;
+                } else {
+                    break;
+                }
+            }
+            if (str[pos] == "]") pos = pos + 1;
+            return arr;
+        };
+        
+        let parseString = func() {
+            pos = pos + 1; // skip '"'
+            let result = "";
+            while (pos < len && str[pos] != "\"") {
+                if (str[pos] == "\\") {
+                    pos = pos + 1;
+                    let esc = str[pos];
+                    if (esc == "n") result = result + "\n";
+                    else if (esc == "t") result = result + "\t";
+                    else if (esc == "r") result = result + "\r";
+                    else result = result + esc;
+                } else {
+                    result = result + str[pos];
+                }
+                pos = pos + 1;
+            }
+            pos = pos + 1; // skip closing '"'
+            return result;
+        };
+        
+        let parseNumber = func() {
+            let numStr = "";
+            while (pos < len && (str[pos] >= "0" && str[pos] <= "9" || str[pos] == "." || str[pos] == "-")) {
+                numStr = numStr + str[pos];
+                pos = pos + 1;
+            }
+            return parseFloat(numStr);
+        };
+        
+        let parseBoolean = func() {
+            if (str.substr(pos, 4) == "true") {
+                pos = pos + 4;
+                return true;
+            }
+            pos = pos + 5;
+            return false;
+        };
+        
+        let parseNull = func() {
+            pos = pos + 4;
+            return null;
+        };
+        
+        return parseValue();
+    },
+    
+    stringify: func(value, indent = 0) {
+        let indentStr = "";
+        let i = 0;
+        while (i < indent) {
+            indentStr = indentStr + " ";
+            i = i + 1;
+        }
+        
+        if (value == null) return "null";
+        
+        let t = typeof(value);
+        if (t == "boolean") return value ? "true" : "false";
+        if (t == "number") return value.toString();
+        if (t == "string") {
+            let escaped = value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\t", "\\t");
+            return "\"" + escaped + "\"";
+        }
+        
+        if (t == "array") {
+            if (value.length == 0) return "[]";
+            let result = "[";
+            if (indent > 0) result = result + "\n";
+            let i = 0;
+            while (i < value.length) {
+                if (indent > 0) result = result + indentStr + "  ";
+                result = result + JSON.stringify(value[i], indent > 0 ? indent + 2 : 0);
+                if (i < value.length - 1) result = result + ",";
+                if (indent > 0) result = result + "\n";
+                i = i + 1;
+            }
+            if (indent > 0) result = result + indentStr;
+            return result + "]";
+        }
+        
+        if (t == "object") {
+            let keys = Object.keys(value);
+            if (keys.length == 0) return "{}";
+            let result = "{";
+            if (indent > 0) result = result + "\n";
+            let i = 0;
+            while (i < keys.length) {
+                let key = keys[i];
+                if (indent > 0) result = result + indentStr + "  ";
+                result = result + "\"" + key + "\":" + (indent > 0 ? " " : "");
+                result = result + JSON.stringify(value[key], indent > 0 ? indent + 2 : 0);
+                if (i < keys.length - 1) result = result + ",";
+                if (indent > 0) result = result + "\n";
+                i = i + 1;
+            }
+            if (indent > 0) result = result + indentStr;
+            return result + "}";
+        }
+        
+        return "null";
+    }
+};

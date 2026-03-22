@@ -1,0 +1,5 @@
+print("Before dict")
+let d = dict()
+print("After dict")
+print(d)
+print("After print d")

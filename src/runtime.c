@@ -9,14 +9,22 @@ extern Value eval_block(Interpreter *interp, ASTNode *block, Env *env);
 extern char *value_to_string(Value *v);
 
 static Value builtin_print(Interpreter *interp, Value *args, int argc) {
+    int i;
     (void)interp;
-    if (argc > 0) value_print(&args[0]);
+    for (i = 0; i < argc; i++) {
+        if (i > 0) printf(" ");
+        value_print(&args[i]);
+    }
     return make_null();
 }
 
 static Value builtin_println(Interpreter *interp, Value *args, int argc) {
+    int i;
     (void)interp;
-    if (argc > 0) value_print(&args[0]);
+    for (i = 0; i < argc; i++) {
+        if (i > 0) printf(" ");
+        value_print(&args[i]);
+    }
     printf("\n");
     return make_null();
 }
@@ -38,6 +46,9 @@ static Value builtin_len(Interpreter *interp, Value *args, int argc) {
     if (argc == 0) return make_int(0);
     if (args[0].type == VAL_STRING) return make_int((long long)strlen(args[0].as.str_val));
     if (args[0].type == VAL_LIST) return make_int((long long)args[0].as.list_val.count);
+    if (args[0].type == VAL_TUPLE) return make_int((long long)args[0].as.tuple_val.count);
+    if (args[0].type == VAL_DICT) return make_int((long long)args[0].as.dict_val->count);
+    if (args[0].type == VAL_SET) return make_int((long long)args[0].as.set_val->count);
     return make_int(0);
 }
 
@@ -83,6 +94,9 @@ static Value builtin_type(Interpreter *interp, Value *args, int argc) {
         case VAL_FUNCTION: return make_string("function");
         case VAL_BUILTIN: return make_string("builtin");
         case VAL_LIST: return make_string("list");
+        case VAL_TUPLE: return make_string("tuple");
+        case VAL_DICT: return make_string("dict");
+        case VAL_SET: return make_string("set");
         case VAL_OBJECT: return make_string("object");
         case VAL_CLASS: return make_string("class");
         case VAL_GENERATOR: return make_string("generator");
@@ -2073,6 +2087,341 @@ static Value builtin_appendFile(Interpreter *interp, Value *args, int argc) {
     return make_bool(written == len);
 }
 
+/* ==================== Dictionary Functions ==================== */
+
+/* Helper function to compare two values for equality */
+static int values_equal(Value *a, Value *b) {
+    if (a->type != b->type) return 0;
+    
+    switch (a->type) {
+        case VAL_INT: return a->as.int_val == b->as.int_val;
+        case VAL_FLOAT: return a->as.float_val == b->as.float_val;
+        case VAL_STRING: return strcmp(a->as.str_val, b->as.str_val) == 0;
+        case VAL_BOOL: return a->as.bool_val == b->as.bool_val;
+        case VAL_NULL: return 1;
+        default: return 0;  // Can't compare complex types
+    }
+}
+
+/* Find index of key in dictionary, returns -1 if not found */
+static int dict_find_key(Value *dict, Value *key) {
+    int i;
+    for (i = 0; i < dict->as.dict_val->count; i++) {
+        if (values_equal(&dict->as.dict_val->keys[i], key)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static Value builtin_dict(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    (void)args;
+    (void)argc;
+    return make_dict();
+}
+
+static Value builtin_dict_set(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 3 || args[0].type != VAL_DICT) {
+        return make_null();
+    }
+    
+    Value *dict = &args[0];
+    Value key = args[1];
+    Value value = args[2];
+    
+    /* Check if key already exists */
+    int idx = dict_find_key(dict, &key);
+    
+    if (idx >= 0) {
+        /* Update existing value */
+        value_free(&dict->as.dict_val->values[idx]);
+        if (value.type == VAL_STRING) {
+            dict->as.dict_val->values[idx] = make_string(value.as.str_val);
+        } else {
+            dict->as.dict_val->values[idx] = value;
+        }
+    } else {
+        /* Add new key-value pair */
+        if (dict->as.dict_val->count >= dict->as.dict_val->capacity) {
+            int new_capacity = dict->as.dict_val->capacity * 2;
+            dict->as.dict_val->keys = realloc(dict->as.dict_val->keys, new_capacity * sizeof(Value));
+            dict->as.dict_val->values = realloc(dict->as.dict_val->values, new_capacity * sizeof(Value));
+            dict->as.dict_val->capacity = new_capacity;
+        }
+        
+        /* Copy key and value */
+        if (key.type == VAL_STRING) {
+            dict->as.dict_val->keys[dict->as.dict_val->count] = make_string(key.as.str_val);
+        } else {
+            dict->as.dict_val->keys[dict->as.dict_val->count] = key;
+        }
+        
+        if (value.type == VAL_STRING) {
+            dict->as.dict_val->values[dict->as.dict_val->count] = make_string(value.as.str_val);
+        } else {
+            dict->as.dict_val->values[dict->as.dict_val->count] = value;
+        }
+        
+        dict->as.dict_val->count++;
+    }
+    
+    return make_null();
+}
+
+static Value builtin_dict_get(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_DICT) {
+        return make_null();
+    }
+    
+    Value *dict = &args[0];
+    Value key = args[1];
+    
+    int idx = dict_find_key(dict, &key);
+    
+    if (idx >= 0) {
+        Value result = dict->as.dict_val->values[idx];
+        if (result.type == VAL_STRING) {
+            return make_string(result.as.str_val);
+        }
+        return result;
+    }
+    
+    /* Return default value if provided */
+    if (argc >= 3) {
+        return args[2];
+    }
+    
+    return make_null();
+}
+
+static Value builtin_dict_has(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_DICT) {
+        return make_bool(0);
+    }
+    
+    Value *dict = &args[0];
+    Value key = args[1];
+    
+    return make_bool(dict_find_key(dict, &key) >= 0);
+}
+
+static Value builtin_dict_delete(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_DICT) {
+        return make_bool(0);
+    }
+    
+    Value *dict = &args[0];
+    Value key = args[1];
+    
+    int idx = dict_find_key(dict, &key);
+    
+    if (idx >= 0) {
+        /* Free the key-value pair */
+        value_free(&dict->as.dict_val->keys[idx]);
+        value_free(&dict->as.dict_val->values[idx]);
+        
+        /* Shift remaining elements down */
+        int i;
+        for (i = idx; i < dict->as.dict_val->count - 1; i++) {
+            dict->as.dict_val->keys[i] = dict->as.dict_val->keys[i + 1];
+            dict->as.dict_val->values[i] = dict->as.dict_val->values[i + 1];
+        }
+        
+        dict->as.dict_val->count--;
+        return make_bool(1);
+    }
+    
+    return make_bool(0);
+}
+
+static Value builtin_dict_keys(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_DICT) {
+        Value list;
+        list.type = VAL_LIST;
+        list.as.list_val.count = 0;
+        list.as.list_val.capacity = 4;
+        list.as.list_val.items = malloc(4 * sizeof(Value));
+        return list;
+    }
+    
+    Value *dict = &args[0];
+    Value list;
+    int i;
+    
+    list.type = VAL_LIST;
+    list.as.list_val.count = dict->as.dict_val->count;
+    list.as.list_val.capacity = dict->as.dict_val->count > 0 ? dict->as.dict_val->count : 1;
+    list.as.list_val.items = malloc(list.as.list_val.capacity * sizeof(Value));
+    
+    for (i = 0; i < dict->as.dict_val->count; i++) {
+        if (dict->as.dict_val->keys[i].type == VAL_STRING) {
+            list.as.list_val.items[i] = make_string(dict->as.dict_val->keys[i].as.str_val);
+        } else {
+            list.as.list_val.items[i] = dict->as.dict_val->keys[i];
+        }
+    }
+    
+    return list;
+}
+
+static Value builtin_dict_values(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_DICT) {
+        Value list;
+        list.type = VAL_LIST;
+        list.as.list_val.count = 0;
+        list.as.list_val.capacity = 4;
+        list.as.list_val.items = malloc(4 * sizeof(Value));
+        return list;
+    }
+    
+    Value *dict = &args[0];
+    Value list;
+    int i;
+    
+    list.type = VAL_LIST;
+    list.as.list_val.count = dict->as.dict_val->count;
+    list.as.list_val.capacity = dict->as.dict_val->count > 0 ? dict->as.dict_val->count : 1;
+    list.as.list_val.items = malloc(list.as.list_val.capacity * sizeof(Value));
+    
+    for (i = 0; i < dict->as.dict_val->count; i++) {
+        if (dict->as.dict_val->values[i].type == VAL_STRING) {
+            list.as.list_val.items[i] = make_string(dict->as.dict_val->values[i].as.str_val);
+        } else {
+            list.as.list_val.items[i] = dict->as.dict_val->values[i];
+        }
+    }
+    
+    return list;
+}
+
+/* ==================== Set Functions ==================== */
+
+/* Find index of value in set, returns -1 if not found */
+static int set_find_value(Value *set, Value *value) {
+    int i;
+    for (i = 0; i < set->as.set_val->count; i++) {
+        if (values_equal(&set->as.set_val->items[i], value)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static Value builtin_set(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    (void)args;
+    (void)argc;
+    return make_set();
+}
+
+static Value builtin_set_add(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_SET) {
+        return make_null();
+    }
+    
+    Value *set = &args[0];
+    Value value = args[1];
+    
+    /* Check if value already exists */
+    if (set_find_value(set, &value) >= 0) {
+        return make_null();  /* Already in set, no-op */
+    }
+    
+    /* Add new value */
+    if (set->as.set_val->count >= set->as.set_val->capacity) {
+        int new_capacity = set->as.set_val->capacity * 2;
+        set->as.set_val->items = realloc(set->as.set_val->items, new_capacity * sizeof(Value));
+        set->as.set_val->capacity = new_capacity;
+    }
+    
+    /* Copy value */
+    if (value.type == VAL_STRING) {
+        set->as.set_val->items[set->as.set_val->count] = make_string(value.as.str_val);
+    } else {
+        set->as.set_val->items[set->as.set_val->count] = value;
+    }
+    
+    set->as.set_val->count++;
+    
+    return make_null();
+}
+
+static Value builtin_set_remove(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_SET) {
+        return make_bool(0);
+    }
+    
+    Value *set = &args[0];
+    Value value = args[1];
+    
+    int idx = set_find_value(set, &value);
+    
+    if (idx >= 0) {
+        /* Free the value */
+        value_free(&set->as.set_val->items[idx]);
+        
+        /* Shift remaining elements down */
+        int i;
+        for (i = idx; i < set->as.set_val->count - 1; i++) {
+            set->as.set_val->items[i] = set->as.set_val->items[i + 1];
+        }
+        
+        set->as.set_val->count--;
+        return make_bool(1);
+    }
+    
+    return make_bool(0);
+}
+
+static Value builtin_set_has(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_SET) {
+        return make_bool(0);
+    }
+    
+    Value *set = &args[0];
+    Value value = args[1];
+    
+    return make_bool(set_find_value(set, &value) >= 0);
+}
+
+static Value builtin_set_size(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_SET) {
+        return make_int(0);
+    }
+    
+    return make_int(args[0].as.set_val->count);
+}
+
+static Value builtin_set_clear(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_SET) {
+        return make_null();
+    }
+    
+    Value *set = &args[0];
+    int i;
+    
+    /* Free all items */
+    for (i = 0; i < set->as.set_val->count; i++) {
+        value_free(&set->as.set_val->items[i]);
+    }
+    
+    set->as.set_val->count = 0;
+    
+    return make_null();
+}
+
 void runtime_init(Interpreter *interp) {
     Value v;
     v.type = VAL_BUILTIN;
@@ -2333,6 +2682,47 @@ void runtime_init(Interpreter *interp) {
     
     v.as.builtin = builtin_appendFile;
     env_set_local(interp->global_env, "appendFile", v);
+    
+    /* Dictionary functions */
+    v.as.builtin = builtin_dict;
+    env_set_local(interp->global_env, "dict", v);
+    
+    v.as.builtin = builtin_dict_set;
+    env_set_local(interp->global_env, "__dict_set", v);
+    
+    v.as.builtin = builtin_dict_get;
+    env_set_local(interp->global_env, "__dict_get", v);
+    
+    v.as.builtin = builtin_dict_has;
+    env_set_local(interp->global_env, "__dict_has", v);
+    
+    v.as.builtin = builtin_dict_delete;
+    env_set_local(interp->global_env, "__dict_delete", v);
+    
+    v.as.builtin = builtin_dict_keys;
+    env_set_local(interp->global_env, "__dict_keys", v);
+    
+    v.as.builtin = builtin_dict_values;
+    env_set_local(interp->global_env, "__dict_values", v);
+    
+    /* Set functions */
+    v.as.builtin = builtin_set;
+    env_set_local(interp->global_env, "set", v);
+    
+    v.as.builtin = builtin_set_add;
+    env_set_local(interp->global_env, "__set_add", v);
+    
+    v.as.builtin = builtin_set_remove;
+    env_set_local(interp->global_env, "__set_remove", v);
+    
+    v.as.builtin = builtin_set_has;
+    env_set_local(interp->global_env, "__set_has", v);
+    
+    v.as.builtin = builtin_set_size;
+    env_set_local(interp->global_env, "__set_size", v);
+    
+    v.as.builtin = builtin_set_clear;
+    env_set_local(interp->global_env, "__set_clear", v);
     
     // Create Promise "class" with static methods
     Value promise_class = make_class("Promise", NULL);
