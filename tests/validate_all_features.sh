@@ -343,13 +343,13 @@ fn outer() {
     }
     return inner
 }
-let fn = outer()
-print(fn())
+let myFunc = outer()
+print(myFunc())
 '
 
 run_test "Higher-order functions" '
-fn apply(fn, x) {
-    return fn(x)
+fn apply(func, x) {
+    return func(x)
 }
 let double = x => x * 2
 print(apply(double, 5))
