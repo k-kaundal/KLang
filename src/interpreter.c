@@ -1502,6 +1502,65 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
         case NODE_BINOP: {
             const char *op = node->data.binop.op;
             
+            // Handle logical operators with short-circuit evaluation
+            if (strcmp(op, "&&") == 0) {
+                Value left = eval_node_env(interp, node->data.binop.left, env);
+                int left_truthy = 0;
+                if (left.type == VAL_BOOL) left_truthy = left.as.bool_val;
+                else if (left.type == VAL_INT) left_truthy = left.as.int_val != 0;
+                else if (left.type == VAL_FLOAT) left_truthy = left.as.float_val != 0.0;
+                else if (left.type == VAL_STRING) left_truthy = strlen(left.as.str_val) > 0;
+                else if (left.type == VAL_NULL) left_truthy = 0;
+                
+                if (!left_truthy) {
+                    // Short-circuit: return false without evaluating right
+                    value_free(&left);
+                    return make_bool(0);
+                }
+                value_free(&left);
+                
+                // Evaluate right side
+                Value right = eval_node_env(interp, node->data.binop.right, env);
+                int right_truthy = 0;
+                if (right.type == VAL_BOOL) right_truthy = right.as.bool_val;
+                else if (right.type == VAL_INT) right_truthy = right.as.int_val != 0;
+                else if (right.type == VAL_FLOAT) right_truthy = right.as.float_val != 0.0;
+                else if (right.type == VAL_STRING) right_truthy = strlen(right.as.str_val) > 0;
+                else if (right.type == VAL_NULL) right_truthy = 0;
+                
+                value_free(&right);
+                return make_bool(right_truthy);
+            }
+            
+            if (strcmp(op, "||") == 0) {
+                Value left = eval_node_env(interp, node->data.binop.left, env);
+                int left_truthy = 0;
+                if (left.type == VAL_BOOL) left_truthy = left.as.bool_val;
+                else if (left.type == VAL_INT) left_truthy = left.as.int_val != 0;
+                else if (left.type == VAL_FLOAT) left_truthy = left.as.float_val != 0.0;
+                else if (left.type == VAL_STRING) left_truthy = strlen(left.as.str_val) > 0;
+                else if (left.type == VAL_NULL) left_truthy = 0;
+                
+                if (left_truthy) {
+                    // Short-circuit: return true without evaluating right
+                    value_free(&left);
+                    return make_bool(1);
+                }
+                value_free(&left);
+                
+                // Evaluate right side
+                Value right = eval_node_env(interp, node->data.binop.right, env);
+                int right_truthy = 0;
+                if (right.type == VAL_BOOL) right_truthy = right.as.bool_val;
+                else if (right.type == VAL_INT) right_truthy = right.as.int_val != 0;
+                else if (right.type == VAL_FLOAT) right_truthy = right.as.float_val != 0.0;
+                else if (right.type == VAL_STRING) right_truthy = strlen(right.as.str_val) > 0;
+                else if (right.type == VAL_NULL) right_truthy = 0;
+                
+                value_free(&right);
+                return make_bool(right_truthy);
+            }
+            
             // Handle member assignment (this.x = value or ClassName.staticField = value)
             if (strcmp(op, "=") == 0 && node->data.binop.left->type == NODE_MEMBER_ACCESS) {
                 ASTNode *member_node = node->data.binop.left;
@@ -1534,21 +1593,40 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             // Handle index assignment (arr[0] = value)
             if (strcmp(op, "=") == 0 && node->data.binop.left->type == NODE_INDEX) {
                 ASTNode *index_node = node->data.binop.left;
-                Value obj = eval_node_env(interp, index_node->data.index_expr.obj, env);
-                Value idx = eval_node_env(interp, index_node->data.index_expr.index, env);
                 Value val = eval_node_env(interp, node->data.binop.right, env);
                 
-                if (obj.type == VAL_LIST && idx.type == VAL_INT) {
-                    long long i = idx.as.int_val;
-                    if (i >= 0 && i < (long long)obj.as.list_val.count) {
-                        value_free(&obj.as.list_val.items[i]);
-                        obj.as.list_val.items[i] = val;
+                // Special case: if the object is an identifier, we need to modify it in-place
+                if (index_node->data.index_expr.obj->type == NODE_IDENT) {
+                    const char *arr_name = index_node->data.index_expr.obj->data.ident.name;
+                    Value *arr_ptr = env_get(env, arr_name);
+                    Value idx = eval_node_env(interp, index_node->data.index_expr.index, env);
+                    
+                    if (arr_ptr && arr_ptr->type == VAL_LIST && idx.type == VAL_INT) {
+                        long long i = idx.as.int_val;
+                        if (i >= 0 && i < (long long)arr_ptr->as.list_val.count) {
+                            value_free(&arr_ptr->as.list_val.items[i]);
+                            arr_ptr->as.list_val.items[i] = val;
+                        }
                     }
+                    value_free(&idx);
+                    return make_null();
+                } else {
+                    // General case: evaluate the object (might be an expression)
+                    Value obj = eval_node_env(interp, index_node->data.index_expr.obj, env);
+                    Value idx = eval_node_env(interp, index_node->data.index_expr.index, env);
+                    
+                    if (obj.type == VAL_LIST && idx.type == VAL_INT) {
+                        long long i = idx.as.int_val;
+                        if (i >= 0 && i < (long long)obj.as.list_val.count) {
+                            value_free(&obj.as.list_val.items[i]);
+                            obj.as.list_val.items[i] = val;
+                        }
+                    }
+                    
+                    value_free(&obj);
+                    value_free(&idx);
+                    return make_null();
                 }
-                
-                value_free(&obj);
-                value_free(&idx);
-                return make_null();
             }
             
             Value left = eval_node_env(interp, node->data.binop.left, env);
@@ -2504,6 +2582,128 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 return eval_node_env(interp, node->data.export_stmt.declaration, env);
             }
             return make_null();
+        
+        case NODE_POSTFIX: {
+            /* Handle prefix/postfix increment and decrement */
+            const char *op = node->data.postfix.op;
+            ASTNode *operand_node = node->data.postfix.operand;
+            int is_postfix = node->data.postfix.is_postfix;
+            
+            /* Get current value */
+            Value old_val = eval_node_env(interp, operand_node, env);
+            Value new_val = make_null();
+            
+            /* Calculate new value */
+            if (strcmp(op, "++") == 0) {
+                if (old_val.type == VAL_INT) {
+                    new_val = make_int(old_val.as.int_val + 1);
+                } else if (old_val.type == VAL_FLOAT) {
+                    new_val = make_float(old_val.as.float_val + 1.0);
+                } else {
+                    value_free(&old_val);
+                    return make_null();
+                }
+            } else if (strcmp(op, "--") == 0) {
+                if (old_val.type == VAL_INT) {
+                    new_val = make_int(old_val.as.int_val - 1);
+                } else if (old_val.type == VAL_FLOAT) {
+                    new_val = make_float(old_val.as.float_val - 1.0);
+                } else {
+                    value_free(&old_val);
+                    return make_null();
+                }
+            }
+            
+            /* Store the new value */
+            if (operand_node->type == NODE_IDENT) {
+                env_set(env, operand_node->data.ident.name, new_val);
+            } else if (operand_node->type == NODE_MEMBER_ACCESS) {
+                Value obj = eval_node_env(interp, operand_node->data.member_access.obj, env);
+                if (obj.type == VAL_OBJECT) {
+                    env_set(obj.as.object_val.fields, operand_node->data.member_access.member, new_val);
+                }
+                value_free(&obj);
+            } else if (operand_node->type == NODE_INDEX) {
+                // Special case: if the object is an identifier, modify it in-place
+                if (operand_node->data.index_expr.obj->type == NODE_IDENT) {
+                    const char *arr_name = operand_node->data.index_expr.obj->data.ident.name;
+                    Value *arr_ptr = env_get(env, arr_name);
+                    Value idx = eval_node_env(interp, operand_node->data.index_expr.index, env);
+                    
+                    if (arr_ptr && arr_ptr->type == VAL_LIST && idx.type == VAL_INT) {
+                        long long i = idx.as.int_val;
+                        if (i >= 0 && i < (long long)arr_ptr->as.list_val.count) {
+                            value_free(&arr_ptr->as.list_val.items[i]);
+                            arr_ptr->as.list_val.items[i] = new_val;
+                        }
+                    }
+                    value_free(&idx);
+                } else {
+                    Value obj = eval_node_env(interp, operand_node->data.index_expr.obj, env);
+                    Value idx = eval_node_env(interp, operand_node->data.index_expr.index, env);
+                    if (obj.type == VAL_LIST && idx.type == VAL_INT) {
+                        long long i = idx.as.int_val;
+                        if (i >= 0 && i < (long long)obj.as.list_val.count) {
+                            value_free(&obj.as.list_val.items[i]);
+                            obj.as.list_val.items[i] = new_val;
+                        }
+                    }
+                    value_free(&obj);
+                    value_free(&idx);
+                }
+            }
+            
+            /* Return old value for postfix, new value for prefix */
+            if (is_postfix) {
+                return old_val;
+            } else {
+                value_free(&old_val);
+                return new_val;
+            }
+        }
+        
+        case NODE_OPTIONAL_CHAIN: {
+            /* Handle optional chaining (?.) */
+            Value obj = eval_node_env(interp, node->data.optional_chain.obj, env);
+            
+            /* If obj is null or undefined, return null */
+            if (obj.type == VAL_NULL) {
+                value_free(&obj);
+                return make_null();
+            }
+            
+            /* Otherwise, perform normal member access */
+            const char *member = node->data.optional_chain.member;
+            Value result = make_null();
+            
+            if (obj.type == VAL_OBJECT) {
+                Value *val = env_get(obj.as.object_val.fields, member);
+                if (val) {
+                    if (val->type == VAL_STRING) {
+                        result = make_string(val->as.str_val);
+                    } else {
+                        result = *val;
+                    }
+                }
+            }
+            
+            value_free(&obj);
+            return result;
+        }
+        
+        case NODE_NULLISH_COALESCE: {
+            /* Handle nullish coalescing (??) */
+            Value left = eval_node_env(interp, node->data.nullish_coalesce.left, env);
+            
+            /* If left is null or undefined, evaluate and return right */
+            if (left.type == VAL_NULL) {
+                value_free(&left);
+                return eval_node_env(interp, node->data.nullish_coalesce.right, env);
+            }
+            
+            /* Otherwise return left */
+            return left;
+        }
         
         default:
             return make_null();

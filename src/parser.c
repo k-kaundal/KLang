@@ -415,6 +415,21 @@ static ASTNode *parse_postfix(Parser *parser) {
                 token_free(&t2);
             }
             expr = ast_new_index(expr, idx, line);
+        } else if (check(parser, TOKEN_OPTIONAL_CHAIN)) {
+            Token t = advance(parser);
+            Token member_tok;
+            char *member_name;
+            token_free(&t);
+            member_tok = consume(parser, TOKEN_IDENT);
+            member_name = strdup(member_tok.value);
+            token_free(&member_tok);
+            /* Create optional chaining node */
+            ASTNode *node = malloc(sizeof(ASTNode));
+            node->type = NODE_OPTIONAL_CHAIN;
+            node->line = line;
+            node->data.optional_chain.obj = expr;
+            node->data.optional_chain.member = member_name;
+            expr = node;
         } else if (check(parser, TOKEN_DOT)) {
             Token t = advance(parser);
             Token member_tok;
@@ -431,6 +446,21 @@ static ASTNode *parse_postfix(Parser *parser) {
                 expr = ast_new_member_access(expr, member_name, line);
             }
             free(member_name);
+        } else if (check(parser, TOKEN_PLUS_PLUS) || check(parser, TOKEN_MINUS_MINUS)) {
+            /* Postfix increment/decrement */
+            Token t = advance(parser);
+            char op[4];
+            strncpy(op, t.value, 3);
+            op[3] = '\0';
+            token_free(&t);
+            ASTNode *node = malloc(sizeof(ASTNode));
+            node->type = NODE_POSTFIX;
+            node->line = line;
+            node->data.postfix.operand = expr;
+            strncpy(node->data.postfix.op, op, 3);
+            node->data.postfix.op[3] = '\0';
+            node->data.postfix.is_postfix = 1;
+            expr = node;
         } else {
             break;
         }
@@ -462,6 +492,24 @@ static ASTNode *parse_unary(Parser *parser) {
         } else {
             return ast_new_yield(NULL, line);
         }
+    }
+    
+    /* Handle prefix increment/decrement */
+    if (check(parser, TOKEN_PLUS_PLUS) || check(parser, TOKEN_MINUS_MINUS)) {
+        Token t = advance(parser);
+        char op[4];
+        strncpy(op, t.value, 3);
+        op[3] = '\0';
+        token_free(&t);
+        ASTNode *operand = parse_unary(parser);
+        ASTNode *node = malloc(sizeof(ASTNode));
+        node->type = NODE_POSTFIX;  // Reuse NODE_POSTFIX but with is_postfix=0
+        node->line = line;
+        node->data.postfix.operand = operand;
+        strncpy(node->data.postfix.op, op, 3);
+        node->data.postfix.op[3] = '\0';
+        node->data.postfix.is_postfix = 0;  // Prefix
+        return node;
     }
     
     if (check(parser, TOKEN_MINUS)) {
@@ -546,8 +594,55 @@ static ASTNode *parse_equality(Parser *parser) {
     return left;
 }
 
+static ASTNode *parse_logical_and(Parser *parser) {
+    ASTNode *left = parse_equality(parser);
+    while (check(parser, TOKEN_AND_AND)) {
+        Token t = advance(parser);
+        int line = t.line;
+        token_free(&t);
+        {
+            ASTNode *right = parse_equality(parser);
+            left = ast_new_binop("&&", left, right, line);
+        }
+    }
+    return left;
+}
+
+static ASTNode *parse_logical_or(Parser *parser) {
+    ASTNode *left = parse_logical_and(parser);
+    while (check(parser, TOKEN_OR_OR)) {
+        Token t = advance(parser);
+        int line = t.line;
+        token_free(&t);
+        {
+            ASTNode *right = parse_logical_and(parser);
+            left = ast_new_binop("||", left, right, line);
+        }
+    }
+    return left;
+}
+
+static ASTNode *parse_nullish_coalesce(Parser *parser) {
+    ASTNode *left = parse_logical_or(parser);
+    while (check(parser, TOKEN_NULLISH_COALESCE)) {
+        Token t = advance(parser);
+        int line = t.line;
+        token_free(&t);
+        {
+            ASTNode *right = parse_logical_or(parser);
+            ASTNode *node = malloc(sizeof(ASTNode));
+            node->type = NODE_NULLISH_COALESCE;
+            node->line = line;
+            node->data.nullish_coalesce.left = left;
+            node->data.nullish_coalesce.right = right;
+            left = node;
+        }
+    }
+    return left;
+}
+
 static ASTNode *parse_ternary(Parser *parser) {
-    ASTNode *expr = parse_equality(parser);
+    ASTNode *expr = parse_nullish_coalesce(parser);
     
     if (check(parser, TOKEN_QUESTION)) {
         int line = parser->current.line;
@@ -1631,17 +1726,42 @@ static ASTNode *parse_statement(Parser *parser) {
         int line = parser->current.line;
         ASTNode *expr = parse_expression(parser);
 
-        if (expr && check(parser, TOKEN_ASSIGN)) {
+        if (expr && (check(parser, TOKEN_ASSIGN) || 
+                     check(parser, TOKEN_PLUS_ASSIGN) || check(parser, TOKEN_MINUS_ASSIGN) ||
+                     check(parser, TOKEN_STAR_ASSIGN) || check(parser, TOKEN_SLASH_ASSIGN) ||
+                     check(parser, TOKEN_PERCENT_ASSIGN))) {
+            
+            /* Get the operator */
+            Token op_tok = advance(parser);
+            int is_compound = (op_tok.type != TOKEN_ASSIGN);
+            char compound_op[4] = {0};
+            
+            if (is_compound) {
+                /* Extract the operator (e.g., "+" from "+=") */
+                if (op_tok.type == TOKEN_PLUS_ASSIGN) strcpy(compound_op, "+");
+                else if (op_tok.type == TOKEN_MINUS_ASSIGN) strcpy(compound_op, "-");
+                else if (op_tok.type == TOKEN_STAR_ASSIGN) strcpy(compound_op, "*");
+                else if (op_tok.type == TOKEN_SLASH_ASSIGN) strcpy(compound_op, "/");
+                else if (op_tok.type == TOKEN_PERCENT_ASSIGN) strcpy(compound_op, "%");
+            }
+            token_free(&op_tok);
+            
+            ASTNode *rhs = parse_expression(parser);
+            
             if (expr->type == NODE_IDENT) {
                 char *name = strdup(expr->data.ident.name);
                 ASTNode *value;
                 ASTNode *n;
-                ast_free(expr);
-                {
-                    Token t = advance(parser);
-                    token_free(&t);
+                
+                if (is_compound) {
+                    /* Transform x += y into x = x + y */
+                    ASTNode *lhs_copy = ast_new_ident(name, line);
+                    value = ast_new_binop(compound_op, lhs_copy, rhs, line);
+                } else {
+                    value = rhs;
                 }
-                value = parse_expression(parser);
+                
+                ast_free(expr);
                 n = ast_new_assign(name, value, line);
                 free(name);
                 return n;
@@ -1651,14 +1771,32 @@ static ASTNode *parse_statement(Parser *parser) {
                  * as a special case. The interpreter/compiler will need to recognize
                  * assignments to member access/index expressions. 
                  * 
-                 * For now, we create a binary operation with '=' operator which
-                 * the runtime can intercept. */
+                 * For compound assignments, we need to transform:
+                 *   obj.field += value  =>  obj.field = obj.field + value
+                 */
                 ASTNode *value;
-                {
-                    Token t = advance(parser);
-                    token_free(&t);
+                
+                if (is_compound) {
+                    /* Create a copy of the lhs for the binary operation */
+                    ASTNode *lhs_copy;
+                    if (expr->type == NODE_MEMBER_ACCESS) {
+                        /* Deep copy member access */
+                        lhs_copy = malloc(sizeof(ASTNode));
+                        memcpy(lhs_copy, expr, sizeof(ASTNode));
+                        lhs_copy->data.member_access.obj = expr->data.member_access.obj;
+                        lhs_copy->data.member_access.member = strdup(expr->data.member_access.member);
+                    } else {
+                        /* Deep copy index */
+                        lhs_copy = malloc(sizeof(ASTNode));
+                        memcpy(lhs_copy, expr, sizeof(ASTNode));
+                        lhs_copy->data.index_expr.obj = expr->data.index_expr.obj;
+                        lhs_copy->data.index_expr.index = expr->data.index_expr.index;
+                    }
+                    value = ast_new_binop(compound_op, lhs_copy, rhs, line);
+                } else {
+                    value = rhs;
                 }
-                value = parse_expression(parser);
+                
                 return ast_new_binop("=", expr, value, line);
             } else {
                 /* Assignment to non-lvalue */

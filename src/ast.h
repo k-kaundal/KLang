@@ -12,7 +12,8 @@ typedef enum {
     NODE_AWAIT, NODE_YIELD,
     NODE_EXPORT, NODE_IMPORT_NAMED, NODE_IMPORT_DEFAULT, NODE_IMPORT_NAMESPACE,
     NODE_DESTRUCTURE_ARRAY, NODE_DESTRUCTURE_OBJECT, NODE_DESTRUCTURE_ELEMENT,
-    NODE_TRY_CATCH, NODE_THROW
+    NODE_TRY_CATCH, NODE_THROW,
+    NODE_POSTFIX, NODE_OPTIONAL_CHAIN, NODE_NULLISH_COALESCE
 } NodeType;
 
 typedef enum {
@@ -131,6 +132,9 @@ struct ASTNode {
         struct {
             ASTNode *expression;
         } throw_stmt;
+        struct { char op[4]; ASTNode *operand; int is_postfix; } postfix;
+        struct { ASTNode *obj; char *member; } optional_chain;
+        struct { ASTNode *left; ASTNode *right; } nullish_coalesce;
     } data;
 };
 
