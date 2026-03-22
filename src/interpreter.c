@@ -63,10 +63,18 @@ int can_access_member(AccessModifier access, int is_same_class, int is_subclass)
 }
 
 void env_set_local(Env *env, const char *name, Value val) {
-    // Deep copy strings to avoid double-free issues
+    // Deep copy to avoid double-free issues
     Value val_copy = val;
     if (val.type == VAL_STRING && val.as.str_val) {
         val_copy.as.str_val = strdup(val.as.str_val);
+    } else if (val.type == VAL_FUNCTION && val.as.func_val.param_names) {
+        // Deep copy function parameter names
+        val_copy.as.func_val.param_names = malloc(val.as.func_val.param_count * sizeof(char *));
+        int i;
+        for (i = 0; i < val.as.func_val.param_count; i++) {
+            val_copy.as.func_val.param_names[i] = strdup(val.as.func_val.param_names[i]);
+        }
+        // Note: body and closure are shared pointers - don't copy
     }
     
     EnvEntry *e = env->entries;
@@ -290,12 +298,25 @@ Value make_promise(void) {
     return val;
 }
 
-Value make_module(const char *module_path, Env *exports) {
+Value make_module(const char *module_path, Env *exports, Env *module_env) {
     Value val;
     val.type = VAL_MODULE;
     val.as.module_val.module_path = module_path ? strdup(module_path) : NULL;
     val.as.module_val.exports = exports;
+    val.as.module_val.module_env = module_env;  // Keep module_env alive for closures
     return val;
+}
+
+Value make_generator(FunctionVal *func, Env *env) {
+    Value v;
+    v.type = VAL_GENERATOR;
+    v.as.generator_val.state = GEN_SUSPENDED;
+    v.as.generator_val.func = func;
+    v.as.generator_val.saved_env = env;
+    v.as.generator_val.yield_index = 0;
+    v.as.generator_val.last_value = malloc(sizeof(Value));
+    *v.as.generator_val.last_value = make_null();
+    return v;
 }
 
 void value_free(Value *v) {
@@ -397,7 +418,15 @@ void value_free(Value *v) {
             free(v->as.module_val.module_path);
             v->as.module_val.module_path = NULL;
         }
-        // Note: exports env is managed by module cache, don't free here
+        // Note: exports and module_env are owned by the module cache in the interpreter
+        // and will be freed when the interpreter is freed. Don't free them here to avoid double-free.
+    }
+    if (v->type == VAL_GENERATOR) {
+        /* Don't free func as it contains pointers to AST nodes owned by parser */
+        /* Don't free saved_env to avoid double-free with closure env */
+        /* Don't free last_value to avoid double-free */
+        /* TODO: Implement proper reference counting for generator lifecycle */
+        /* This will leak memory but prevents crashes */
     }
 }
 
@@ -471,6 +500,17 @@ char *value_to_string(Value *v) {
             snprintf(buf, sizeof(buf), "<module %s>", 
                 v->as.module_val.module_path ? v->as.module_val.module_path : "unknown");
             return strdup(buf);
+        case VAL_GENERATOR: {
+            const char *state_str;
+            switch (v->as.generator_val.state) {
+                case GEN_RUNNING: state_str = "running"; break;
+                case GEN_SUSPENDED: state_str = "suspended"; break;
+                case GEN_COMPLETED: state_str = "completed"; break;
+                default: state_str = "unknown"; break;
+            }
+            snprintf(buf, sizeof(buf), "<generator %s>", state_str);
+            return strdup(buf);
+        }
         default:
             return strdup("<unknown>");
     }
@@ -510,8 +550,15 @@ void interpreter_free(Interpreter *interp) {
     }
     // Free loaded modules
     for (i = 0; i < interp->module_count; i++) {
+        int j;
         free(interp->loaded_modules[i].path);
         env_free(interp->loaded_modules[i].exports);
+        env_free(interp->loaded_modules[i].module_env);
+        // Free AST nodes
+        for (j = 0; j < interp->loaded_modules[i].ast_count; j++) {
+            ast_free(interp->loaded_modules[i].ast_nodes[j]);
+        }
+        free(interp->loaded_modules[i].ast_nodes);
     }
     free(interp->loaded_modules);
     if (interp->current_module_dir) free(interp->current_module_dir);
@@ -618,6 +665,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             func.as.func_val.body = node->data.func_def.body;
             func.as.func_val.closure = env;
             func.as.func_val.is_async = node->data.func_def.is_async;
+            func.as.func_val.is_generator = node->data.func_def.is_generator;
             
             // Arrow functions are expressions that return the function value
             // Named functions are statements that bind to a name
@@ -762,8 +810,30 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     }
                 }
             } else if (callee.type == VAL_FUNCTION) {
+                /* Check if function is a generator */
+                if (callee.as.func_val.is_generator) {
+                    /* Generator functions return a generator object when called */
+                    FunctionVal *func_copy = malloc(sizeof(FunctionVal));
+                    func_copy->param_count = callee.as.func_val.param_count;
+                    func_copy->param_names = malloc(func_copy->param_count * sizeof(char *));
+                    for (i = 0; i < func_copy->param_count; i++) {
+                        func_copy->param_names[i] = strdup(callee.as.func_val.param_names[i]);
+                    }
+                    func_copy->body = callee.as.func_val.body;
+                    func_copy->closure = callee.as.func_val.closure;
+                    func_copy->is_async = callee.as.func_val.is_async;
+                    func_copy->is_generator = 1;
+                    
+                    /* Create generator environment with bound parameters */
+                    Env *gen_env = env_new(callee.as.func_val.closure);
+                    for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
+                        env_set_local(gen_env, callee.as.func_val.param_names[i], args[i]);
+                    
+                    value_free(&result);
+                    result = make_generator(func_copy, gen_env);
+                }
                 /* Check if function is async */
-                if (callee.as.func_val.is_async) {
+                else if (callee.as.func_val.is_async) {
                     /* Async functions always return a Promise */
                     /* Create a Promise and execute function body */
                     Value promise_result;
@@ -1498,6 +1568,28 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 return make_null();
             }
             
+            // Handle generator methods
+            if (obj.type == VAL_GENERATOR) {
+                const char *method_name = node->data.member_access.member;
+                Value *builtin = NULL;
+                
+                if (strcmp(method_name, "next") == 0) {
+                    builtin = env_get(interp->global_env, "__generator_next");
+                }
+                
+                if (builtin && builtin->type == VAL_BUILTIN) {
+                    // Create a bound method with the generator as receiver
+                    result = make_method(obj, *builtin);
+                    return result;
+                }
+                
+                fprintf(stderr, "Error at line %d: generator has no method '%s'\n",
+                        node->line, method_name);
+                interp->had_error = 1;
+                value_free(&obj);
+                return make_null();
+            }
+            
             // Handle promise methods
             if (obj.type == VAL_PROMISE) {
                 const char *method_name = node->data.member_access.member;
@@ -1738,6 +1830,21 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             /* If not a promise, return the value as-is (await on non-promise resolves immediately) */
             return awaited;
         }
+        case NODE_YIELD: {
+            /* Yield is handled specially by generator execution */
+            /* When encountered, we should save state and return */
+            /* This is a marker that will be processed by the generator runner */
+            Value result;
+            if (node->data.yield_expr.value) {
+                result = eval_node_env(interp, node->data.yield_expr.value, env);
+            } else {
+                result = make_null();
+            }
+            /* Set a special flag to indicate yield */
+            interp->last_result.is_return = 1; /* Reuse return mechanism for now */
+            interp->last_result.return_value = result;
+            return result;
+        }
         
         /* Module system - Import statements */
         case NODE_IMPORT_NAMED: {
@@ -1941,19 +2048,19 @@ char *resolve_module_path(Interpreter *interp, const char *import_path) {
     return resolved;
 }
 
-/* Get cached module exports */
-Env *get_cached_module(Interpreter *interp, const char *module_path) {
+/* Get cached module */
+LoadedModule *get_cached_module(Interpreter *interp, const char *module_path) {
     int i;
     for (i = 0; i < interp->module_count; i++) {
         if (strcmp(interp->loaded_modules[i].path, module_path) == 0) {
-            return interp->loaded_modules[i].exports;
+            return &interp->loaded_modules[i];
         }
     }
     return NULL;
 }
 
 /* Cache module exports */
-void cache_module(Interpreter *interp, const char *module_path, Env *exports) {
+void cache_module(Interpreter *interp, const char *module_path, Env *exports, Env *module_env, ASTNode **ast_nodes, int ast_count) {
     if (interp->module_count >= interp->module_capacity) {
         interp->module_capacity = interp->module_capacity == 0 ? 4 : interp->module_capacity * 2;
         interp->loaded_modules = realloc(interp->loaded_modules, 
@@ -1962,6 +2069,9 @@ void cache_module(Interpreter *interp, const char *module_path, Env *exports) {
     
     interp->loaded_modules[interp->module_count].path = strdup(module_path);
     interp->loaded_modules[interp->module_count].exports = exports;
+    interp->loaded_modules[interp->module_count].module_env = module_env;
+    interp->loaded_modules[interp->module_count].ast_nodes = ast_nodes;
+    interp->loaded_modules[interp->module_count].ast_count = ast_count;
     interp->loaded_modules[interp->module_count].is_loading = 0;
     interp->module_count++;
 }
@@ -2003,9 +2113,9 @@ Value load_module(Interpreter *interp, const char *module_path, Env *env) {
     Value result = make_null();
     
     /* Check if already loaded */
-    export_env = get_cached_module(interp, module_path);
-    if (export_env != NULL) {
-        return make_module(module_path, export_env);
+    LoadedModule *cached = get_cached_module(interp, module_path);
+    if (cached != NULL) {
+        return make_module(module_path, cached->exports, cached->module_env);
     }
     
     /* Check for circular dependency */
@@ -2061,7 +2171,7 @@ Value load_module(Interpreter *interp, const char *module_path, Env *env) {
     free(module_dir);
     
     /* Mark module as loading before executing */
-    cache_module(interp, module_path, export_env);
+    cache_module(interp, module_path, export_env, module_env, nodes, count);
     set_module_loading(interp, module_path, 1);
     
     /* Execute module statements */
@@ -2073,6 +2183,25 @@ Value load_module(Interpreter *interp, const char *module_path, Env *env) {
             if (node->data.export_stmt.is_default) {
                 /* export default expr */
                 Value val = eval_node_env(interp, node->data.export_stmt.declaration, module_env);
+                
+                /* For named function/class declarations, they return null but bind to module_env */
+                /* We need to retrieve them from the environment */
+                if (val.type == VAL_NULL && node->data.export_stmt.declaration) {
+                    const char *name = NULL;
+                    if (node->data.export_stmt.declaration->type == NODE_FUNC_DEF) {
+                        name = node->data.export_stmt.declaration->data.func_def.name;
+                    } else if (node->data.export_stmt.declaration->type == NODE_CLASS_DEF) {
+                        name = node->data.export_stmt.declaration->data.class_def.name;
+                    }
+                    
+                    if (name && strlen(name) > 0) {
+                        Value *func_val = env_get(module_env, name);
+                        if (func_val) {
+                            val = *func_val;
+                        }
+                    }
+                }
+                
                 env_set_local(export_env, "default", val);
             } else if (node->data.export_stmt.declaration) {
                 /* export const/let/var/fn/class */
@@ -2126,16 +2255,24 @@ Value load_module(Interpreter *interp, const char *module_path, Env *env) {
     free(interp->current_module_dir);
     interp->current_module_dir = old_module_dir;
     
-    /* Cleanup */
-    for (i = 0; i < count; i++) ast_free(nodes[i]);
-    free(nodes);
+    /* Cleanup parser resources */
     parser_free(&parser);
     lexer_free(&lexer);
     free(source);
-    env_free(module_env);
+    /* NOTE: We do NOT free module_env or AST nodes here because:
+       - exported functions reference module_env through their closures
+       - function bodies point to AST nodes
+       Both are stored in the module cache (loaded_modules array) and will be 
+       freed in interpreter_free() at lines 543-556. */
     
     if (!interp->had_error) {
-        result = make_module(module_path, export_env);
+        result = make_module(module_path, export_env, module_env);
+    } else {
+        /* On error, clean up everything */
+        for (i = 0; i < count; i++) ast_free(nodes[i]);
+        free(nodes);
+        env_free(module_env);
+        env_free(export_env);
     }
     
     return result;

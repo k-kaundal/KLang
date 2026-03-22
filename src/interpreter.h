@@ -5,7 +5,7 @@
 
 typedef enum {
     VAL_INT, VAL_FLOAT, VAL_STRING, VAL_BOOL, VAL_NULL, VAL_FUNCTION, VAL_LIST, VAL_BUILTIN,
-    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE
+    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE, VAL_GENERATOR
 } ValueType;
 
 typedef struct Value Value;
@@ -20,6 +20,7 @@ typedef struct {
     ASTNode *body;
     Env *closure;
     int is_async;
+    int is_generator;
 } FunctionVal;
 
 typedef struct {
@@ -71,7 +72,22 @@ typedef struct {
 typedef struct {
     char *module_path;         // Absolute path to the module
     Env *exports;              // Module's export namespace
+    Env *module_env;           // Module's internal environment (kept alive for closures)
 } ModuleVal;
+
+typedef enum {
+    GEN_RUNNING,
+    GEN_SUSPENDED,
+    GEN_COMPLETED
+} GeneratorState;
+
+typedef struct {
+    GeneratorState state;
+    FunctionVal *func;         // The generator function
+    Env *saved_env;            // Saved environment state
+    int yield_index;           // Which yield point we're at
+    Value *last_value;         // Last yielded value (pointer to avoid incomplete type)
+} GeneratorVal;
 
 struct Value {
     ValueType type;
@@ -88,6 +104,7 @@ struct Value {
         MethodVal method_val;
         PromiseVal promise_val;
         ModuleVal module_val;
+        GeneratorVal generator_val;
     } as;
 };
 
@@ -122,6 +139,9 @@ typedef struct MicrotaskNode {
 typedef struct LoadedModule {
     char *path;                  // Absolute path to module
     Env *exports;                // Module's export environment
+    Env *module_env;             // Module's internal environment (for closures)
+    ASTNode **ast_nodes;         // AST nodes (kept alive for function bodies)
+    int ast_count;               // Number of AST nodes
     int is_loading;              // Flag to detect circular dependencies
 } LoadedModule;
 
@@ -150,7 +170,7 @@ Value make_class(const char *name, const char *parent_name);
 Value make_object(const char *class_name, Env *methods);
 Value make_method(Value receiver, Value method);
 Value make_promise(void);
-Value make_module(const char *module_path, Env *exports);
+Value make_module(const char *module_path, Env *exports, Env *module_env);
 void value_free(Value *v);
 void value_print(Value *v);
 char *value_to_string(Value *v);
@@ -161,8 +181,8 @@ void microtask_queue_process(Interpreter *interp);
 /* Module system functions */
 char *resolve_module_path(Interpreter *interp, const char *import_path);
 Value load_module(Interpreter *interp, const char *module_path, Env *env);
-Env *get_cached_module(Interpreter *interp, const char *module_path);
-void cache_module(Interpreter *interp, const char *module_path, Env *exports);
+LoadedModule *get_cached_module(Interpreter *interp, const char *module_path);
+void cache_module(Interpreter *interp, const char *module_path, Env *exports, Env *module_env, ASTNode **ast_nodes, int ast_count);
 void set_module_loading(Interpreter *interp, const char *module_path, int loading);
 int is_module_loading(Interpreter *interp, const char *module_path);
 

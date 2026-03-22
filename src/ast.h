@@ -139,6 +139,7 @@ ASTNode *ast_new_ternary(ASTNode *cond, ASTNode *true_expr, ASTNode *false_expr,
 ASTNode *ast_new_switch(ASTNode *expr, int line);
 ASTNode *ast_new_case(ASTNode *value, int line);
 ASTNode *ast_new_await(ASTNode *expr, int line);
+ASTNode *ast_new_yield(ASTNode *value, int line);
 /* Module system constructors */
 ASTNode *ast_new_import_named(char **names, char **aliases, int count, const char *module_path, int line);
 ASTNode *ast_new_import_default(const char *name, const char *module_path, int line);

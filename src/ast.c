@@ -284,6 +284,12 @@ ASTNode *ast_new_await(ASTNode *expr, int line) {
     return n;
 }
 
+ASTNode *ast_new_yield(ASTNode *value, int line) {
+    ASTNode *n = ast_alloc(NODE_YIELD, line);
+    n->data.yield_expr.value = value;
+    return n;
+}
+
 /* Module system constructors */
 ASTNode *ast_new_import_named(char **names, char **aliases, int count, const char *module_path, int line) {
     ASTNode *n = ast_alloc(NODE_IMPORT_NAMED, line);
@@ -463,6 +469,11 @@ void ast_free(ASTNode *node) {
             break;
         case NODE_AWAIT:
             ast_free(node->data.await_expr.expr);
+            break;
+        case NODE_YIELD:
+            if (node->data.yield_expr.value) {
+                ast_free(node->data.yield_expr.value);
+            }
             break;
         case NODE_IMPORT_NAMED:
             if (node->data.import_named.names) {

@@ -395,6 +395,21 @@ static ASTNode *parse_unary(Parser *parser) {
         return ast_new_await(expr, line);
     }
     
+    /* Handle yield expression */
+    if (check(parser, TOKEN_YIELD)) {
+        Token t = advance(parser);
+        token_free(&t);
+        /* Check if there's a value to yield (could be empty for "yield" without value) */
+        if (!check(parser, TOKEN_SEMICOLON) && !check(parser, TOKEN_RBRACE) && 
+            !check(parser, TOKEN_EOF) && !check(parser, TOKEN_RPAREN) &&
+            !check(parser, TOKEN_COMMA)) {
+            ASTNode *value = parse_unary(parser);
+            return ast_new_yield(value, line);
+        } else {
+            return ast_new_yield(NULL, line);
+        }
+    }
+    
     if (check(parser, TOKEN_MINUS)) {
         Token t = advance(parser);
         token_free(&t);
@@ -706,6 +721,7 @@ static ASTNode *parse_const(Parser *parser) {
 static ASTNode *parse_func_def(Parser *parser) {
     int line = parser->current.line;
     int is_async = 0;
+    int is_generator = 0;
     Token fn_tok;
     Token name_tok;
     char *fname;
@@ -725,6 +741,14 @@ static ASTNode *parse_func_def(Parser *parser) {
     
     fn_tok = consume(parser, TOKEN_FN);
     token_free(&fn_tok);
+    
+    /* Check for * after fn (generator function) */
+    if (check(parser, TOKEN_STAR)) {
+        Token star_tok = advance(parser);
+        token_free(&star_tok);
+        is_generator = 1;
+    }
+    
     name_tok = consume(parser, TOKEN_IDENT);
     fname = strdup(name_tok.value);
     token_free(&name_tok);
@@ -778,8 +802,9 @@ static ASTNode *parse_func_def(Parser *parser) {
     }
     free(param_names);
 
-    /* Set async flag */
+    /* Set async and generator flags */
     func->data.func_def.is_async = is_async;
+    func->data.func_def.is_generator = is_generator;
 
     // Check if this is an abstract method (no body, just semicolon)
     if (check(parser, TOKEN_SEMICOLON)) {

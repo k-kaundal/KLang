@@ -82,6 +82,10 @@ static Value builtin_type(Interpreter *interp, Value *args, int argc) {
         case VAL_FUNCTION: return make_string("function");
         case VAL_BUILTIN: return make_string("builtin");
         case VAL_LIST: return make_string("list");
+        case VAL_OBJECT: return make_string("object");
+        case VAL_CLASS: return make_string("class");
+        case VAL_GENERATOR: return make_string("generator");
+        case VAL_PROMISE: return make_string("promise");
         default: return make_string("unknown");
     }
 }
@@ -1432,6 +1436,76 @@ static Value builtin_Promise_reject(Interpreter *interp, Value *args, int argc) 
     return *promise_ptr;
 }
 
+/* Generator next() method */
+static Value builtin_generator_next(Interpreter *interp, Value *args, int argc) {
+    /* args[0] is the generator object (receiver) */
+    if (argc < 1 || args[0].type != VAL_GENERATOR) {
+        fprintf(stderr, "Error: next() requires a generator\n");
+        interp->had_error = 1;
+        return make_null();
+    }
+    
+    GeneratorVal *gen = &args[0].as.generator_val;
+    
+    /* Check if generator is already completed */
+    if (gen->state == GEN_COMPLETED) {
+        /* Return {value: null, done: true} */
+        Value result;
+        result.type = VAL_OBJECT;
+        result.as.object_val.class_name = strdup("IteratorResult");
+        result.as.object_val.fields = env_new(NULL);
+        result.as.object_val.methods = env_new(NULL);
+        env_set_local(result.as.object_val.fields, "value", make_null());
+        env_set_local(result.as.object_val.fields, "done", make_bool(1));
+        return result;
+    }
+    
+    /* Execute generator function body */
+    gen->state = GEN_RUNNING;
+    
+    /* Clear previous return state */
+    interp->last_result.is_return = 0;
+    value_free(&interp->last_result.return_value);
+    interp->last_result.return_value = make_null();
+    
+    /* Execute the function body in the saved environment */
+    Value body_result = eval_block(interp, gen->func->body, gen->saved_env);
+    
+    /* Check if we hit a yield or return */
+    Value yielded_value;
+    int is_done = 0;
+    
+    if (interp->last_result.is_return) {
+        /* Got a yield (we reused return mechanism) or actual return */
+        yielded_value = interp->last_result.return_value;
+        interp->last_result.is_return = 0;
+        interp->last_result.return_value = make_null();
+        
+        /* TODO: Distinguish between yield and return */
+        /* For now, we'll mark as done after first yield */
+        /* This is a simplified implementation */
+        gen->state = GEN_COMPLETED; /* Mark as completed for now */
+        is_done = 1;
+    } else {
+        /* Function completed without explicit return/yield */
+        yielded_value = body_result;
+        gen->state = GEN_COMPLETED;
+        is_done = 1;
+    }
+    
+    /* Create iterator result object {value: ..., done: ...} */
+    Value result;
+    result.type = VAL_OBJECT;
+    result.as.object_val.class_name = strdup("IteratorResult");
+    result.as.object_val.fields = env_new(NULL);
+    result.as.object_val.methods = env_new(NULL);
+    
+    env_set_local(result.as.object_val.fields, "value", yielded_value);
+    env_set_local(result.as.object_val.fields, "done", make_bool(is_done));
+    
+    return result;
+}
+
 void runtime_init(Interpreter *interp) {
     Value v;
     v.type = VAL_BUILTIN;
@@ -1563,6 +1637,10 @@ void runtime_init(Interpreter *interp) {
     
     v.as.builtin = builtin_Promise_reject;
     env_set_local(interp->global_env, "__Promise_reject", v);
+    
+    /* Generator methods */
+    v.as.builtin = builtin_generator_next;
+    env_set_local(interp->global_env, "__generator_next", v);
     
     // Create Promise "class" with static methods
     Value promise_class = make_class("Promise", NULL);
