@@ -367,7 +367,8 @@ Token lexer_next_token(Lexer *lexer) {
                 lexer->pos++; lexer->col++;
                 return make_token(TOKEN_AND_AND, "&&", line, col);
             }
-            // Single & would fall through to default
+            // Single & is not supported (bitwise operators not implemented)
+            fprintf(stderr, "Lexer error at line %d, col %d: unexpected character '&' (bitwise operators not supported yet)\n", line, col);
             {
                 char buf[2] = {c, 0};
                 return make_token(TOKEN_EOF, buf, line, col);
@@ -377,7 +378,8 @@ Token lexer_next_token(Lexer *lexer) {
                 lexer->pos++; lexer->col++;
                 return make_token(TOKEN_OR_OR, "||", line, col);
             }
-            // Single | would fall through to default
+            // Single | is not supported (bitwise operators not implemented)
+            fprintf(stderr, "Lexer error at line %d, col %d: unexpected character '|' (bitwise operators not supported yet)\n", line, col);
             {
                 char buf[2] = {c, 0};
                 return make_token(TOKEN_EOF, buf, line, col);
