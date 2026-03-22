@@ -333,6 +333,7 @@ void value_free(Value *v) {
             free(v->as.func_val.param_names);
             v->as.func_val.param_names = NULL;
         }
+        /* Note: default_values array and its contents are owned by the AST, not freed here */
     }
     if (v->type == VAL_LIST) {
         int i;
@@ -815,6 +816,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             func.type = VAL_FUNCTION;
             func.as.func_val.param_count = node->data.func_def.params.count;
             func.as.func_val.param_names = NULL;
+            func.as.func_val.default_values = node->data.func_def.default_values; /* Point to AST-owned array */
             if (func.as.func_val.param_count > 0) {
                 int i;
                 func.as.func_val.param_names = malloc(func.as.func_val.param_count * sizeof(char *));
@@ -1001,6 +1003,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     for (i = 0; i < func_copy->param_count; i++) {
                         func_copy->param_names[i] = strdup(callee.as.func_val.param_names[i]);
                     }
+                    /* Copy default values pointer (owned by AST) */
+                    func_copy->default_values = callee.as.func_val.default_values;
                     func_copy->body = callee.as.func_val.body;
                     func_copy->closure = callee.as.func_val.closure;
                     func_copy->is_async = callee.as.func_val.is_async;
@@ -1016,6 +1020,14 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         for (i = 0; i < callee.as.func_val.param_count - 1 && i < argc; i++)
                             env_set_local(gen_env, callee.as.func_val.param_names[i], args[i]);
                         
+                        /* Handle missing args with default values */
+                        for (i = argc; i < callee.as.func_val.param_count - 1; i++) {
+                            if (callee.as.func_val.default_values && callee.as.func_val.default_values[i]) {
+                                Value default_val = eval_node_env(interp, callee.as.func_val.default_values[i], gen_env);
+                                env_set_local(gen_env, callee.as.func_val.param_names[i], default_val);
+                            }
+                        }
+                        
                         /* Collect rest args into array */
                         Value rest_array;
                         int rest_count = argc - (callee.as.func_val.param_count - 1);
@@ -1030,8 +1042,17 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         }
                         env_set_local(gen_env, callee.as.func_val.param_names[callee.as.func_val.param_count - 1], rest_array);
                     } else {
+                        /* Bind provided arguments */
                         for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
                             env_set_local(gen_env, callee.as.func_val.param_names[i], args[i]);
+                        
+                        /* Handle missing args with default values */
+                        for (i = argc; i < callee.as.func_val.param_count; i++) {
+                            if (callee.as.func_val.default_values && callee.as.func_val.default_values[i]) {
+                                Value default_val = eval_node_env(interp, callee.as.func_val.default_values[i], gen_env);
+                                env_set_local(gen_env, callee.as.func_val.param_names[i], default_val);
+                            }
+                        }
                     }
                     
                     value_free(&result);
@@ -1051,6 +1072,14 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         for (i = 0; i < callee.as.func_val.param_count - 1 && i < argc; i++)
                             env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
                         
+                        /* Handle missing args with default values */
+                        for (i = argc; i < callee.as.func_val.param_count - 1; i++) {
+                            if (callee.as.func_val.default_values && callee.as.func_val.default_values[i]) {
+                                Value default_val = eval_node_env(interp, callee.as.func_val.default_values[i], call_env);
+                                env_set_local(call_env, callee.as.func_val.param_names[i], default_val);
+                            }
+                        }
+                        
                         /* Collect rest args into array */
                         Value rest_array;
                         int rest_count = argc - (callee.as.func_val.param_count - 1);
@@ -1065,8 +1094,17 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         }
                         env_set_local(call_env, callee.as.func_val.param_names[callee.as.func_val.param_count - 1], rest_array);
                     } else {
+                        /* Bind provided arguments */
                         for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
                             env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                        
+                        /* Handle missing args with default values */
+                        for (i = argc; i < callee.as.func_val.param_count; i++) {
+                            if (callee.as.func_val.default_values && callee.as.func_val.default_values[i]) {
+                                Value default_val = eval_node_env(interp, callee.as.func_val.default_values[i], call_env);
+                                env_set_local(call_env, callee.as.func_val.param_names[i], default_val);
+                            }
+                        }
                     }
                     
                     /* Execute function body */
@@ -1100,6 +1138,14 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         for (i = 0; i < callee.as.func_val.param_count - 1 && i < argc; i++)
                             env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
                         
+                        /* Handle missing args with default values */
+                        for (i = argc; i < callee.as.func_val.param_count - 1; i++) {
+                            if (callee.as.func_val.default_values && callee.as.func_val.default_values[i]) {
+                                Value default_val = eval_node_env(interp, callee.as.func_val.default_values[i], call_env);
+                                env_set_local(call_env, callee.as.func_val.param_names[i], default_val);
+                            }
+                        }
+                        
                         /* Collect rest args into array */
                         Value rest_array;
                         int rest_count = argc - (callee.as.func_val.param_count - 1);
@@ -1114,8 +1160,17 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         }
                         env_set_local(call_env, callee.as.func_val.param_names[callee.as.func_val.param_count - 1], rest_array);
                     } else {
+                        /* Bind provided arguments */
                         for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
                             env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                        
+                        /* Handle missing args with default values */
+                        for (i = argc; i < callee.as.func_val.param_count; i++) {
+                            if (callee.as.func_val.default_values && callee.as.func_val.default_values[i]) {
+                                Value default_val = eval_node_env(interp, callee.as.func_val.default_values[i], call_env);
+                                env_set_local(call_env, callee.as.func_val.param_names[i], default_val);
+                            }
+                        }
                     }
                     
                     value_free(&result);

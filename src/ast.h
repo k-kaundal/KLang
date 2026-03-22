@@ -66,7 +66,7 @@ struct ASTNode {
         struct { } break_stmt;
         struct { } continue_stmt;
         struct { NodeList stmts; } block;
-        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; int is_async; int is_generator; int has_rest_param; } func_def;
+        struct { char *name; NodeList params; char **param_types; ASTNode **default_values; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; int is_async; int is_generator; int has_rest_param; } func_def;
         struct { NodeList elements; } list;
         struct { NodeList elements; } tuple;
         struct { ObjectProperty *props; int count; int capacity; } object;

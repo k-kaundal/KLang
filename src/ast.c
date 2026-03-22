@@ -187,6 +187,7 @@ ASTNode *ast_new_func_def(const char *name, const char *return_type, int line) {
     n->data.func_def.return_type = return_type ? strdup(return_type) : NULL;
     nodelist_init(&n->data.func_def.params);
     n->data.func_def.param_types = NULL;
+    n->data.func_def.default_values = NULL;
     n->data.func_def.body = NULL;
     n->data.func_def.is_static = 0;
     n->data.func_def.access = ACCESS_PUBLIC;
@@ -468,8 +469,11 @@ void ast_free(ASTNode *node) {
                 ast_free(node->data.func_def.params.items[i]);
                 if (node->data.func_def.param_types && node->data.func_def.param_types[i])
                     free(node->data.func_def.param_types[i]);
+                if (node->data.func_def.default_values && node->data.func_def.default_values[i])
+                    ast_free(node->data.func_def.default_values[i]);
             }
             if (node->data.func_def.param_types) free(node->data.func_def.param_types);
+            if (node->data.func_def.default_values) free(node->data.func_def.default_values);
             nodelist_free(&node->data.func_def.params);
             ast_free(node->data.func_def.body);
             break;

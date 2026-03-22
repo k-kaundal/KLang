@@ -17,6 +17,7 @@ typedef Value (*BuiltinFn)(Interpreter *interp, Value *args, int argc);
 typedef struct {
     char **param_names;
     int param_count;
+    ASTNode **default_values;
     ASTNode *body;
     Env *closure;
     int is_async;

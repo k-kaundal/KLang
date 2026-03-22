@@ -1029,6 +1029,7 @@ static ASTNode *parse_func_def(Parser *parser) {
     char *fname;
     char **param_names = NULL;
     char **param_types = NULL;
+    ASTNode **param_defaults = NULL;
     int param_count = 0;
     int param_cap = 0;
     char *return_type = NULL;
@@ -1075,15 +1076,24 @@ static ASTNode *parse_func_def(Parser *parser) {
             param_cap = param_cap == 0 ? 4 : param_cap * 2;
             param_names = realloc(param_names, param_cap * sizeof(char *));
             param_types = realloc(param_types, param_cap * sizeof(char *));
+            param_defaults = realloc(param_defaults, param_cap * sizeof(ASTNode *));
         }
         param_names[param_count] = strdup(pname_tok.value);
         token_free(&pname_tok);
         param_types[param_count] = NULL;
+        param_defaults[param_count] = NULL;
+        
         if (match(parser, TOKEN_COLON)) {
             Token ptype_tok = consume(parser, TOKEN_IDENT);
             param_types[param_count] = strdup(ptype_tok.value);
             token_free(&ptype_tok);
         }
+        
+        /* Check for default value: name = expr */
+        if (match(parser, TOKEN_ASSIGN)) {
+            param_defaults[param_count] = parse_expression(parser);
+        }
+        
         param_count++;
         
         /* Rest parameter must be last */
@@ -1119,6 +1129,7 @@ static ASTNode *parse_func_def(Parser *parser) {
     if (return_type) free(return_type);
 
     func->data.func_def.param_types = param_types;
+    func->data.func_def.default_values = param_defaults;
     {
         int i;
         for (i = 0; i < param_count; i++) {
