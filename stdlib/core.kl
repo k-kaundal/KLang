@@ -1,0 +1,108 @@
+# KLang Standard Library - Core Utilities
+# Core utility functions for common tasks
+
+# Identity function - returns the value passed to it
+fn identity(value: int) -> int {
+    return value
+}
+
+# Constant function - always returns the same value
+fn constant(value: int, arg: int) -> int {
+    return value
+}
+
+# Check if value is within range (inclusive)
+fn inRange(value: int, min: int, max: int) -> int {
+    if value >= min {
+        if value <= max {
+            return 1
+        }
+    }
+    return 0
+}
+
+# Default value if condition is false
+fn defaultTo(value: int, defaultValue: int, condition: int) -> int {
+    if condition {
+        return value
+    }
+    return defaultValue
+}
+
+# Swap two values (returns array with swapped values)
+fn swap(a: int, b: int) -> array {
+    return [b, a]
+}
+
+# Sign function (-1, 0, or 1)
+fn sign(n: int) -> int {
+    if n < 0 {
+        return 0 - 1
+    }
+    if n > 0 {
+        return 1
+    }
+    return 0
+}
+
+# Compare two values (-1 if a < b, 0 if a == b, 1 if a > b)
+fn compare(a: int, b: int) -> int {
+    if a < b {
+        return 0 - 1
+    }
+    if a > b {
+        return 1
+    }
+    return 0
+}
+
+# Boolean to integer conversion (for compatibility)
+fn toInt(value: int) -> int {
+    return value
+}
+
+# Negate boolean (0 becomes 1, non-zero becomes 0)
+fn not(value: int) -> int {
+    if value == 0 {
+        return 1
+    }
+    return 0
+}
+
+# Logical AND
+fn and(a: int, b: int) -> int {
+    if a != 0 {
+        if b != 0 {
+            return 1
+        }
+    }
+    return 0
+}
+
+# Logical OR
+fn or(a: int, b: int) -> int {
+    if a != 0 {
+        return 1
+    }
+    if b != 0 {
+        return 1
+    }
+    return 0
+}
+
+# Logical XOR
+fn xor(a: int, b: int) -> int {
+    let aTrue = a != 0
+    let bTrue = b != 0
+    if aTrue {
+        if not(bTrue) {
+            return 1
+        }
+    }
+    if bTrue {
+        if not(aTrue) {
+            return 1
+        }
+    }
+    return 0
+}

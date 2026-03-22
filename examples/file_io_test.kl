@@ -1,0 +1,121 @@
+# KLang File I/O Test
+# Demonstrates comprehensive file operations
+
+println("╔════════════════════════════════════════════════════════════╗")
+println("║           KLang File I/O Operations Test                  ║")
+println("╚════════════════════════════════════════════════════════════╝")
+println("")
+
+# Test 1: Write to a file
+println("Test 1: Writing to a file...")
+let success = writeFile("/tmp/klang_test.txt", "Hello from KLang!\nThis is line 2.\nThis is line 3.")
+println("Write success: ")
+print(success)
+println("")
+println("")
+
+# Test 2: Read from a file
+println("Test 2: Reading from a file...")
+let content = readFile("/tmp/klang_test.txt")
+println("File content:")
+println(content)
+println("")
+
+# Test 3: Check if file exists
+println("Test 3: Checking if file exists...")
+let exists = fexists("/tmp/klang_test.txt")
+println("File exists: ")
+print(exists)
+println("")
+println("")
+
+# Test 4: Get file size
+println("Test 4: Getting file size...")
+let size = fsize("/tmp/klang_test.txt")
+println("File size (bytes): ")
+print(size)
+println("")
+println("")
+
+# Test 5: Append to file
+println("Test 5: Appending to file...")
+let appendSuccess = appendFile("/tmp/klang_test.txt", "\nAppended line!")
+println("Append success: ")
+print(appendSuccess)
+println("")
+
+let newContent = readFile("/tmp/klang_test.txt")
+println("Updated content:")
+println(newContent)
+println("")
+
+# Test 6: File operations with fopen/fclose
+println("Test 6: Using fopen/fclose/fread...")
+let file = fopen("/tmp/klang_test.txt", "r")
+println("File opened: ")
+print(type(file))
+println("")
+
+let fileContent = fread(file)
+println("Content from fread:")
+println(fileContent)
+
+let closeSuccess = fclose(file)
+println("Close success: ")
+print(closeSuccess)
+println("")
+println("")
+
+# Test 7: Writing with fopen/fwrite
+println("Test 7: Writing with fopen/fwrite...")
+let writeF = fopen("/tmp/klang_write_test.txt", "w")
+let writeSuccess2 = fwrite(writeF, "Line 1\n")
+let writeSuccess3 = fwrite(writeF, "Line 2\n")
+fclose(writeF)
+println("Write operations completed")
+println("")
+
+let result = readFile("/tmp/klang_write_test.txt")
+println("Written content:")
+println(result)
+println("")
+
+# Test 8: Reading line by line
+println("Test 8: Reading line by line with freadline...")
+let readF = fopen("/tmp/klang_write_test.txt", "r")
+println("Line 1: ")
+print(freadline(readF))
+println("")
+println("Line 2: ")
+print(freadline(readF))
+println("")
+fclose(readF)
+println("")
+
+# Test 9: Rename file
+println("Test 9: Renaming file...")
+let renameSuccess = frename("/tmp/klang_write_test.txt", "/tmp/klang_renamed.txt")
+println("Rename success: ")
+print(renameSuccess)
+println("")
+
+let renamedExists = fexists("/tmp/klang_renamed.txt")
+println("Renamed file exists: ")
+print(renamedExists)
+println("")
+println("")
+
+# Test 10: Delete file
+println("Test 10: Deleting files...")
+let deleteSuccess1 = fdelete("/tmp/klang_test.txt")
+let deleteSuccess2 = fdelete("/tmp/klang_renamed.txt")
+println("Delete success: ")
+print(deleteSuccess1)
+println(" and ")
+print(deleteSuccess2)
+println("")
+println("")
+
+println("╔════════════════════════════════════════════════════════════╗")
+println("║              All File I/O Tests Complete!                 ║")
+println("╚════════════════════════════════════════════════════════════╝")

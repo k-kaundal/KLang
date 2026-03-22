@@ -1,0 +1,87 @@
+# KLang File I/O Examples
+# Simple and practical file operation demonstrations
+
+println("=== KLang File I/O Examples ===")
+println("")
+
+# Example 1: Write and Read
+println("Example 1: Write and Read File")
+println("-------------------------------")
+writeFile("/tmp/hello.txt", "Hello from KLang!")
+let content = readFile("/tmp/hello.txt")
+println("File content: " + content)
+println("")
+
+# Example 2: Append to File
+println("Example 2: Append to File")
+println("--------------------------")
+appendFile("/tmp/hello.txt", "\nThis is line 2")
+appendFile("/tmp/hello.txt", "\nThis is line 3")
+let updated = readFile("/tmp/hello.txt")
+println("Updated content:")
+println(updated)
+println("")
+
+# Example 3: Check File Existence
+println("Example 3: File Existence Check")
+println("--------------------------------")
+if fexists("/tmp/hello.txt") {
+    println("✓ File exists")
+    let size = fsize("/tmp/hello.txt")
+    println("File size: " + str(size) + " bytes")
+} else {
+    println("✗ File does not exist")
+}
+println("")
+
+# Example 4: Line-by-Line Reading
+println("Example 4: Line-by-Line Reading")
+println("--------------------------------")
+let file = fopen("/tmp/hello.txt", "r")
+println("Reading lines:")
+let line = freadline(file)
+let lineNum = 1
+while len(line) > 0 {
+    println(str(lineNum) + ": " + line)
+    lineNum = lineNum + 1
+    line = freadline(file)
+}
+fclose(file)
+println("")
+
+# Example 5: Write Multiple Times
+println("Example 5: Write Multiple Times")
+println("--------------------------------")
+let f = fopen("/tmp/numbers.txt", "w")
+fwrite(f, "One\n")
+fwrite(f, "Two\n")
+fwrite(f, "Three\n")
+fclose(f)
+println("Written to file:")
+println(readFile("/tmp/numbers.txt"))
+
+# Example 6: File Rename
+println("Example 6: File Rename")
+println("----------------------")
+if frename("/tmp/numbers.txt", "/tmp/renamed.txt") {
+    println("✓ File renamed successfully")
+    if fexists("/tmp/renamed.txt") {
+        println("✓ New file exists")
+    }
+}
+println("")
+
+# Example 7: Cleanup
+println("Example 7: Cleanup (Delete Files)")
+println("----------------------------------")
+let deleted1 = fdelete("/tmp/hello.txt")
+let deleted2 = fdelete("/tmp/renamed.txt")
+if deleted1 {
+    println("✓ Deleted hello.txt")
+}
+if deleted2 {
+    println("✓ Deleted renamed.txt")
+}
+println("")
+
+println("=== All Examples Complete ===")

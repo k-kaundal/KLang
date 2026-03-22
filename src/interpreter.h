@@ -2,10 +2,11 @@
 #define INTERPRETER_H
 
 #include "ast.h"
+#include <stdio.h>
 
 typedef enum {
     VAL_INT, VAL_FLOAT, VAL_STRING, VAL_BOOL, VAL_NULL, VAL_FUNCTION, VAL_LIST, VAL_BUILTIN,
-    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE, VAL_GENERATOR, VAL_TUPLE
+    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE, VAL_GENERATOR, VAL_TUPLE, VAL_FILE
 } ValueType;
 
 typedef struct Value Value;
@@ -96,6 +97,13 @@ typedef struct {
     Value *last_value;         // Last yielded value (pointer to avoid incomplete type)
 } GeneratorVal;
 
+typedef struct {
+    FILE *fp;                  // File pointer
+    char *path;                // File path for reference
+    char *mode;                // File mode (r, w, a, etc.)
+    int is_open;               // Track if file is still open
+} FileVal;
+
 struct Value {
     ValueType type;
     union {
@@ -113,6 +121,7 @@ struct Value {
         PromiseVal promise_val;
         ModuleVal module_val;
         GeneratorVal generator_val;
+        FileVal file_val;
     } as;
 };
 
