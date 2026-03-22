@@ -372,6 +372,10 @@ const char *token_type_name(TokenType type) {
         case TOKEN_ASYNC: return "ASYNC";
         case TOKEN_AWAIT: return "AWAIT";
         case TOKEN_YIELD: return "YIELD";
+        case TOKEN_TRY: return "TRY";
+        case TOKEN_CATCH: return "CATCH";
+        case TOKEN_FINALLY: return "FINALLY";
+        case TOKEN_THROW: return "THROW";
         case TOKEN_IMPORT: return "IMPORT";
         case TOKEN_EXPORT: return "EXPORT";
         case TOKEN_FROM: return "FROM";
