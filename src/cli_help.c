@@ -42,6 +42,8 @@ void print_help(void) {
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %scheck%s <file>     Check syntax without executing\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("  %sfmt%s <file>       Format KLang source code\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %sinfo%s <file>      Display file information and statistics\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %sversion%s          Show version information\n",
@@ -61,6 +63,7 @@ void print_help(void) {
     printf("  klang run program.kl           # Run a program\n");
     printf("  klang repl                     # Start REPL\n");
     printf("  klang check script.k           # Check syntax\n");
+    printf("  klang fmt script.k             # Format code\n");
     printf("  klang info myfile.klang        # Show file info\n");
     printf("  klang help run                 # Help for 'run' command\n\n");
 
@@ -134,6 +137,24 @@ void print_command_help(const char* command) {
         printf("    Shows line count, size, and basic analysis.\n\n");
         printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
         printf("    klang info script.kl\n\n");
+    }
+    else if (strcmp(command, "fmt") == 0) {
+        printf("\n%sKLang Format Command%s\n\n", 
+               get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+        printf("%sUSAGE:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang fmt <file> [OPTIONS]\n\n");
+        printf("%sDESCRIPTION:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    Format KLang source code with consistent style.\n");
+        printf("    Formats indentation, spacing, and code structure.\n\n");
+        printf("%sOPTIONS:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    --check           Check if file needs formatting (don't modify)\n");
+        printf("    --indent=N        Set indent size (1-8, default: 4)\n");
+        printf("    --tabs            Use tabs instead of spaces\n\n");
+        printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang fmt script.kl              # Format with defaults\n");
+        printf("    klang fmt script.kl --check      # Check only\n");
+        printf("    klang fmt script.kl --indent=2   # Use 2-space indent\n");
+        printf("    klang fmt script.kl --tabs       # Use tabs\n\n");
     }
     else {
         print_error("Unknown command");

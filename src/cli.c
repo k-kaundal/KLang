@@ -202,6 +202,35 @@ int main(int argc, char **argv) {
         }
         cmd_info_file(argv[2]);
     }
+    else if (strcmp(argv[1], "fmt") == 0) {
+        if (argc < 3) {
+            print_error("Missing file argument");
+            fprintf(stderr, "Usage: klang fmt <file.kl> [--check] [--indent=N] [--tabs]\n");
+            fprintf(stderr, "Try 'klang help fmt' for more information.\n");
+            return 1;
+        }
+        
+        /* Parse fmt options */
+        int check_only = 0;
+        int indent_size = 4; /* Default */
+        int use_tabs = 0;
+        
+        for (i = 3; i < argc; i++) {
+            if (strcmp(argv[i], "--check") == 0) {
+                check_only = 1;
+            } else if (strncmp(argv[i], "--indent=", 9) == 0) {
+                indent_size = atoi(argv[i] + 9);
+                if (indent_size < 1 || indent_size > 8) {
+                    print_error("Invalid indent size (must be 1-8)");
+                    return 1;
+                }
+            } else if (strcmp(argv[i], "--tabs") == 0) {
+                use_tabs = 1;
+            }
+        }
+        
+        cmd_fmt_file(argv[2], check_only, indent_size, use_tabs);
+    }
     else if (strcmp(argv[1], "version") == 0) {
         print_version();
     }

@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "cli_commands.h"
 #include "cli_colors.h"
 #include "lexer.h"
 #include "parser.h"
 #include "ast.h"
+#include "formatter.h"
 
 /* Helper to validate file extension */
 static int validate_file_extension(const char *path) {
@@ -207,4 +209,77 @@ void cmd_info_file(const char *path) {
     printf("\n");
     
     free(source);
+}
+
+void cmd_fmt_file(const char *path, int check_only, int indent_size, int use_tabs) {
+    char temp_path[512];
+    int result;
+    
+    printf("\n%sFormatting:%s %s\n", 
+           get_color(COLOR_BOLD_CYAN), 
+           get_color(COLOR_RESET), 
+           path);
+    
+    /* Validate extension */
+    if (!validate_file_extension(path)) {
+        print_error("Invalid file extension. KLang files must have .kl, .k, or .klang extension");
+        fprintf(stderr, "Given file: %s\n", path);
+        return;
+    }
+    
+    if (check_only) {
+        /* Check mode: format to temp file and compare */
+        snprintf(temp_path, sizeof(temp_path), "/tmp/klang_fmt_%d.kl", (int)getpid());
+        result = format_file(path, temp_path, indent_size, use_tabs);
+        
+        if (result != 0) {
+            print_error("Formatting failed");
+            return;
+        }
+        
+        /* Compare files */
+        char *original = read_file(path);
+        char *formatted = read_file(temp_path);
+        
+        if (!original || !formatted) {
+            print_error("Cannot read files for comparison");
+            free(original);
+            free(formatted);
+            remove(temp_path);
+            return;
+        }
+        
+        if (strcmp(original, formatted) == 0) {
+            print_success("File is already formatted");
+        } else {
+            print_info("File needs formatting");
+            printf("%sHint:%s Run 'klang fmt %s' to format the file\n",
+                   get_color(COLOR_YELLOW),
+                   get_color(COLOR_RESET),
+                   path);
+        }
+        
+        free(original);
+        free(formatted);
+        remove(temp_path);
+    } else {
+        /* Format mode: format in place */
+        snprintf(temp_path, sizeof(temp_path), "%s.tmp", path);
+        result = format_file(path, temp_path, indent_size, use_tabs);
+        
+        if (result != 0) {
+            print_error("Formatting failed");
+            remove(temp_path);
+            return;
+        }
+        
+        /* Replace original with formatted version */
+        if (remove(path) != 0 || rename(temp_path, path) != 0) {
+            print_error("Cannot write formatted file");
+            remove(temp_path);
+            return;
+        }
+        
+        print_success("File formatted successfully");
+    }
 }
