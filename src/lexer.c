@@ -227,6 +227,7 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "of") == 0) type = TOKEN_OF;
             else if (strcmp(buf, "true") == 0) type = TOKEN_TRUE;
             else if (strcmp(buf, "false") == 0) type = TOKEN_FALSE;
+            else if (strcmp(buf, "null") == 0) type = TOKEN_NULL;
             else if (strcmp(buf, "switch") == 0) type = TOKEN_SWITCH;
             else if (strcmp(buf, "case") == 0) type = TOKEN_CASE;
             else if (strcmp(buf, "default") == 0) type = TOKEN_DEFAULT;

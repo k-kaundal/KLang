@@ -63,7 +63,7 @@ void run_ternary_tests(void) {
 
     // Test 4: Ternary with expressions
     {
-        Value v = run_expr("let a = 10\nlet b = 20\nlet max = a > b ? a : b\nmax");
+        Value v = run_expr("let a = 10\nlet b = 20\nlet maxval = a > b ? a : b\nmaxval");
         ASSERT_EQ(v.type, VAL_INT);
         ASSERT_EQ(v.as.int_val, 20);
         value_free(&v);

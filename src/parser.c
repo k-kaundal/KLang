@@ -173,6 +173,11 @@ static ASTNode *parse_primary(Parser *parser) {
         token_free(&t);
         return ast_new_bool(0, line);
     }
+    if (check(parser, TOKEN_NULL)) {
+        Token t = advance(parser);
+        token_free(&t);
+        return ast_new_null(line);
+    }
     if (check(parser, TOKEN_IDENT)) {
         Token t = advance(parser);
         ASTNode *n = ast_new_ident(t.value, line);
