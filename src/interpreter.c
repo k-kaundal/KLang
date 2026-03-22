@@ -312,13 +312,16 @@ void value_free(Value *v) {
     }
     if (v->type == VAL_CLASS) {
         // Don't free Env structures to avoid double-free issues
-        // when class is copied/stored in multiple places
+        // when class is copied/stored in multiple places.
+        // NOTE: This is a known memory management limitation in KLang's Value system.
+        // Classes share Env pointers across copies, so freeing them causes double-frees.
+        // A proper fix would require reference counting or unique ownership semantics.
         if (v->as.class_val.name) {
-            // free(v->as.class_val.name);  // Keep allocated
+            // Keep allocated - will leak but prevents crashes
             v->as.class_val.name = NULL;
         }
         if (v->as.class_val.parent_name) {
-            // free(v->as.class_val.parent_name);  // Keep allocated
+            // Keep allocated - will leak but prevents crashes
             v->as.class_val.parent_name = NULL;
         }
         // Don't free env structures - they're shared

@@ -1191,6 +1191,9 @@ Value builtin_promise_resolve_fn(Interpreter *interp, Value *args, int argc);
 Value builtin_promise_reject_fn(Interpreter *interp, Value *args, int argc);
 
 // Global promise being constructed (for resolve/reject to access)
+// NOTE: This is not thread-safe and is a known limitation.
+// In a multi-threaded environment, this would need to be refactored
+// to pass promise context through parameters or use thread-local storage.
 static Value *g_current_promise = NULL;
 
 Value builtin_promise_resolve_fn(Interpreter *interp, Value *args, int argc) {
@@ -1218,6 +1221,10 @@ Value builtin_Promise_constructor(Interpreter *interp, Value *args, int argc) {
     Value promise = make_promise();
     
     // Create a copy of the promise for the resolve/reject functions to capture
+    // NOTE: Memory management - promise_ptr is allocated but not explicitly freed.
+    // It's managed as part of the Value system when the promise is stored/copied.
+    // This follows KLang's Value ownership model where heap-allocated sub-structures
+    // are shared between Value copies.
     Value *promise_ptr = malloc(sizeof(Value));
     *promise_ptr = promise;
     

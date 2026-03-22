@@ -241,11 +241,19 @@ gcc tests/test_promises.c -o test_promises
 
 1. **Synchronous Execution**: Promises execute synchronously, not asynchronously. The executor and callbacks run immediately rather than being scheduled on a microtask queue.
 
-2. **Memory Management**: Current implementation has some memory management issues with promise cleanup that may cause warnings or crashes in certain edge cases. This is a known issue with the overall Value system in KLang and affects classes/objects as well.
+2. **Memory Management**: Current implementation has memory management challenges:
+   - Promise structs are heap-allocated and shared across copies
+   - Some memory leaks exist but are acceptable given KLang's Value system design
+   - This is consistent with how classes/objects are handled in KLang
+   - A full fix would require reference counting throughout the Value system
 
-3. **Promise.all() and Promise.race()**: These static methods are not yet implemented.
+3. **Thread Safety**: The global `g_current_promise` variable used during construction is not thread-safe. KLang is currently single-threaded, so this isn't an issue in practice.
 
-4. **Async/Await**: Syntactic sugar for Promises (async/await) is not implemented.
+4. **String Values**: String values in promises may cause memory corruption due to shared pointer issues in the Value system. Use numeric values or objects instead.
+
+5. **Promise.all() and Promise.race()**: These static methods are not yet implemented.
+
+6. **Async/Await**: Syntactic sugar for Promises (async/await) is not implemented.
 
 ## Future Enhancements
 
