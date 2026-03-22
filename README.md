@@ -168,6 +168,9 @@ klang run script.kl     # Run a script
 - 🔧 [**Usage Guide**](docs/USAGE_GUIDE.md) - How to use KLang
 - 🔨 [**Compilation Guide**](docs/COMPILATION_GUIDE.md) - Building from source
 - 🎓 [**OOP Specification**](docs/OOP_LANGUAGE_SPEC.md) - Object-oriented features
+- ⚖️ [**JavaScript vs KLang Comparison**](docs/JS_KLANG_FEATURE_COMPARISON.md) - Complete feature comparison (1800+ lines)
+- 📊 [**Feature Comparison Summary**](docs/FEATURE_COMPARISON_SUMMARY.md) - Quick comparison overview
+- 🔄 [**JavaScript to KLang Migration**](docs/JS_TO_KLANG_MIGRATION.md) - Migration guide for JS developers
 - 🤝 [**Contributing Guide**](CONTRIBUTING.md) - How to contribute
 
 **Quick Links:**
