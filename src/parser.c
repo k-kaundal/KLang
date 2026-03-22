@@ -691,15 +691,229 @@ static ASTNode *parse_block(Parser *parser) {
     return block;
 }
 
+/* Parse destructuring array pattern element */
+static ASTNode *parse_destructure_array_element(Parser *parser) {
+    int line = parser->current.line;
+    
+    /* Check for hole/skip: const [a, , c] = arr */
+    if (check(parser, TOKEN_COMMA) || check(parser, TOKEN_RBRACKET)) {
+        return ast_new_destructure_element(NULL, NULL, NULL, 0, 1, line);
+    }
+    
+    /* Check for rest element: ...rest */
+    if (check(parser, TOKEN_SPREAD)) {
+        Token spread_tok = advance(parser);
+        token_free(&spread_tok);
+        
+        if (!check(parser, TOKEN_IDENT)) {
+            fprintf(stderr, "Parse error at line %d: expected identifier after ...\n", line);
+            parser->had_error = 1;
+            return NULL;
+        }
+        
+        Token name_tok = advance(parser);
+        ASTNode *elem = ast_new_destructure_element(name_tok.value, NULL, NULL, 1, 0, line);
+        token_free(&name_tok);
+        return elem;
+    }
+    
+    /* Check for nested array destructuring: const [[a, b], c] = arr */
+    if (check(parser, TOKEN_LBRACKET)) {
+        /* Parse nested array pattern */
+        Token lbracket = advance(parser);
+        token_free(&lbracket);
+        
+        ASTNode *nested = ast_new_destructure_array(NULL, DECL_LET, line);
+        while (!check(parser, TOKEN_RBRACKET) && !check(parser, TOKEN_EOF)) {
+            ASTNode *elem = parse_destructure_array_element(parser);
+            if (elem) nodelist_push(&nested->data.destructure_array.elements, elem);
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        Token rbracket = consume(parser, TOKEN_RBRACKET);
+        token_free(&rbracket);
+        
+        ASTNode *wrapper = ast_new_destructure_element(NULL, NULL, NULL, 0, 0, line);
+        wrapper->data.destructure_element.nested = nested;
+        return wrapper;
+    }
+    
+    /* Regular identifier with optional default */
+    if (!check(parser, TOKEN_IDENT)) {
+        fprintf(stderr, "Parse error at line %d: expected identifier in destructuring pattern\n", line);
+        parser->had_error = 1;
+        return NULL;
+    }
+    
+    Token name_tok = advance(parser);
+    char *name = strdup(name_tok.value);
+    token_free(&name_tok);
+    
+    ASTNode *default_value = NULL;
+    if (match(parser, TOKEN_ASSIGN)) {
+        default_value = parse_expression(parser);
+    }
+    
+    ASTNode *elem = ast_new_destructure_element(name, NULL, default_value, 0, 0, line);
+    free(name);
+    return elem;
+}
+
+/* Parse destructuring object pattern element */
+static ASTNode *parse_destructure_object_element(Parser *parser) {
+    int line = parser->current.line;
+    
+    /* Check for rest element: ...rest */
+    if (check(parser, TOKEN_SPREAD)) {
+        Token spread_tok = advance(parser);
+        token_free(&spread_tok);
+        
+        if (!check(parser, TOKEN_IDENT)) {
+            fprintf(stderr, "Parse error at line %d: expected identifier after ...\n", line);
+            parser->had_error = 1;
+            return NULL;
+        }
+        
+        Token name_tok = advance(parser);
+        ASTNode *elem = ast_new_destructure_element(name_tok.value, NULL, NULL, 1, 0, line);
+        token_free(&name_tok);
+        return elem;
+    }
+    
+    if (!check(parser, TOKEN_IDENT)) {
+        fprintf(stderr, "Parse error at line %d: expected identifier in object destructuring\n", line);
+        parser->had_error = 1;
+        return NULL;
+    }
+    
+    Token key_tok = advance(parser);
+    char *key = strdup(key_tok.value);
+    char *name = strdup(key_tok.value); /* Default: same as key */
+    token_free(&key_tok);
+    
+    /* Check for rename: {x: newX} */
+    if (match(parser, TOKEN_COLON)) {
+        /* Check for nested object destructuring: {outer: {inner}} */
+        if (check(parser, TOKEN_LBRACE)) {
+            Token lbrace = advance(parser);
+            token_free(&lbrace);
+            
+            ASTNode *nested = ast_new_destructure_object(NULL, DECL_LET, line);
+            while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+                ASTNode *elem = parse_destructure_object_element(parser);
+                if (elem) nodelist_push(&nested->data.destructure_object.properties, elem);
+                if (!match(parser, TOKEN_COMMA)) break;
+            }
+            
+            Token rbrace = consume(parser, TOKEN_RBRACE);
+            token_free(&rbrace);
+            
+            ASTNode *wrapper = ast_new_destructure_element(NULL, key, NULL, 0, 0, line);
+            wrapper->data.destructure_element.nested = nested;
+            free(key);
+            free(name);
+            return wrapper;
+        }
+        
+        /* Regular rename */
+        Token name_tok = consume(parser, TOKEN_IDENT);
+        free(name);
+        name = strdup(name_tok.value);
+        token_free(&name_tok);
+    }
+    
+    /* Check for default value */
+    ASTNode *default_value = NULL;
+    if (match(parser, TOKEN_ASSIGN)) {
+        default_value = parse_expression(parser);
+    }
+    
+    ASTNode *elem = ast_new_destructure_element(name, key, default_value, 0, 0, line);
+    free(key);
+    free(name);
+    return elem;
+}
+
 static ASTNode *parse_var_decl(Parser *parser, TokenType decl_token, DeclType decl_type) {
     int line = parser->current.line;
     Token decl_tok = consume(parser, decl_token);
+    token_free(&decl_tok);
+    
+    /* Check for array destructuring: const [a, b] = ... */
+    if (check(parser, TOKEN_LBRACKET)) {
+        Token lbracket = advance(parser);
+        token_free(&lbracket);
+        
+        ASTNode *destructure = ast_new_destructure_array(NULL, decl_type, line);
+        
+        /* Parse array elements */
+        while (!check(parser, TOKEN_RBRACKET) && !check(parser, TOKEN_EOF)) {
+            ASTNode *elem = parse_destructure_array_element(parser);
+            if (elem) {
+                nodelist_push(&destructure->data.destructure_array.elements, elem);
+            }
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        Token rbracket = consume(parser, TOKEN_RBRACKET);
+        token_free(&rbracket);
+        
+        /* Must have initializer */
+        if (!match(parser, TOKEN_ASSIGN)) {
+            if (decl_type == DECL_CONST) {
+                fprintf(stderr, "Error at line %d: const destructuring must be initialized\n", line);
+                parser->had_error = 1;
+            }
+            /* For let/var, allow uninitialized (will be undefined) */
+            destructure->data.destructure_array.source = ast_new_list(line);
+        } else {
+            destructure->data.destructure_array.source = parse_expression(parser);
+        }
+        
+        return destructure;
+    }
+    
+    /* Check for object destructuring: const {x, y} = ... */
+    if (check(parser, TOKEN_LBRACE)) {
+        Token lbrace = advance(parser);
+        token_free(&lbrace);
+        
+        ASTNode *destructure = ast_new_destructure_object(NULL, decl_type, line);
+        
+        /* Parse object properties */
+        while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+            ASTNode *elem = parse_destructure_object_element(parser);
+            if (elem) {
+                nodelist_push(&destructure->data.destructure_object.properties, elem);
+            }
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        Token rbrace = consume(parser, TOKEN_RBRACE);
+        token_free(&rbrace);
+        
+        /* Must have initializer */
+        if (!match(parser, TOKEN_ASSIGN)) {
+            if (decl_type == DECL_CONST) {
+                fprintf(stderr, "Error at line %d: const destructuring must be initialized\n", line);
+                parser->had_error = 1;
+            }
+            /* For let/var, allow uninitialized (will be undefined) */
+            destructure->data.destructure_object.source = ast_new_object(line);
+        } else {
+            destructure->data.destructure_object.source = parse_expression(parser);
+        }
+        
+        return destructure;
+    }
+    
+    /* Regular variable declaration */
     Token name_tok;
     char *varname;
     char *type_annot = NULL;
     ASTNode *value = NULL;
     ASTNode *n;
-    token_free(&decl_tok);
+    
     name_tok = consume(parser, TOKEN_IDENT);
     varname = strdup(name_tok.value);
     token_free(&name_tok);

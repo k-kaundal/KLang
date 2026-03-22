@@ -329,6 +329,35 @@ ASTNode *ast_new_export(int is_default, ASTNode *declaration, char **names, int 
     return n;
 }
 
+/* Destructuring constructors */
+ASTNode *ast_new_destructure_array(ASTNode *source, DeclType decl_type, int line) {
+    ASTNode *n = ast_alloc(NODE_DESTRUCTURE_ARRAY, line);
+    nodelist_init(&n->data.destructure_array.elements);
+    n->data.destructure_array.source = source;
+    n->data.destructure_array.decl_type = decl_type;
+    return n;
+}
+
+ASTNode *ast_new_destructure_object(ASTNode *source, DeclType decl_type, int line) {
+    ASTNode *n = ast_alloc(NODE_DESTRUCTURE_OBJECT, line);
+    nodelist_init(&n->data.destructure_object.properties);
+    n->data.destructure_object.source = source;
+    n->data.destructure_object.decl_type = decl_type;
+    return n;
+}
+
+ASTNode *ast_new_destructure_element(const char *name, const char *key, ASTNode *default_value, int is_rest, int is_hole, int line) {
+    ASTNode *n = ast_alloc(NODE_DESTRUCTURE_ELEMENT, line);
+    n->data.destructure_element.name = name ? strdup(name) : NULL;
+    n->data.destructure_element.key = key ? strdup(key) : NULL;
+    n->data.destructure_element.default_value = default_value;
+    n->data.destructure_element.is_rest = is_rest;
+    n->data.destructure_element.is_hole = is_hole;
+    n->data.destructure_element.nested = NULL;
+    return n;
+}
+
+
 void ast_free(ASTNode *node) {
     int i;
     if (!node) return;
@@ -520,6 +549,28 @@ void ast_free(ASTNode *node) {
                         free(node->data.export_stmt.names[i]);
                 free(node->data.export_stmt.names);
             }
+            break;
+        case NODE_DESTRUCTURE_ARRAY:
+            for (i = 0; i < node->data.destructure_array.elements.count; i++)
+                ast_free(node->data.destructure_array.elements.items[i]);
+            nodelist_free(&node->data.destructure_array.elements);
+            ast_free(node->data.destructure_array.source);
+            break;
+        case NODE_DESTRUCTURE_OBJECT:
+            for (i = 0; i < node->data.destructure_object.properties.count; i++)
+                ast_free(node->data.destructure_object.properties.items[i]);
+            nodelist_free(&node->data.destructure_object.properties);
+            ast_free(node->data.destructure_object.source);
+            break;
+        case NODE_DESTRUCTURE_ELEMENT:
+            if (node->data.destructure_element.name)
+                free(node->data.destructure_element.name);
+            if (node->data.destructure_element.key)
+                free(node->data.destructure_element.key);
+            if (node->data.destructure_element.default_value)
+                ast_free(node->data.destructure_element.default_value);
+            if (node->data.destructure_element.nested)
+                ast_free(node->data.destructure_element.nested);
             break;
         default:
             break;

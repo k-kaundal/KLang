@@ -640,6 +640,118 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             env_declare(env, node->data.let_stmt.name, val, node->data.let_stmt.decl_type, node->line, interp);
             return make_null();
         }
+        case NODE_DESTRUCTURE_ARRAY: {
+            Value source = eval_node_env(interp, node->data.destructure_array.source, env);
+            DeclType decl_type = node->data.destructure_array.decl_type;
+            
+            if (source.type != VAL_LIST) {
+                fprintf(stderr, "Runtime error at line %d: cannot destructure non-array\n", node->line);
+                value_free(&source);
+                return make_null();
+            }
+            
+            int i;
+            int source_idx = 0;
+            for (i = 0; i < node->data.destructure_array.elements.count; i++) {
+                ASTNode *elem = node->data.destructure_array.elements.items[i];
+                
+                if (elem->data.destructure_element.is_hole) {
+                    source_idx++;
+                    continue;
+                }
+                
+                if (elem->data.destructure_element.is_rest) {
+                    /* Collect remaining elements into array */
+                    Value rest_array;
+                    int rest_count = source.as.list_val.count - source_idx;
+                    if (rest_count < 0) rest_count = 0;
+                    rest_array.type = VAL_LIST;
+                    rest_array.as.list_val.count = rest_count;
+                    rest_array.as.list_val.capacity = rest_count;
+                    rest_array.as.list_val.items = malloc((rest_count > 0 ? rest_count : 1) * sizeof(Value));
+                    int rest_idx = 0;
+                    while (source_idx < (int)source.as.list_val.count) {
+                        rest_array.as.list_val.items[rest_idx++] = source.as.list_val.items[source_idx];
+                        source_idx++;
+                    }
+                    env_declare(env, elem->data.destructure_element.name, rest_array, decl_type, node->line, interp);
+                    break;
+                }
+                
+                Value val = make_null();
+                if (source_idx < (int)source.as.list_val.count) {
+                    val = source.as.list_val.items[source_idx];
+                } else if (elem->data.destructure_element.default_value) {
+                    val = eval_node_env(interp, elem->data.destructure_element.default_value, env);
+                }
+                
+                if (elem->data.destructure_element.nested) {
+                    /* Handle nested destructuring */
+                    elem->data.destructure_element.nested->data.destructure_array.source = ast_new_list(node->line);
+                    if (val.type == VAL_LIST) {
+                        /* Copy list items to nested source */
+                        int j;
+                        for (j = 0; j < (int)val.as.list_val.count; j++) {
+                            nodelist_push(&elem->data.destructure_element.nested->data.destructure_array.source->data.list.elements, 
+                                         ast_new_number(0, node->line));
+                        }
+                    }
+                    eval_node_env(interp, elem->data.destructure_element.nested, env);
+                } else if (elem->data.destructure_element.name) {
+                    env_declare(env, elem->data.destructure_element.name, val, decl_type, node->line, interp);
+                }
+                
+                source_idx++;
+            }
+            
+            value_free(&source);
+            return make_null();
+        }
+        case NODE_DESTRUCTURE_OBJECT: {
+            Value source = eval_node_env(interp, node->data.destructure_object.source, env);
+            DeclType decl_type = node->data.destructure_object.decl_type;
+            
+            if (source.type != VAL_OBJECT) {
+                fprintf(stderr, "Runtime error at line %d: cannot destructure non-object\n", node->line);
+                value_free(&source);
+                return make_null();
+            }
+            
+            int i;
+            for (i = 0; i < node->data.destructure_object.properties.count; i++) {
+                ASTNode *elem = node->data.destructure_object.properties.items[i];
+                
+                if (elem->data.destructure_element.is_rest) {
+                    /* Rest properties - create new object with all fields */
+                    Value rest_obj = make_object("Object", NULL);
+                    env_declare(env, elem->data.destructure_element.name, rest_obj, decl_type, node->line, interp);
+                    continue;
+                }
+                
+                const char *key = elem->data.destructure_element.key ? 
+                                 elem->data.destructure_element.key : 
+                                 elem->data.destructure_element.name;
+                
+                Value val = make_null();
+                /* Look up value from object fields */
+                Value *found = env_get(source.as.object_val.fields, key);
+                if (found && found->type != VAL_NULL) {
+                    val = *found;
+                } else if (elem->data.destructure_element.default_value) {
+                    val = eval_node_env(interp, elem->data.destructure_element.default_value, env);
+                }
+                
+                if (elem->data.destructure_element.nested) {
+                    /* Handle nested object destructuring */
+                    eval_node_env(interp, elem->data.destructure_element.nested, env);
+                } else if (elem->data.destructure_element.name) {
+                    env_declare(env, elem->data.destructure_element.name, val, decl_type, node->line, interp);
+                }
+            }
+            
+            value_free(&source);
+            return make_null();
+        }
         case NODE_ASSIGN: {
             Value val = eval_node_env(interp, node->data.assign_stmt.value, env);
             env_set(env, node->data.assign_stmt.name, val);

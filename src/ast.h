@@ -10,7 +10,8 @@ typedef enum {
     NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER,
     NODE_TEMPLATE_LITERAL, NODE_TERNARY, NODE_SWITCH, NODE_CASE,
     NODE_AWAIT, NODE_YIELD,
-    NODE_EXPORT, NODE_IMPORT_NAMED, NODE_IMPORT_DEFAULT, NODE_IMPORT_NAMESPACE
+    NODE_EXPORT, NODE_IMPORT_NAMED, NODE_IMPORT_DEFAULT, NODE_IMPORT_NAMESPACE,
+    NODE_DESTRUCTURE_ARRAY, NODE_DESTRUCTURE_OBJECT, NODE_DESTRUCTURE_ELEMENT
 } NodeType;
 
 typedef enum {
@@ -99,6 +100,25 @@ struct ASTNode {
             char **names;           // Named exports (for re-export)
             int count;              // Number of named exports
         } export_stmt;
+        /* Destructuring nodes */
+        struct {
+            NodeList elements;      // Array of destructure elements
+            ASTNode *source;        // Expression to destructure from
+            DeclType decl_type;     // let/const/var
+        } destructure_array;
+        struct {
+            NodeList properties;    // Array of destructure elements  
+            ASTNode *source;        // Expression to destructure from
+            DeclType decl_type;     // let/const/var
+        } destructure_object;
+        struct {
+            char *name;             // Variable name to bind to
+            char *key;              // Object key (for object destructuring)
+            ASTNode *default_value; // Default value if undefined
+            int is_rest;            // Is this a rest element (...rest)
+            int is_hole;            // Is this a hole/skip in array destructuring
+            ASTNode *nested;        // Nested destructuring pattern
+        } destructure_element;
     } data;
 };
 
@@ -147,6 +167,9 @@ ASTNode *ast_new_import_named(char **names, char **aliases, int count, const cha
 ASTNode *ast_new_import_default(const char *name, const char *module_path, int line);
 ASTNode *ast_new_import_namespace(const char *namespace, const char *module_path, int line);
 ASTNode *ast_new_export(int is_default, ASTNode *declaration, char **names, int count, int line);
+ASTNode *ast_new_destructure_array(ASTNode *source, DeclType decl_type, int line);
+ASTNode *ast_new_destructure_object(ASTNode *source, DeclType decl_type, int line);
+ASTNode *ast_new_destructure_element(const char *name, const char *key, ASTNode *default_value, int is_rest, int is_hole, int line);
 void ast_free(ASTNode *node);
 
 #endif
