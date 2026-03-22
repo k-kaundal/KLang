@@ -14,6 +14,7 @@ extern Value builtin_Promise_constructor(Interpreter *interp, Value *args, int a
 Env *env_new(Env *parent) {
     Env *e = calloc(1, sizeof(Env));
     e->parent = parent;
+    e->ref_count = 1;  // Start with reference count of 1
     return e;
 }
 
@@ -27,6 +28,21 @@ void env_free(Env *env) {
         e = next;
     }
     free(env);
+}
+
+void env_retain(Env *env) {
+    if (env) {
+        env->ref_count++;
+    }
+}
+
+void env_release(Env *env) {
+    if (env) {
+        env->ref_count--;
+        if (env->ref_count <= 0) {
+            env_free(env);
+        }
+    }
 }
 
 Value *env_get(Env *env, const char *name) {
@@ -67,14 +83,20 @@ void env_set_local(Env *env, const char *name, Value val) {
     Value val_copy = val;
     if (val.type == VAL_STRING && val.as.str_val) {
         val_copy.as.str_val = strdup(val.as.str_val);
-    } else if (val.type == VAL_FUNCTION && val.as.func_val.param_names) {
-        // Deep copy function parameter names
-        val_copy.as.func_val.param_names = malloc(val.as.func_val.param_count * sizeof(char *));
-        int i;
-        for (i = 0; i < val.as.func_val.param_count; i++) {
-            val_copy.as.func_val.param_names[i] = strdup(val.as.func_val.param_names[i]);
+    } else if (val.type == VAL_FUNCTION) {
+        // Deep copy function parameter names if they exist
+        if (val.as.func_val.param_names) {
+            val_copy.as.func_val.param_names = malloc(val.as.func_val.param_count * sizeof(char *));
+            int i;
+            for (i = 0; i < val.as.func_val.param_count; i++) {
+                val_copy.as.func_val.param_names[i] = strdup(val.as.func_val.param_names[i]);
+            }
         }
-        // Note: body and closure are shared pointers - don't copy
+        // Note: body and closure are shared pointers
+        // Retain closure to keep it alive
+        if (val_copy.as.func_val.closure) {
+            env_retain(val_copy.as.func_val.closure);
+        }
     }
     
     EnvEntry *e = env->entries;
@@ -103,6 +125,19 @@ void env_set_local_with_access(Env *env, const char *name, Value val, AccessModi
     Value val_copy = val;
     if (val.type == VAL_STRING && val.as.str_val) {
         val_copy.as.str_val = strdup(val.as.str_val);
+    } else if (val.type == VAL_FUNCTION) {
+        // Deep copy function parameter names if they exist
+        if (val.as.func_val.param_names) {
+            val_copy.as.func_val.param_names = malloc(val.as.func_val.param_count * sizeof(char *));
+            int i;
+            for (i = 0; i < val.as.func_val.param_count; i++) {
+                val_copy.as.func_val.param_names[i] = strdup(val.as.func_val.param_names[i]);
+            }
+        }
+        // Retain closure to keep it alive
+        if (val_copy.as.func_val.closure) {
+            env_retain(val_copy.as.func_val.closure);
+        }
     }
     
     EnvEntry *e = env->entries;
@@ -332,6 +367,11 @@ void value_free(Value *v) {
                 free(v->as.func_val.param_names[i]);
             free(v->as.func_val.param_names);
             v->as.func_val.param_names = NULL;
+        }
+        /* Release the closure environment (reference counted) */
+        if (v->as.func_val.closure) {
+            env_release(v->as.func_val.closure);
+            v->as.func_val.closure = NULL;
         }
         /* Note: default_values array and its contents are owned by the AST, not freed here */
     }
@@ -597,8 +637,8 @@ void interpreter_free(Interpreter *interp) {
     for (i = 0; i < interp->module_count; i++) {
         int j;
         free(interp->loaded_modules[i].path);
-        env_free(interp->loaded_modules[i].exports);
-        env_free(interp->loaded_modules[i].module_env);
+        env_release(interp->loaded_modules[i].exports);
+        env_release(interp->loaded_modules[i].module_env);
         // Free AST nodes
         for (j = 0; j < interp->loaded_modules[i].ast_count; j++) {
             ast_free(interp->loaded_modules[i].ast_nodes[j]);
@@ -607,7 +647,7 @@ void interpreter_free(Interpreter *interp) {
     }
     free(interp->loaded_modules);
     if (interp->current_module_dir) free(interp->current_module_dir);
-    env_free(interp->global_env);
+    env_release(interp->global_env);
     free(interp);
 }
 
@@ -665,12 +705,19 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
                 return copy;
             }
-            if (v->type == VAL_FUNCTION && v->as.func_val.param_names) {
+            if (v->type == VAL_FUNCTION) {
                 Value copy = *v;
-                int ii;
-                copy.as.func_val.param_names = malloc(v->as.func_val.param_count * sizeof(char *));
-                for (ii = 0; ii < v->as.func_val.param_count; ii++)
-                    copy.as.func_val.param_names[ii] = strdup(v->as.func_val.param_names[ii]);
+                /* Deep copy parameter names if they exist */
+                if (v->as.func_val.param_names) {
+                    int ii;
+                    copy.as.func_val.param_names = malloc(v->as.func_val.param_count * sizeof(char *));
+                    for (ii = 0; ii < v->as.func_val.param_count; ii++)
+                        copy.as.func_val.param_names[ii] = strdup(v->as.func_val.param_names[ii]);
+                }
+                /* Retain the closure when copying a function */
+                if (copy.as.func_val.closure) {
+                    env_retain(copy.as.func_val.closure);
+                }
                 return copy;
             }
             return *v;
@@ -808,7 +855,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
         case NODE_BLOCK: {
             Env *block_env = env_new(env);
             Value result = eval_block(interp, node, block_env);
-            env_free(block_env);
+            env_release(block_env);
             return result;
         }
         case NODE_FUNC_DEF: {
@@ -825,6 +872,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             func.as.func_val.body = node->data.func_def.body;
             func.as.func_val.closure = env;
+            env_retain(env);  /* Retain closure environment for nested functions */
             func.as.func_val.is_async = node->data.func_def.is_async;
             func.as.func_val.is_generator = node->data.func_def.is_generator;
             func.as.func_val.has_rest_param = node->data.func_def.has_rest_param;
@@ -835,6 +883,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 return func;
             } else {
                 env_set_local(env, node->data.func_def.name, func);
+                value_free(&func);  /* Free the local copy after storing */
                 return make_null();
             }
         }
@@ -929,7 +978,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         // Fields are shared, so updates are automatic
                     }
                     
-                    env_free(call_env);
+                    env_release(call_env);
                     for (i = 0; i < argc; i++) value_free(&args[i]);
                     free(args);
                     
@@ -985,7 +1034,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         }
                     }
                     
-                    env_free(call_env);
+                    env_release(call_env);
                     if (interp->last_result.is_return) {
                         value_free(&result);
                         result = interp->last_result.return_value;
@@ -1007,6 +1056,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     func_copy->default_values = callee.as.func_val.default_values;
                     func_copy->body = callee.as.func_val.body;
                     func_copy->closure = callee.as.func_val.closure;
+                    env_retain(func_copy->closure);  /* Retain closure for generator */
                     func_copy->is_async = callee.as.func_val.is_async;
                     func_copy->is_generator = 1;
                     func_copy->has_rest_param = callee.as.func_val.has_rest_param;
@@ -1110,7 +1160,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     /* Execute function body */
                     value_free(&result);
                     body_result = eval_block(interp, callee.as.func_val.body, call_env);
-                    env_free(call_env);
+                    env_release(call_env);
                     
                     /* Handle return value */
                     if (interp->last_result.is_return) {
@@ -1175,7 +1225,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     
                     value_free(&result);
                     result = eval_block(interp, callee.as.func_val.body, call_env);
-                    env_free(call_env);
+                    env_release(call_env);
                     if (interp->last_result.is_return) {
                         value_free(&result);
                         result = interp->last_result.return_value;
@@ -1263,7 +1313,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     Value r = eval_block(interp, node->data.for_stmt.body, loop_env);
                     value_free(&r);
                 }
-                env_free(loop_env);
+                env_release(loop_env);
                 if (interp->last_result.is_return || interp->last_result.is_break) {
                     interp->last_result.is_break = 0;
                     break;
@@ -1294,7 +1344,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
                         value_free(&r);
                     }
-                    env_free(loop_env);
+                    env_release(loop_env);
                     
                     if (interp->last_result.is_return || interp->last_result.is_break) {
                         interp->last_result.is_break = 0;
@@ -1319,7 +1369,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
                         value_free(&r);
                     }
-                    env_free(loop_env);
+                    env_release(loop_env);
                     
                     if (interp->last_result.is_return || interp->last_result.is_break) {
                         interp->last_result.is_break = 0;
@@ -1343,7 +1393,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
                         value_free(&r);
                     }
-                    env_free(loop_env);
+                    env_release(loop_env);
                     
                     if (interp->last_result.is_return || interp->last_result.is_break) {
                         interp->last_result.is_break = 0;
@@ -1367,7 +1417,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
                         value_free(&r);
                     }
-                    env_free(loop_env);
+                    env_release(loop_env);
                     
                     if (interp->last_result.is_return || interp->last_result.is_break) {
                         interp->last_result.is_break = 0;
@@ -1437,7 +1487,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
             }
             
-            env_free(for_env);
+            env_release(for_env);
             return make_null();
         }
         case NODE_BINOP: {
@@ -1854,11 +1904,13 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     }
                     func.as.func_val.body = member->data.func_def.body;
                     func.as.func_val.closure = env;
+                    env_retain(env);  /* Retain closure environment */
                     if (member->data.func_def.is_static) {
                         env_set_local_with_access(class_val.as.class_val.static_methods, member->data.func_def.name, func, member->data.func_def.access);
                     } else {
                         env_set_local_with_access(class_val.as.class_val.methods, member->data.func_def.name, func, member->data.func_def.access);
                     }
+                    value_free(&func);  /* Free the local copy after storing */
                 } else if (member->type == NODE_LET) {
                     // Add field default value to class (static or instance)
                     Value field_val = member->data.let_stmt.value ? 
@@ -1940,7 +1992,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     }
                 }
                 
-                env_free(call_env);
+                env_release(call_env);
                 for (i = 0; i < argc; i++) value_free(&args[i]);
                 free(args);
                 
@@ -2502,7 +2554,7 @@ void microtask_queue_process(Interpreter *interp) {
             }
             
             value_free(&result);
-            env_free(call_env);
+            env_release(call_env);
         }
         
         // Free the node
@@ -2769,8 +2821,8 @@ Value load_module(Interpreter *interp, const char *module_path, Env *env) {
         /* On error, clean up everything */
         for (i = 0; i < count; i++) ast_free(nodes[i]);
         free(nodes);
-        env_free(module_env);
-        env_free(export_env);
+        env_release(module_env);
+        env_release(export_env);
     }
     
     return result;

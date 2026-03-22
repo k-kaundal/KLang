@@ -128,6 +128,7 @@ typedef struct EnvEntry {
 struct Env {
     EnvEntry *entries;
     Env *parent;
+    int ref_count;  // Reference count for closure lifetime management
 };
 
 typedef struct {
@@ -196,6 +197,8 @@ int is_module_loading(Interpreter *interp, const char *module_path);
 
 Env *env_new(Env *parent);
 void env_free(Env *env);
+void env_retain(Env *env);   // Increment reference count
+void env_release(Env *env);  // Decrement reference count and free if zero
 Value *env_get(Env *env, const char *name);
 EnvEntry *env_get_entry(Env *env, const char *name);
 void env_set(Env *env, const char *name, Value val);
