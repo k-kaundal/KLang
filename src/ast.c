@@ -173,6 +173,7 @@ ASTNode *ast_new_func_def(const char *name, const char *return_type, int line) {
     n->data.func_def.is_static = 0;
     n->data.func_def.access = ACCESS_PUBLIC;
     n->data.func_def.is_abstract = 0;
+    n->data.func_def.is_arrow = 0;
     return n;
 }
 

@@ -212,6 +212,10 @@ Token lexer_next_token(Lexer *lexer) {
                 lexer->pos++; lexer->col++;
                 return make_token(TOKEN_EQ, "==", line, col);
             }
+            if (lexer->source[lexer->pos] == '>') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_FAT_ARROW, "=>", line, col);
+            }
             return make_token(TOKEN_ASSIGN, "=", line, col);
         case '!':
             if (lexer->source[lexer->pos] == '=') {
@@ -313,6 +317,7 @@ const char *token_type_name(TokenType type) {
         case TOKEN_SEMICOLON: return "SEMICOLON";
         case TOKEN_COMMA: return "COMMA";
         case TOKEN_ARROW: return "ARROW";
+        case TOKEN_FAT_ARROW: return "FAT_ARROW";
         case TOKEN_DOTDOT: return "DOTDOT";
         case TOKEN_DOT: return "DOT";
         case TOKEN_EOF: return "EOF";

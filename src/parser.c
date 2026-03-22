@@ -278,8 +278,100 @@ static ASTNode *parse_equality(Parser *parser) {
     return left;
 }
 
+static int is_arrow_function_start(Parser *parser) {
+    // Check for single param without parens: ident => ...
+    if (check(parser, TOKEN_IDENT) && parser->peek.type == TOKEN_FAT_ARROW) {
+        return 1;
+    }
+    
+    // Check for params with parens: () => ... or (params) => ...
+    if (!check(parser, TOKEN_LPAREN)) {
+        return 0;
+    }
+    
+    // Scan the source directly to check for the pattern
+    const char *src = parser->lexer->source;
+    int pos = parser->lexer->pos - 1; // Current position is at the character after '('
+    
+    // Find where the current '(' is in the source by going backwards
+    while (pos >= 0 && src[pos] != '(') pos--;
+    if (pos < 0 || src[pos] != '(') return 0;
+    
+    // Now scan forward to find the matching ')'
+    pos++; // Skip the '('
+    int paren_depth = 1;
+    while (src[pos] && paren_depth > 0) {
+        if (src[pos] == '(') paren_depth++;
+        else if (src[pos] == ')') paren_depth--;
+        pos++;
+    }
+    
+    if (paren_depth != 0) return 0; // Unmatched parens
+    
+    // Now pos is right after the ')', skip whitespace and check for =>
+    while (src[pos] && (src[pos] == ' ' || src[pos] == '\t' || src[pos] == '\r' || src[pos] == '\n'))
+        pos++;
+    
+    return (src[pos] == '=' && src[pos + 1] == '>');
+}
+
+static ASTNode *parse_arrow_function(Parser *parser);
+
 static ASTNode *parse_expression(Parser *parser) {
+    // Check if this is an arrow function
+    if (is_arrow_function_start(parser)) {
+        return parse_arrow_function(parser);
+    }
+    
     return parse_equality(parser);
+}
+
+static ASTNode *parse_arrow_function(Parser *parser) {
+    int line = parser->current.line;
+    ASTNode *func = ast_new_func_def("", NULL, line);
+    func->data.func_def.is_arrow = 1;
+    
+    // Parse parameters
+    if (check(parser, TOKEN_IDENT)) {
+        // Single param without parens: x => ...
+        Token param_tok = advance(parser);
+        nodelist_push(&func->data.func_def.params, ast_new_ident(param_tok.value, line));
+        token_free(&param_tok);
+    } else if (check(parser, TOKEN_LPAREN)) {
+        // Params with parens: () => ... or (x, y) => ...
+        Token lp = advance(parser);
+        token_free(&lp);
+        
+        while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
+            Token param_tok = consume(parser, TOKEN_IDENT);
+            nodelist_push(&func->data.func_def.params, ast_new_ident(param_tok.value, line));
+            token_free(&param_tok);
+            if (!match(parser, TOKEN_COMMA)) break;
+        }
+        
+        Token rp = consume(parser, TOKEN_RPAREN);
+        token_free(&rp);
+    }
+    
+    // Consume =>
+    Token arrow_tok = consume(parser, TOKEN_FAT_ARROW);
+    token_free(&arrow_tok);
+    
+    // Parse body
+    if (check(parser, TOKEN_LBRACE)) {
+        // Block body: x => { return x * 2 }
+        func->data.func_def.body = parse_block(parser);
+    } else {
+        // Expression body: x => x * 2 (or nested arrow: x => y => x + y)
+        // Wrap the expression in a return statement within a block
+        ASTNode *expr = parse_expression(parser);
+        ASTNode *ret = ast_new_return(expr, line);
+        ASTNode *block = ast_new_block(line);
+        nodelist_push(&block->data.block.stmts, ret);
+        func->data.func_def.body = block;
+    }
+    
+    return func;
 }
 
 static ASTNode *parse_block(Parser *parser) {

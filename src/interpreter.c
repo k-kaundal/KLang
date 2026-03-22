@@ -152,6 +152,13 @@ void env_declare(Env *env, const char *name, Value val, DeclType decl_type, int 
     Value val_copy = val;
     if (val.type == VAL_STRING && val.as.str_val) {
         val_copy.as.str_val = strdup(val.as.str_val);
+    } else if (val.type == VAL_FUNCTION && val.as.func_val.param_count > 0) {
+        /* Deep copy function parameter names */
+        int i;
+        val_copy.as.func_val.param_names = malloc(val.as.func_val.param_count * sizeof(char *));
+        for (i = 0; i < val.as.func_val.param_count; i++) {
+            val_copy.as.func_val.param_names[i] = strdup(val.as.func_val.param_names[i]);
+        }
     }
     
     /* Check for redeclaration in local scope */
@@ -495,8 +502,15 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             func.as.func_val.body = node->data.func_def.body;
             func.as.func_val.closure = env;
-            env_set_local(env, node->data.func_def.name, func);
-            return make_null();
+            
+            // Arrow functions are expressions that return the function value
+            // Named functions are statements that bind to a name
+            if (node->data.func_def.is_arrow || strlen(node->data.func_def.name) == 0) {
+                return func;
+            } else {
+                env_set_local(env, node->data.func_def.name, func);
+                return make_null();
+            }
         }
         case NODE_CALL: {
             // Special handling for new expressions: new Point(args)

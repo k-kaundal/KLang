@@ -18,5 +18,6 @@ extern int test_fail_count;
 void run_lexer_tests(void);
 void run_parser_tests(void);
 void run_interpreter_tests(void);
+void run_arrow_function_tests(void);
 
 #endif
