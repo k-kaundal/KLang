@@ -179,22 +179,35 @@ klang run script.kl     # Run a script
 
 ### 📖 Documentation
 
+**Complete documentation is now organized in the `/docs` directory!**
+
 **Essential Guides:**
-- 🚀 [**Getting Started Guide**](docs/GETTING_STARTED.md) - Setup and installation
-- 🔧 [**PATH Troubleshooting**](docs/PATH_TROUBLESHOOTING.md) - Fix "command not found" errors
-- 📦 [**Distribution Guide**](docs/DISTRIBUTION.md) - Self-contained runtime info
-- 📘 [**Language Reference**](docs/LANGUAGE_REFERENCE.md) - Complete syntax reference
-- 🔧 [**Usage Guide**](docs/USAGE_GUIDE.md) - How to use KLang
-- 🔨 [**Compilation Guide**](docs/COMPILATION_GUIDE.md) - Building from source
-- 🎓 [**OOP Specification**](docs/OOP_LANGUAGE_SPEC.md) - Object-oriented features
-- ⚖️ [**JavaScript vs KLang Comparison**](docs/JS_KLANG_FEATURE_COMPARISON.md) - Complete feature comparison (1800+ lines)
-- 📊 [**Feature Comparison Summary**](docs/FEATURE_COMPARISON_SUMMARY.md) - Quick comparison overview
-- 🔄 [**JavaScript to KLang Migration**](docs/JS_TO_KLANG_MIGRATION.md) - Migration guide for JS developers
-- 🤝 [**Contributing Guide**](CONTRIBUTING.md) - How to contribute
+- 🚀 [**Getting Started Guide**](docs/guides/GETTING_STARTED.md) - Setup and installation
+- 📘 [**Language Reference**](docs/guides/LANGUAGE_REFERENCE.md) - Complete syntax reference
+- 🔧 [**Usage Guide**](docs/guides/USAGE_GUIDE.md) - How to use KLang
+- 📚 [**Complete Documentation Index**](docs/README.md) - Browse all docs
+
+**Features:**
+- 🎓 [**OOP Specification**](docs/guides/OOP_LANGUAGE_SPEC.md) - Object-oriented features
+- ⚡ [**Async/Await**](docs/features/ASYNC_AWAIT_IMPLEMENTATION.md) - Asynchronous programming
+- 🔄 [**Generators**](docs/features/GENERATOR_IMPLEMENTATION.md) - Lazy evaluation
+- 📦 [**Modules**](docs/features/ES6_MODULES_IMPLEMENTATION.md) - Code organization
+
+**API Reference:**
+- 🧮 [**Math Module**](docs/api/MATH_MODULE_DOCS.md) - Mathematical operations
+- 📊 [**Array Methods**](docs/guides/ARRAY_METHODS.md) - Array operations
+- 🔤 [**String Operations**](docs/guides/COMPLETE_FEATURE_GUIDE.md#strings) - String manipulation
+
+**For Developers:**
+- ⚖️ [**JavaScript vs KLang**](docs/guides/JS_KLANG_FEATURE_COMPARISON.md) - Feature comparison
+- 🔄 [**JS Migration Guide**](docs/guides/JS_TO_KLANG_MIGRATION.md) - Migrating from JavaScript
+- 🤝 [**Contributing Guide**](docs/development/CONTRIBUTING.md) - How to contribute
 
 **Quick Links:**
+- [Documentation Index](docs/README.md) - Complete navigation
 - [Examples](examples/) - Working code examples
-- [Tests](tests/) - Test suite
+- [Tests](tests/) - Test suite ([Test Guide](tests/README.md))
+- [Project Structure](PROJECT_STRUCTURE.md) - Repository organization
 - [Issues](https://github.com/k-kaundal/KLang/issues) - Bug reports & features
 - [Discussions](https://github.com/k-kaundal/KLang/discussions) - Q&A & ideas
 
