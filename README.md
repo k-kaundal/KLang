@@ -105,6 +105,16 @@ Source Code (.kl)
   * Multiple comment styles: `#`, `//`, `/* */`, `///` (doc comments)
 * Interactive REPL with `exit()` function
 * Built-in functions (print, println, input, len, type conversion, abs, min, max)
+* **Standard Library** 🆕
+  * 43+ utility functions across 5 modules
+  * Math operations (factorial, gcd, lcm, power, sqrt)
+  * String utilities (repeat, reverse, padding)
+  * Array operations (sum, average, min, max, contains)
+  * I/O helpers (prompt, formatted output)
+  * Core utilities (sign, compare, logical operations)
+* **File Extension Validation** 🆕
+  * Validates `.kl`, `.k`, `.klang` extensions
+  * Clear error messages for invalid files
 
 ### 🚧 In Progress
 
@@ -460,10 +470,40 @@ klang build file.kl  # compile & execute via VM
 
 * `src/` — lexer, parser, interpreter, VM, compiler, runtime, CLI
 * `include/` — public headers
-* `stdlib/` — standard library stubs
+* `stdlib/` — **standard library** (43 utility functions across 5 modules)
 * `examples/` — sample `.kl` programs
 * `tests/` — unit tests (lexer, parser, interpreter)
 * `docs/` — architecture notes
+
+## 📚 Standard Library
+
+KLang includes a **basic standard library** with 43+ utility functions:
+
+* **math.kl** - Mathematical functions (abs, pow, sqrt, factorial, gcd, lcm, etc.)
+* **string.kl** - String utilities (repeat, reverse, padding, etc.)
+* **array.kl** - Array operations (sum, average, min, max, etc.)
+* **io.kl** - I/O utilities (prompt, headers, separators, etc.)
+* **core.kl** - Core utilities (sign, compare, logical operations, etc.)
+
+See [`stdlib/README.md`](stdlib/README.md) for complete documentation and [`examples/stdlib_simple.kl`](examples/stdlib_simple.kl) for usage examples.
+
+## ✅ File Extension Validation
+
+KLang validates file extensions to ensure proper usage:
+
+* **Accepted extensions**: `.kl`, `.k`, `.klang`
+* **Invalid extensions** will show a clear error message
+* **REPL mode** doesn't require file extensions
+
+```bash
+# Valid
+klang run program.kl
+klang run script.k
+
+# Invalid - shows error
+klang run script.txt
+# Error: Invalid file extension. KLang files must have .kl, .k, or .klang extension
+```
 
 ## 🤝 Contributing
 
