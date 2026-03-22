@@ -1228,6 +1228,49 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             // Return bound method
             return make_method(*this_val, *method);
         }
+        case NODE_TEMPLATE_LITERAL: {
+            /* Evaluate template literal by concatenating parts and evaluated expressions */
+            int result_cap = 256;
+            int result_len = 0;
+            char *result = malloc(result_cap);
+            int i;
+            
+            /* Iterate through parts and expressions */
+            for (i = 0; i < node->data.template_literal.count; i++) {
+                /* Add the string part */
+                const char *part = node->data.template_literal.parts[i];
+                int part_len = strlen(part);
+                
+                while (result_len + part_len + 1 >= result_cap) {
+                    result_cap *= 2;
+                    result = realloc(result, result_cap);
+                }
+                strcpy(result + result_len, part);
+                result_len += part_len;
+                
+                /* Add the evaluated expression (if not the last part) */
+                if (i < node->data.template_literal.count - 1) {
+                    Value expr_val = eval_node_env(interp, node->data.template_literal.exprs[i], env);
+                    char *expr_str = value_to_string(&expr_val);
+                    int expr_len = strlen(expr_str);
+                    
+                    while (result_len + expr_len + 1 >= result_cap) {
+                        result_cap *= 2;
+                        result = realloc(result, result_cap);
+                    }
+                    strcpy(result + result_len, expr_str);
+                    result_len += expr_len;
+                    
+                    free(expr_str);
+                    value_free(&expr_val);
+                }
+            }
+            
+            result[result_len] = '\0';
+            Value v = make_string(result);
+            free(result);
+            return v;
+        }
         default:
             return make_null();
     }

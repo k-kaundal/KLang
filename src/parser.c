@@ -51,6 +51,96 @@ static Token consume(Parser *parser, TokenType type) {
     return parser->current;
 }
 
+/* Parse a template literal and convert ${...} into expression nodes */
+static ASTNode *parse_template_literal(Parser *parser) {
+    int line = parser->current.line;
+    Token t = advance(parser);
+    const char *template_str = t.value;
+    ASTNode *node = ast_new_template_literal(line);
+    
+    /* Count parts and expressions */
+    int expr_count = 0;
+    int i, j;
+    for (i = 0; template_str[i]; i++) {
+        if (template_str[i] == '$' && template_str[i+1] == '{') {
+            expr_count++;
+        }
+    }
+    
+    /* Allocate arrays for parts and expressions */
+    int part_count = expr_count + 1;
+    node->data.template_literal.count = part_count;
+    node->data.template_literal.parts = malloc(part_count * sizeof(char*));
+    node->data.template_literal.exprs = malloc(expr_count * sizeof(ASTNode*));
+    
+    /* Initialize parts */
+    for (i = 0; i < part_count; i++) {
+        node->data.template_literal.parts[i] = NULL;
+    }
+    
+    /* Parse the template string */
+    int part_idx = 0;
+    int expr_idx = 0;
+    int part_cap = 64;
+    int part_len = 0;
+    char *part_buf = malloc(part_cap);
+    
+    for (i = 0; template_str[i]; ) {
+        if (template_str[i] == '$' && template_str[i+1] == '{') {
+            /* Found interpolation start */
+            /* Save current part */
+            part_buf[part_len] = '\0';
+            node->data.template_literal.parts[part_idx++] = strdup(part_buf);
+            part_len = 0;
+            
+            /* Find matching } */
+            i += 2; /* Skip ${ */
+            int expr_start = i;
+            int brace_depth = 1;
+            while (template_str[i] && brace_depth > 0) {
+                if (template_str[i] == '{') brace_depth++;
+                else if (template_str[i] == '}') brace_depth--;
+                if (brace_depth > 0) i++;
+            }
+            
+            /* Extract expression */
+            int expr_len = i - expr_start;
+            char *expr_str = malloc(expr_len + 1);
+            for (j = 0; j < expr_len; j++) {
+                expr_str[j] = template_str[expr_start + j];
+            }
+            expr_str[expr_len] = '\0';
+            
+            /* Parse expression */
+            Lexer expr_lexer;
+            Parser expr_parser;
+            lexer_init(&expr_lexer, expr_str);
+            parser_init(&expr_parser, &expr_lexer);
+            node->data.template_literal.exprs[expr_idx++] = parse_expression(&expr_parser);
+            parser_free(&expr_parser);
+            lexer_free(&expr_lexer);
+            free(expr_str);
+            
+            if (template_str[i] == '}') i++; /* Skip closing } */
+        } else {
+            /* Regular character */
+            if (part_len + 1 >= part_cap) {
+                part_cap *= 2;
+                part_buf = realloc(part_buf, part_cap);
+            }
+            part_buf[part_len++] = template_str[i++];
+        }
+    }
+    
+    /* Save final part */
+    part_buf[part_len] = '\0';
+    node->data.template_literal.parts[part_idx] = strdup(part_buf);
+    free(part_buf);
+    
+    token_free(&t);
+    return node;
+}
+
 static ASTNode *parse_primary(Parser *parser) {
     int line = parser->current.line;
 
@@ -66,6 +156,9 @@ static ASTNode *parse_primary(Parser *parser) {
         ASTNode *n = ast_new_string(t.value, line);
         token_free(&t);
         return n;
+    }
+    if (check(parser, TOKEN_TEMPLATE_LITERAL)) {
+        return parse_template_literal(parser);
     }
     if (check(parser, TOKEN_TRUE)) {
         Token t = advance(parser);

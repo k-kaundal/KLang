@@ -149,6 +149,56 @@ Token lexer_next_token(Lexer *lexer) {
         return t;
     }
 
+    /* Template literals with backticks */
+    if (c == '`') {
+        int cap = 256, len = 0;
+        char *buf = malloc(cap);
+        Token t;
+        lexer->pos++; lexer->col++;
+        
+        while (lexer->source[lexer->pos] && lexer->source[lexer->pos] != '`') {
+            char ch = lexer->source[lexer->pos];
+            
+            /* Handle newlines in template literals */
+            if (ch == '\n') {
+                lexer->line++;
+                lexer->col = 1;
+            } else {
+                lexer->col++;
+            }
+            
+            /* Handle escape sequences */
+            if (ch == '\\' && lexer->source[lexer->pos + 1] == '`') {
+                /* Escaped backtick */
+                lexer->pos++;
+                ch = '`';
+            } else if (ch == '\\' && lexer->source[lexer->pos + 1] == '\\') {
+                /* Escaped backslash */
+                lexer->pos++;
+                ch = '\\';
+            }
+            
+            /* Store the character */
+            if (len + 1 >= cap) { 
+                cap *= 2; 
+                buf = realloc(buf, cap); 
+            }
+            buf[len++] = ch;
+            lexer->pos++;
+        }
+        
+        if (lexer->source[lexer->pos] == '`') { 
+            lexer->pos++; 
+            lexer->col++; 
+        }
+        buf[len] = '\0';
+        t.type = TOKEN_TEMPLATE_LITERAL;
+        t.value = buf;
+        t.line = line;
+        t.col = col;
+        return t;
+    }
+
     /* Identifiers and keywords */
     if (isalpha((unsigned char)c) || c == '_') {
         int start = lexer->pos;
@@ -269,6 +319,7 @@ const char *token_type_name(TokenType type) {
     switch (type) {
         case TOKEN_NUMBER: return "NUMBER";
         case TOKEN_STRING: return "STRING";
+        case TOKEN_TEMPLATE_LITERAL: return "TEMPLATE_LITERAL";
         case TOKEN_IDENT: return "IDENT";
         case TOKEN_FN: return "FN";
         case TOKEN_LET: return "LET";

@@ -7,7 +7,8 @@ typedef enum {
     NODE_LET, NODE_ASSIGN, NODE_IF, NODE_WHILE, NODE_FOR,
     NODE_RETURN, NODE_BREAK, NODE_CONTINUE, NODE_BLOCK, NODE_FUNC_DEF, NODE_STRUCT_DEF, NODE_IMPORT,
     NODE_LIST,
-    NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER
+    NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER,
+    NODE_TEMPLATE_LITERAL
 } NodeType;
 
 typedef enum {
@@ -58,6 +59,7 @@ struct ASTNode {
         struct { ASTNode *obj; char *member; } member_access;
         struct { } this_expr;
         struct { char *member; } super_expr;
+        struct { char **parts; ASTNode **exprs; int count; } template_literal;
     } data;
 };
 
@@ -91,6 +93,7 @@ ASTNode *ast_new_new(const char *class_name, int line);
 ASTNode *ast_new_member_access(ASTNode *obj, const char *member, int line);
 ASTNode *ast_new_this(int line);
 ASTNode *ast_new_super(const char *member, int line);
+ASTNode *ast_new_template_literal(int line);
 void ast_free(ASTNode *node);
 
 #endif

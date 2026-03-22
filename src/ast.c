@@ -216,6 +216,14 @@ ASTNode *ast_new_super(const char *member, int line) {
     return n;
 }
 
+ASTNode *ast_new_template_literal(int line) {
+    ASTNode *n = ast_alloc(NODE_TEMPLATE_LITERAL, line);
+    n->data.template_literal.parts = NULL;
+    n->data.template_literal.exprs = NULL;
+    n->data.template_literal.count = 0;
+    return n;
+}
+
 void ast_free(ASTNode *node) {
     int i;
     if (!node) return;
@@ -316,6 +324,17 @@ void ast_free(ASTNode *node) {
             break;
         case NODE_SUPER:
             if (node->data.super_expr.member) free(node->data.super_expr.member);
+            break;
+        case NODE_TEMPLATE_LITERAL:
+            for (i = 0; i < node->data.template_literal.count; i++) {
+                if (node->data.template_literal.parts[i])
+                    free(node->data.template_literal.parts[i]);
+            }
+            free(node->data.template_literal.parts);
+            for (i = 0; i < node->data.template_literal.count - 1; i++) {
+                ast_free(node->data.template_literal.exprs[i]);
+            }
+            free(node->data.template_literal.exprs);
             break;
         default:
             break;
