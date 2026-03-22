@@ -9,6 +9,9 @@ static ASTNode *parse_block(Parser *parser);
 static ASTNode *parse_break(Parser *parser);
 static ASTNode *parse_continue(Parser *parser);
 static ASTNode *parse_class_def(Parser *parser);
+static ASTNode *parse_import(Parser *parser);
+static ASTNode *parse_export(Parser *parser);
+static int check_ahead(Parser *parser, TokenType type);
 
 void parser_init(Parser *parser, Lexer *lexer) {
     parser->lexer = lexer;
@@ -976,6 +979,10 @@ static ASTNode *parse_return(Parser *parser) {
 static ASTNode *parse_statement(Parser *parser) {
     while (match(parser, TOKEN_SEMICOLON)) {}
 
+    /* Module system - must be at top level */
+    if (check(parser, TOKEN_IMPORT)) return parse_import(parser);
+    if (check(parser, TOKEN_EXPORT)) return parse_export(parser);
+
     if (check(parser, TOKEN_ABSTRACT)) {
         Token abstract_tok = advance(parser);
         token_free(&abstract_tok);
@@ -1203,3 +1210,194 @@ ASTNode **parse_program(Parser *parser, int *count) {
     }
     return nodes;
 }
+
+/* Check if the next token (peek) matches a type */
+static int check_ahead(Parser *parser, TokenType type) {
+    return parser->peek.type == type;
+}
+
+/* Module system parsing */
+
+/* Parse import statement:
+ * import {name1, name2 as alias} from "module"
+ * import defaultName from "module"
+ * import * as namespace from "module"
+ * import defaultName, {name1, name2} from "module"
+ */
+static ASTNode *parse_import(Parser *parser) {
+    Token import_tok = consume(parser, TOKEN_IMPORT);
+    int line = import_tok.line;
+    token_free(&import_tok);
+
+    /* import * as namespace from "module" */
+    if (check(parser, TOKEN_STAR)) {
+        Token star_tok = advance(parser);
+        Token as_tok, namespace_tok, from_tok, path_tok;
+        char *namespace, *module_path;
+        ASTNode *result;
+        token_free(&star_tok);
+        
+        as_tok = consume(parser, TOKEN_AS);
+        token_free(&as_tok);
+        
+        namespace_tok = consume(parser, TOKEN_IDENT);
+        namespace = strdup(namespace_tok.value);
+        token_free(&namespace_tok);
+        
+        from_tok = consume(parser, TOKEN_FROM);
+        token_free(&from_tok);
+        
+        path_tok = consume(parser, TOKEN_STRING);
+        module_path = strdup(path_tok.value);
+        token_free(&path_tok);
+        
+        result = ast_new_import_namespace(namespace, module_path, line);
+        free(namespace);
+        free(module_path);
+        return result;
+    }
+    
+    /* Check for default import */
+    if (check(parser, TOKEN_IDENT) && !check_ahead(parser, TOKEN_COMMA) && !check_ahead(parser, TOKEN_LBRACE)) {
+        Token name_tok = consume(parser, TOKEN_IDENT);
+        Token from_tok, path_tok;
+        char *name = strdup(name_tok.value);
+        char *module_path;
+        ASTNode *result;
+        token_free(&name_tok);
+        
+        from_tok = consume(parser, TOKEN_FROM);
+        token_free(&from_tok);
+        
+        path_tok = consume(parser, TOKEN_STRING);
+        module_path = strdup(path_tok.value);
+        token_free(&path_tok);
+        
+        result = ast_new_import_default(name, module_path, line);
+        free(name);
+        free(module_path);
+        return result;
+    }
+    
+    /* Named imports: import {a, b as c} from "module" */
+    if (check(parser, TOKEN_LBRACE)) {
+        Token brace_tok = advance(parser);
+        int cap = 4;
+        int count = 0;
+        char **names = malloc(cap * sizeof(char*));
+        char **aliases = malloc(cap * sizeof(char*));
+        Token from_tok, path_tok;
+        char *module_path;
+        ASTNode *result;
+        token_free(&brace_tok);
+        
+        while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+            Token name_tok = consume(parser, TOKEN_IDENT);
+            char *alias = NULL;
+            
+            if (count >= cap) {
+                cap *= 2;
+                names = realloc(names, cap * sizeof(char*));
+                aliases = realloc(aliases, cap * sizeof(char*));
+            }
+            
+            names[count] = strdup(name_tok.value);
+            token_free(&name_tok);
+            
+            /* Check for 'as' alias */
+            if (match(parser, TOKEN_AS)) {
+                Token alias_tok = consume(parser, TOKEN_IDENT);
+                alias = strdup(alias_tok.value);
+                token_free(&alias_tok);
+            }
+            
+            aliases[count] = alias;
+            count++;
+            
+            if (!check(parser, TOKEN_RBRACE)) {
+                Token comma = consume(parser, TOKEN_COMMA);
+                token_free(&comma);
+            }
+        }
+        
+        brace_tok = consume(parser, TOKEN_RBRACE);
+        token_free(&brace_tok);
+        
+        from_tok = consume(parser, TOKEN_FROM);
+        token_free(&from_tok);
+        
+        path_tok = consume(parser, TOKEN_STRING);
+        module_path = strdup(path_tok.value);
+        token_free(&path_tok);
+        
+        result = ast_new_import_named(names, aliases, count, module_path, line);
+        free(module_path);
+        return result;
+    }
+    
+    fprintf(stderr, "Syntax error at line %d: Invalid import syntax\n", line);
+    parser->had_error = 1;
+    return NULL;
+}
+
+/* Parse export statement:
+ * export const x = 1
+ * export fn foo() {}
+ * export default expression
+ * export {name1, name2}
+ */
+static ASTNode *parse_export(Parser *parser) {
+    Token export_tok = consume(parser, TOKEN_EXPORT);
+    int line = export_tok.line;
+    token_free(&export_tok);
+    
+    /* export default ... */
+    if (match(parser, TOKEN_DEFAULT)) {
+        /* Check if it's a function or class declaration */
+        if (check(parser, TOKEN_FN) || check(parser, TOKEN_CLASS) || 
+            check(parser, TOKEN_ASYNC)) {
+            ASTNode *decl = parse_statement(parser);
+            return ast_new_export(1, decl, NULL, 0, line);
+        } else {
+            /* Otherwise it's an expression */
+            ASTNode *expr = parse_expression(parser);
+            return ast_new_export(1, expr, NULL, 0, line);
+        }
+    }
+    
+    /* export { name1, name2 } */
+    if (check(parser, TOKEN_LBRACE)) {
+        Token brace_tok = advance(parser);
+        int cap = 4;
+        int count = 0;
+        char **names = malloc(cap * sizeof(char*));
+        token_free(&brace_tok);
+        
+        while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+            Token name_tok = consume(parser, TOKEN_IDENT);
+            
+            if (count >= cap) {
+                cap *= 2;
+                names = realloc(names, cap * sizeof(char*));
+            }
+            
+            names[count++] = strdup(name_tok.value);
+            token_free(&name_tok);
+            
+            if (!check(parser, TOKEN_RBRACE)) {
+                Token comma = consume(parser, TOKEN_COMMA);
+                token_free(&comma);
+            }
+        }
+        
+        brace_tok = consume(parser, TOKEN_RBRACE);
+        token_free(&brace_tok);
+        
+        return ast_new_export(0, NULL, names, count, line);
+    }
+    
+    /* export const/let/var/fn/class ... */
+    ASTNode *declaration = parse_statement(parser);
+    return ast_new_export(0, declaration, NULL, 0, line);
+}
+

@@ -284,6 +284,39 @@ ASTNode *ast_new_await(ASTNode *expr, int line) {
     return n;
 }
 
+/* Module system constructors */
+ASTNode *ast_new_import_named(char **names, char **aliases, int count, const char *module_path, int line) {
+    ASTNode *n = ast_alloc(NODE_IMPORT_NAMED, line);
+    n->data.import_named.names = names;
+    n->data.import_named.aliases = aliases;
+    n->data.import_named.count = count;
+    n->data.import_named.module_path = module_path ? strdup(module_path) : NULL;
+    return n;
+}
+
+ASTNode *ast_new_import_default(const char *name, const char *module_path, int line) {
+    ASTNode *n = ast_alloc(NODE_IMPORT_DEFAULT, line);
+    n->data.import_default.name = name ? strdup(name) : NULL;
+    n->data.import_default.module_path = module_path ? strdup(module_path) : NULL;
+    return n;
+}
+
+ASTNode *ast_new_import_namespace(const char *namespace, const char *module_path, int line) {
+    ASTNode *n = ast_alloc(NODE_IMPORT_NAMESPACE, line);
+    n->data.import_namespace.namespace = namespace ? strdup(namespace) : NULL;
+    n->data.import_namespace.module_path = module_path ? strdup(module_path) : NULL;
+    return n;
+}
+
+ASTNode *ast_new_export(int is_default, ASTNode *declaration, char **names, int count, int line) {
+    ASTNode *n = ast_alloc(NODE_EXPORT, line);
+    n->data.export_stmt.is_default = is_default;
+    n->data.export_stmt.declaration = declaration;
+    n->data.export_stmt.names = names;
+    n->data.export_stmt.count = count;
+    return n;
+}
+
 void ast_free(ASTNode *node) {
     int i;
     if (!node) return;
@@ -430,6 +463,43 @@ void ast_free(ASTNode *node) {
             break;
         case NODE_AWAIT:
             ast_free(node->data.await_expr.expr);
+            break;
+        case NODE_IMPORT_NAMED:
+            if (node->data.import_named.names) {
+                for (i = 0; i < node->data.import_named.count; i++)
+                    free(node->data.import_named.names[i]);
+                free(node->data.import_named.names);
+            }
+            if (node->data.import_named.aliases) {
+                for (i = 0; i < node->data.import_named.count; i++)
+                    if (node->data.import_named.aliases[i])
+                        free(node->data.import_named.aliases[i]);
+                free(node->data.import_named.aliases);
+            }
+            if (node->data.import_named.module_path)
+                free(node->data.import_named.module_path);
+            break;
+        case NODE_IMPORT_DEFAULT:
+            if (node->data.import_default.name)
+                free(node->data.import_default.name);
+            if (node->data.import_default.module_path)
+                free(node->data.import_default.module_path);
+            break;
+        case NODE_IMPORT_NAMESPACE:
+            if (node->data.import_namespace.namespace)
+                free(node->data.import_namespace.namespace);
+            if (node->data.import_namespace.module_path)
+                free(node->data.import_namespace.module_path);
+            break;
+        case NODE_EXPORT:
+            if (node->data.export_stmt.declaration)
+                ast_free(node->data.export_stmt.declaration);
+            if (node->data.export_stmt.names) {
+                for (i = 0; i < node->data.export_stmt.count; i++)
+                    if (node->data.export_stmt.names[i])
+                        free(node->data.export_stmt.names[i]);
+                free(node->data.export_stmt.names);
+            }
             break;
         default:
             break;

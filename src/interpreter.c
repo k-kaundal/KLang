@@ -1,4 +1,6 @@
 #include "interpreter.h"
+#include "lexer.h"
+#include "parser.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -288,6 +290,14 @@ Value make_promise(void) {
     return val;
 }
 
+Value make_module(const char *module_path, Env *exports) {
+    Value val;
+    val.type = VAL_MODULE;
+    val.as.module_val.module_path = module_path ? strdup(module_path) : NULL;
+    val.as.module_val.exports = exports;
+    return val;
+}
+
 void value_free(Value *v) {
     if (!v) return;
     if (v->type == VAL_STRING && v->as.str_val) {
@@ -382,6 +392,13 @@ void value_free(Value *v) {
             free(v->as.promise_val.result);
         }
     }
+    if (v->type == VAL_MODULE) {
+        if (v->as.module_val.module_path) {
+            free(v->as.module_val.module_path);
+            v->as.module_val.module_path = NULL;
+        }
+        // Note: exports env is managed by module cache, don't free here
+    }
 }
 
 char *value_to_string(Value *v) {
@@ -450,6 +467,10 @@ char *value_to_string(Value *v) {
             snprintf(buf, sizeof(buf), "Promise { <%s> }", state_str);
             return strdup(buf);
         }
+        case VAL_MODULE:
+            snprintf(buf, sizeof(buf), "<module %s>", 
+                v->as.module_val.module_path ? v->as.module_val.module_path : "unknown");
+            return strdup(buf);
         default:
             return strdup("<unknown>");
     }
@@ -466,22 +487,34 @@ Interpreter *interpreter_new(void) {
     interp->global_env = env_new(NULL);
     interp->microtask_queue_head = NULL;
     interp->microtask_queue_tail = NULL;
+    interp->loaded_modules = NULL;
+    interp->module_count = 0;
+    interp->module_capacity = 0;
+    interp->current_module_dir = NULL;
     return interp;
 }
 
 void interpreter_free(Interpreter *interp) {
+    int i;
     // Free microtask queue
     MicrotaskNode *node = interp->microtask_queue_head;
     while (node) {
         MicrotaskNode *next = node->next;
         value_free(&node->callback);
-        for (int i = 0; i < node->argc; i++) {
+        for (i = 0; i < node->argc; i++) {
             value_free(&node->args[i]);
         }
         free(node->args);
         free(node);
         node = next;
     }
+    // Free loaded modules
+    for (i = 0; i < interp->module_count; i++) {
+        free(interp->loaded_modules[i].path);
+        env_free(interp->loaded_modules[i].exports);
+    }
+    free(interp->loaded_modules);
+    if (interp->current_module_dir) free(interp->current_module_dir);
     env_free(interp->global_env);
     free(interp);
 }
@@ -1532,10 +1565,21 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     if (method->type == VAL_STRING) result = make_string(method->as.str_val);
                     else result = *method;
                 }
+            } else if (obj.type == VAL_MODULE) {
+                // Access to module exports (e.g., Math.PI)
+                Value *exported = env_get(obj.as.module_val.exports, node->data.member_access.member);
+                if (exported) {
+                    if (exported->type == VAL_STRING) result = make_string(exported->as.str_val);
+                    else result = *exported;
+                } else {
+                    fprintf(stderr, "Error at line %d: module does not export '%s'\n",
+                            node->line, node->data.member_access.member);
+                    interp->had_error = 1;
+                }
             }
             
-            // Don't free obj if it's an object or class - they share Env pointers
-            if (obj.type != VAL_OBJECT && obj.type != VAL_CLASS) {
+            // Don't free obj if it's an object, class, or module - they share Env pointers
+            if (obj.type != VAL_OBJECT && obj.type != VAL_CLASS && obj.type != VAL_MODULE) {
                 value_free(&obj);
             }
             return result;
@@ -1694,6 +1738,108 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             /* If not a promise, return the value as-is (await on non-promise resolves immediately) */
             return awaited;
         }
+        
+        /* Module system - Import statements */
+        case NODE_IMPORT_NAMED: {
+            /* import {name1, name2 as alias} from "module" */
+            char *resolved_path = resolve_module_path(interp, node->data.import_named.module_path);
+            Value module = load_module(interp, resolved_path, env);
+            int i;
+            
+            if (module.type == VAL_MODULE) {
+                Env *exports = module.as.module_val.exports;
+                for (i = 0; i < node->data.import_named.count; i++) {
+                    const char *name = node->data.import_named.names[i];
+                    const char *alias = node->data.import_named.aliases[i];
+                    const char *local_name = alias ? alias : name;
+                    
+                    Value *exported = env_get(exports, name);
+                    if (exported) {
+                        /* Deep copy for certain types */
+                        Value imported;
+                        if (exported->type == VAL_FUNCTION && exported->as.func_val.param_names) {
+                            imported = *exported;
+                            imported.as.func_val.param_names = malloc(exported->as.func_val.param_count * sizeof(char *));
+                            for (int j = 0; j < exported->as.func_val.param_count; j++)
+                                imported.as.func_val.param_names[j] = strdup(exported->as.func_val.param_names[j]);
+                        } else if (exported->type == VAL_STRING) {
+                            imported = make_string(exported->as.str_val);
+                        } else {
+                            imported = *exported;
+                        }
+                        env_set_local(env, local_name, imported);
+                    } else {
+                        fprintf(stderr, "Error at line %d: Module '%s' does not export '%s'\n",
+                            node->line, node->data.import_named.module_path, name);
+                        interp->had_error = 1;
+                    }
+                }
+            }
+            
+            free(resolved_path);
+            value_free(&module);
+            return make_null();
+        }
+        
+        case NODE_IMPORT_DEFAULT: {
+            /* import name from "module" */
+            char *resolved_path = resolve_module_path(interp, node->data.import_default.module_path);
+            Value module = load_module(interp, resolved_path, env);
+            
+            if (module.type == VAL_MODULE) {
+                Env *exports = module.as.module_val.exports;
+                Value *default_export = env_get(exports, "default");
+                if (default_export) {
+                    /* Deep copy for certain types */
+                    Value imported;
+                    if (default_export->type == VAL_FUNCTION && default_export->as.func_val.param_names) {
+                        imported = *default_export;
+                        imported.as.func_val.param_names = malloc(default_export->as.func_val.param_count * sizeof(char *));
+                        for (int j = 0; j < default_export->as.func_val.param_count; j++)
+                            imported.as.func_val.param_names[j] = strdup(default_export->as.func_val.param_names[j]);
+                    } else if (default_export->type == VAL_STRING) {
+                        imported = make_string(default_export->as.str_val);
+                    } else {
+                        imported = *default_export;
+                    }
+                    env_set_local(env, node->data.import_default.name, imported);
+                } else {
+                    fprintf(stderr, "Error at line %d: Module '%s' does not have a default export\n",
+                        node->line, node->data.import_default.module_path);
+                    interp->had_error = 1;
+                }
+            }
+            
+            free(resolved_path);
+            value_free(&module);
+            return make_null();
+        }
+        
+        case NODE_IMPORT_NAMESPACE: {
+            /* import * as name from "module" */
+            char *resolved_path = resolve_module_path(interp, node->data.import_namespace.module_path);
+            Value module = load_module(interp, resolved_path, env);
+            
+            if (module.type == VAL_MODULE) {
+                /* Store the module value itself so user can access module.name */
+                env_set_local(env, node->data.import_namespace.namespace, module);
+            } else {
+                value_free(&module);
+            }
+            
+            free(resolved_path);
+            return make_null();
+        }
+        
+        case NODE_EXPORT:
+            /* Exports are handled during module loading, not during normal execution */
+            /* If we encounter this during normal (non-module) execution, it's an error */
+            if (node->data.export_stmt.declaration) {
+                /* Execute the declaration in the current environment */
+                return eval_node_env(interp, node->data.export_stmt.declaration, env);
+            }
+            return make_null();
+        
         default:
             return make_null();
     }
@@ -1763,4 +1909,234 @@ void microtask_queue_process(Interpreter *interp) {
         free(node->args);
         free(node);
     }
+}
+
+/* ========== Module System Implementation ========== */
+
+#include <libgen.h>
+#include <unistd.h>
+#include <limits.h>
+
+/* Resolve module path to absolute path */
+char *resolve_module_path(Interpreter *interp, const char *import_path) {
+    char *resolved = malloc(PATH_MAX);
+    
+    /* If it starts with ./ or ../ it's relative */
+    if (import_path[0] == '.' && (import_path[1] == '/' || 
+        (import_path[1] == '.' && import_path[2] == '/'))) {
+        
+        /* Get the directory of the current module */
+        char *base_dir = interp->current_module_dir ? interp->current_module_dir : ".";
+        snprintf(resolved, PATH_MAX, "%s/%s", base_dir, import_path);
+    } else {
+        /* Absolute path or bare import - for now treat as relative to cwd */
+        if (import_path[0] == '/') {
+            strncpy(resolved, import_path, PATH_MAX);
+        } else {
+            /* Try current directory */
+            snprintf(resolved, PATH_MAX, "./%s", import_path);
+        }
+    }
+    
+    return resolved;
+}
+
+/* Get cached module exports */
+Env *get_cached_module(Interpreter *interp, const char *module_path) {
+    int i;
+    for (i = 0; i < interp->module_count; i++) {
+        if (strcmp(interp->loaded_modules[i].path, module_path) == 0) {
+            return interp->loaded_modules[i].exports;
+        }
+    }
+    return NULL;
+}
+
+/* Cache module exports */
+void cache_module(Interpreter *interp, const char *module_path, Env *exports) {
+    if (interp->module_count >= interp->module_capacity) {
+        interp->module_capacity = interp->module_capacity == 0 ? 4 : interp->module_capacity * 2;
+        interp->loaded_modules = realloc(interp->loaded_modules, 
+            interp->module_capacity * sizeof(LoadedModule));
+    }
+    
+    interp->loaded_modules[interp->module_count].path = strdup(module_path);
+    interp->loaded_modules[interp->module_count].exports = exports;
+    interp->loaded_modules[interp->module_count].is_loading = 0;
+    interp->module_count++;
+}
+
+/* Check if module is currently being loaded (for circular dependency detection) */
+int is_module_loading(Interpreter *interp, const char *module_path) {
+    int i;
+    for (i = 0; i < interp->module_count; i++) {
+        if (strcmp(interp->loaded_modules[i].path, module_path) == 0) {
+            return interp->loaded_modules[i].is_loading;
+        }
+    }
+    return 0;
+}
+
+/* Set module loading flag */
+void set_module_loading(Interpreter *interp, const char *module_path, int loading) {
+    int i;
+    for (i = 0; i < interp->module_count; i++) {
+        if (strcmp(interp->loaded_modules[i].path, module_path) == 0) {
+            interp->loaded_modules[i].is_loading = loading;
+            return;
+        }
+    }
+}
+
+/* Load and execute a module */
+Value load_module(Interpreter *interp, const char *module_path, Env *env) {
+    FILE *file;
+    long file_size;
+    char *source;
+    Lexer lexer;
+    Parser parser;
+    ASTNode **nodes;
+    int count, i;
+    Env *module_env, *export_env;
+    char *old_module_dir;
+    char *module_dir;
+    Value result = make_null();
+    
+    /* Check if already loaded */
+    export_env = get_cached_module(interp, module_path);
+    if (export_env != NULL) {
+        return make_module(module_path, export_env);
+    }
+    
+    /* Check for circular dependency */
+    if (is_module_loading(interp, module_path)) {
+        fprintf(stderr, "Error: Circular dependency detected for module '%s'\n", module_path);
+        interp->had_error = 1;
+        return make_null();
+    }
+    
+    /* Read the module file */
+    file = fopen(module_path, "r");
+    if (!file) {
+        fprintf(stderr, "Error: Cannot open module file '%s'\n", module_path);
+        interp->had_error = 1;
+        return make_null();
+    }
+    
+    fseek(file, 0, SEEK_END);
+    file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    
+    source = malloc(file_size + 1);
+    fread(source, 1, file_size, file);
+    source[file_size] = '\0';
+    fclose(file);
+    
+    /* Parse the module */
+    lexer_init(&lexer, source);
+    parser_init(&parser, &lexer);
+    nodes = parse_program(&parser, &count);
+    
+    if (parser.had_error) {
+        interp->had_error = 1;
+        for (i = 0; i < count; i++) ast_free(nodes[i]);
+        free(nodes);
+        parser_free(&parser);
+        lexer_free(&lexer);
+        free(source);
+        return make_null();
+    }
+    
+    /* Create module environment - isolated from global */
+    module_env = env_new(NULL);  /* No parent - isolated scope */
+    export_env = env_new(NULL);  /* Export namespace */
+    
+    /* Save current module directory and set new one */
+    old_module_dir = interp->current_module_dir;
+    module_dir = strdup(module_path);
+    {
+        char *dir_result = dirname(module_dir);
+        interp->current_module_dir = strdup(dir_result);
+    }
+    free(module_dir);
+    
+    /* Mark module as loading before executing */
+    cache_module(interp, module_path, export_env);
+    set_module_loading(interp, module_path, 1);
+    
+    /* Execute module statements */
+    for (i = 0; i < count; i++) {
+        ASTNode *node = nodes[i];
+        
+        /* Handle exports */
+        if (node->type == NODE_EXPORT) {
+            if (node->data.export_stmt.is_default) {
+                /* export default expr */
+                Value val = eval_node_env(interp, node->data.export_stmt.declaration, module_env);
+                env_set_local(export_env, "default", val);
+            } else if (node->data.export_stmt.declaration) {
+                /* export const/let/var/fn/class */
+                Value val = eval_node_env(interp, node->data.export_stmt.declaration, module_env);
+                
+                /* Extract the name from the declaration and export it */
+                const char *name = NULL;
+                if (node->data.export_stmt.declaration->type == NODE_LET) {
+                    name = node->data.export_stmt.declaration->data.let_stmt.name;
+                } else if (node->data.export_stmt.declaration->type == NODE_FUNC_DEF) {
+                    name = node->data.export_stmt.declaration->data.func_def.name;
+                } else if (node->data.export_stmt.declaration->type == NODE_CLASS_DEF) {
+                    name = node->data.export_stmt.declaration->data.class_def.name;
+                }
+                
+                if (name) {
+                    Value *exported_val = env_get(module_env, name);
+                    if (exported_val) {
+                        env_set_local(export_env, name, *exported_val);
+                    } else {
+                        fprintf(stderr, "Warning: Export failed - '%s' not found in module environment\n", name);
+                    }
+                }
+                value_free(&val);
+            } else if (node->data.export_stmt.names) {
+                /* export { name1, name2 } */
+                int j;
+                for (j = 0; j < node->data.export_stmt.count; j++) {
+                    const char *name = node->data.export_stmt.names[j];
+                    Value *val = env_get(module_env, name);
+                    if (val) {
+                        env_set_local(export_env, name, *val);
+                    } else {
+                        fprintf(stderr, "Warning: Exported name '%s' not found in module\n", name);
+                    }
+                }
+            }
+        } else {
+            /* Regular statement - execute in module environment */
+            Value val = eval_node_env(interp, node, module_env);
+            value_free(&val);
+        }
+        
+        if (interp->had_error) break;
+    }
+    
+    /* Mark module as loaded */
+    set_module_loading(interp, module_path, 0);
+    
+    /* Restore old module directory */
+    free(interp->current_module_dir);
+    interp->current_module_dir = old_module_dir;
+    
+    /* Cleanup */
+    for (i = 0; i < count; i++) ast_free(nodes[i]);
+    free(nodes);
+    parser_free(&parser);
+    lexer_free(&lexer);
+    free(source);
+    env_free(module_env);
+    
+    if (!interp->had_error) {
+        result = make_module(module_path, export_env);
+    }
+    
+    return result;
 }

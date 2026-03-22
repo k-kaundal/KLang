@@ -9,7 +9,8 @@ typedef enum {
     NODE_LIST, NODE_OBJECT,
     NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER,
     NODE_TEMPLATE_LITERAL, NODE_TERNARY, NODE_SWITCH, NODE_CASE,
-    NODE_AWAIT
+    NODE_AWAIT, NODE_YIELD,
+    NODE_EXPORT, NODE_IMPORT_NAMED, NODE_IMPORT_DEFAULT, NODE_IMPORT_NAMESPACE
 } NodeType;
 
 typedef enum {
@@ -62,7 +63,7 @@ struct ASTNode {
         struct { } break_stmt;
         struct { } continue_stmt;
         struct { NodeList stmts; } block;
-        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; int is_async; } func_def;
+        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; int is_arrow; int is_async; int is_generator; } func_def;
         struct { NodeList elements; } list;
         struct { ObjectProperty *props; int count; int capacity; } object;
         struct { char *name; char *parent_name; NodeList members; int is_abstract; } class_def;
@@ -75,6 +76,28 @@ struct ASTNode {
         struct { ASTNode *expr; NodeList cases; ASTNode *default_case; } switch_stmt;
         struct { ASTNode *value; NodeList body; } case_stmt;
         struct { ASTNode *expr; } await_expr;
+        struct { ASTNode *value; } yield_expr;
+        /* Module system nodes */
+        struct {
+            char **names;           // Imported names
+            char **aliases;         // Aliases (for "as")
+            int count;              // Number of imports
+            char *module_path;      // Module to import from
+        } import_named;
+        struct {
+            char *name;             // Default import name
+            char *module_path;      // Module to import from
+        } import_default;
+        struct {
+            char *namespace;        // Namespace name (import * as X)
+            char *module_path;      // Module to import from
+        } import_namespace;
+        struct {
+            int is_default;         // Is this a default export?
+            ASTNode *declaration;   // What's being exported (func, class, var, etc)
+            char **names;           // Named exports (for re-export)
+            int count;              // Number of named exports
+        } export_stmt;
     } data;
 };
 
@@ -116,6 +139,11 @@ ASTNode *ast_new_ternary(ASTNode *cond, ASTNode *true_expr, ASTNode *false_expr,
 ASTNode *ast_new_switch(ASTNode *expr, int line);
 ASTNode *ast_new_case(ASTNode *value, int line);
 ASTNode *ast_new_await(ASTNode *expr, int line);
+/* Module system constructors */
+ASTNode *ast_new_import_named(char **names, char **aliases, int count, const char *module_path, int line);
+ASTNode *ast_new_import_default(const char *name, const char *module_path, int line);
+ASTNode *ast_new_import_namespace(const char *namespace, const char *module_path, int line);
+ASTNode *ast_new_export(int is_default, ASTNode *declaration, char **names, int count, int line);
 void ast_free(ASTNode *node);
 
 #endif

@@ -5,7 +5,7 @@
 
 typedef enum {
     VAL_INT, VAL_FLOAT, VAL_STRING, VAL_BOOL, VAL_NULL, VAL_FUNCTION, VAL_LIST, VAL_BUILTIN,
-    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE
+    VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE
 } ValueType;
 
 typedef struct Value Value;
@@ -68,6 +68,11 @@ typedef struct {
     PromiseCallbackNode *callbacks;  // Linked list of callbacks
 } PromiseVal;
 
+typedef struct {
+    char *module_path;         // Absolute path to the module
+    Env *exports;              // Module's export namespace
+} ModuleVal;
+
 struct Value {
     ValueType type;
     union {
@@ -82,6 +87,7 @@ struct Value {
         ObjectVal object_val;
         MethodVal method_val;
         PromiseVal promise_val;
+        ModuleVal module_val;
     } as;
 };
 
@@ -113,12 +119,22 @@ typedef struct MicrotaskNode {
     struct MicrotaskNode *next;
 } MicrotaskNode;
 
+typedef struct LoadedModule {
+    char *path;                  // Absolute path to module
+    Env *exports;                // Module's export environment
+    int is_loading;              // Flag to detect circular dependencies
+} LoadedModule;
+
 struct Interpreter {
     Env *global_env;
     EvalResult last_result;
     int had_error;
     MicrotaskNode *microtask_queue_head;
     MicrotaskNode *microtask_queue_tail;
+    LoadedModule *loaded_modules;  // Array of loaded modules
+    int module_count;
+    int module_capacity;
+    char *current_module_dir;      // Directory of currently executing module
 };
 
 Interpreter *interpreter_new(void);
@@ -134,12 +150,21 @@ Value make_class(const char *name, const char *parent_name);
 Value make_object(const char *class_name, Env *methods);
 Value make_method(Value receiver, Value method);
 Value make_promise(void);
+Value make_module(const char *module_path, Env *exports);
 void value_free(Value *v);
 void value_print(Value *v);
 char *value_to_string(Value *v);
 
 void microtask_queue_push(Interpreter *interp, Value callback, Value *args, int argc);
 void microtask_queue_process(Interpreter *interp);
+
+/* Module system functions */
+char *resolve_module_path(Interpreter *interp, const char *import_path);
+Value load_module(Interpreter *interp, const char *module_path, Env *env);
+Env *get_cached_module(Interpreter *interp, const char *module_path);
+void cache_module(Interpreter *interp, const char *module_path, Env *exports);
+void set_module_loading(Interpreter *interp, const char *module_path, int loading);
+int is_module_loading(Interpreter *interp, const char *module_path);
 
 Env *env_new(Env *parent);
 void env_free(Env *env);
