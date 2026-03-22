@@ -14,6 +14,7 @@
 #include "config.h"
 #include "test_runner.h"
 #include "project_init.h"
+#include "llvm_backend.h"
 
 void run_repl(void);
 
@@ -137,6 +138,66 @@ static void build_file(const char *path) {
     free(source);
 }
 
+static void compile_file(const char *path) {
+    char *source;
+    Lexer lexer;
+    Parser parser;
+    int count = 0;
+    ASTNode **nodes;
+    int i;
+    
+    if (!validate_file_extension(path)) {
+        print_error("Invalid file extension. KLang files must have .kl, .k, or .klang extension");
+        fprintf(stderr, "Given file: %s\n", path);
+        return;
+    }
+    
+    source = read_file(path);
+    if (!source) {
+        print_error("Cannot open file");
+        return;
+    }
+
+    lexer_init(&lexer, source);
+    parser_init(&parser, &lexer);
+
+    nodes = parse_program(&parser, &count);
+
+    if (!parser.had_error) {
+        // Generate output filename (remove extension and use as executable name)
+        char output_path[1024];
+        const char *base = strrchr(path, '/');
+        base = base ? base + 1 : path;
+        
+        // Copy base name without extension
+        char *dot = strrchr(base, '.');
+        int name_len = dot ? (int)(dot - base) : (int)strlen(base);
+        strncpy(output_path, base, name_len);
+        output_path[name_len] = '\0';
+        
+        print_success("Compiling with LLVM backend...");
+        printf("Input: %s\n", path);
+        printf("Output: %s\n", output_path);
+        
+        // Initialize LLVM backend
+        llvm_backend_init();
+        
+        // Compile to native executable
+        if (llvm_compile_ast(nodes, count, output_path) == 0) {
+            print_success("Compilation successful!");
+            printf("Generated executable: %s\n", output_path);
+        } else {
+            print_error("Compilation failed");
+        }
+    }
+
+    for (i = 0; i < count; i++) ast_free(nodes[i]);
+    free(nodes);
+    parser_free(&parser);
+    lexer_free(&lexer);
+    free(source);
+}
+
 int main(int argc, char **argv) {
     int i;
     
@@ -193,6 +254,15 @@ int main(int argc, char **argv) {
             return 1;
         }
         build_file(argv[2]);
+    }
+    else if (strcmp(argv[1], "compile") == 0) {
+        if (argc < 3) {
+            print_error("Missing file argument");
+            fprintf(stderr, "Usage: klang compile <file.kl>\n");
+            fprintf(stderr, "Try 'klang help compile' for more information.\n");
+            return 1;
+        }
+        compile_file(argv[2]);
     }
     else if (strcmp(argv[1], "check") == 0) {
         if (argc < 3) {

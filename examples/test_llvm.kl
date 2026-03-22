@@ -1,0 +1,48 @@
+// Test LLVM backend compilation
+// Simple arithmetic and control flow
+
+// Test basic arithmetic
+let a = 10;
+let b = 20;
+let sum = a + b;
+println("Sum:", sum);
+
+// Test comparison
+if (sum > 25) {
+    println("Sum is greater than 25");
+} else {
+    println("Sum is not greater than 25");
+}
+
+// Test while loop
+let i = 0;
+while (i < 5) {
+    println("Loop iteration:", i);
+    i = i + 1;
+}
+
+// Test for loop
+for j in 0..3 {
+    println("For loop:", j);
+}
+
+// Test function
+fn add(x, y) {
+    return x + y;
+}
+
+let result = add(15, 25);
+println("Function result:", result);
+
+// Test boolean operations
+let flag = true;
+if (flag) {
+    println("Flag is true");
+}
+
+// Test logical operators
+if (a > 5 && b > 15) {
+    println("Both conditions are true");
+}
+
+println("LLVM compilation test complete!");

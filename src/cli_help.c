@@ -38,6 +38,8 @@ void print_help(void) {
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %sbuild%s <file>     Compile and run via bytecode VM\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("  %scompile%s <file>   Compile to native executable (LLVM)\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %srepl%s             Start interactive REPL mode\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %scheck%s <file>     Check syntax without executing\n",
@@ -67,6 +69,7 @@ void print_help(void) {
 
     printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
     printf("  klang run program.kl           # Run a program\n");
+    printf("  klang compile program.kl       # Compile to native code\n");
     printf("  klang repl                     # Start REPL\n");
     printf("  klang check script.k           # Check syntax\n");
     printf("  klang fmt script.k             # Format code\n");
@@ -110,6 +113,25 @@ void print_command_help(const char* command) {
         printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
         printf("    klang build script.kl\n");
         printf("    klang build app.k\n\n");
+    }
+    else if (strcmp(command, "compile") == 0) {
+        printf("\n%sKLang Compile Command%s\n\n", 
+               get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+        printf("%sUSAGE:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang compile <file>\n\n");
+        printf("%sDESCRIPTION:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    Compile KLang source to native machine code using LLVM.\n");
+        printf("    Generates a standalone executable that runs without the KLang runtime.\n");
+        printf("    Provides maximum performance with full optimization.\n\n");
+        printf("%sFEATURES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    - Native code generation via LLVM\n");
+        printf("    - Optimization passes (mem2reg, constant folding, DCE)\n");
+        printf("    - Standalone executables (no runtime dependency)\n");
+        printf("    - Full performance, comparable to C/C++\n\n");
+        printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang compile script.kl    # Generates ./script executable\n");
+        printf("    klang compile app.k        # Generates ./app executable\n");
+        printf("    ./script                   # Run the compiled binary\n\n");
     }
     else if (strcmp(command, "repl") == 0) {
         printf("\n%sKLang REPL Command%s\n\n", 
