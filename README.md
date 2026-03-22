@@ -112,6 +112,12 @@ Source Code (.kl)
   * Array operations (sum, average, min, max, contains)
   * I/O helpers (prompt, formatted output)
   * Core utilities (sign, compare, logical operations)
+* **File I/O Operations** 🆕
+  * Complete file system access and control
+  * 12 file I/O functions (fopen, fclose, fread, fwrite, etc.)
+  * Convenience functions (readFile, writeFile, appendFile)
+  * File management (exists, delete, rename, size)
+  * Line-by-line reading support
 * **File Extension Validation** 🆕
   * Validates `.kl`, `.k`, `.klang` extensions
   * Clear error messages for invalid files
@@ -127,7 +133,6 @@ Source Code (.kl)
 ### 📌 Planned
 
 * List comprehensions
-* File I/O module
 * JSON module
 * Regex module
 * Garbage collector
@@ -388,6 +393,35 @@ class Circle extends Shape {
 
 let c = new Circle(5.0)
 c.display()  # Shape with area: 78.53975
+```
+
+### File I/O Operations
+
+```klang
+# Write to file
+writeFile("/tmp/data.txt", "Hello World!")
+
+# Read from file
+let content = readFile("/tmp/data.txt")
+println(content)  # Hello World!
+
+# Append to file
+appendFile("/tmp/data.txt", "\nNew line")
+
+# Line-by-line reading
+let file = fopen("/tmp/data.txt", "r")
+let line1 = freadline(file)
+let line2 = freadline(file)
+fclose(file)
+
+# File management
+if fexists("/tmp/data.txt") {
+    let size = fsize("/tmp/data.txt")
+    println("Size: " + str(size) + " bytes")
+    
+    frename("/tmp/data.txt", "/tmp/renamed.txt")
+    fdelete("/tmp/renamed.txt")
+}
 ```
 
 ---
