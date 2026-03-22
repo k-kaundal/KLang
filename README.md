@@ -205,6 +205,7 @@ klang run script.kl     # Run a script
 
 **Quick Links:**
 - [Documentation Index](docs/README.md) - Complete navigation
+- [All Documentation Files](ALL_DOCUMENTATION_INDEX.md) - Comprehensive A-Z index (112 files)
 - [Documentation Status](DOCUMENTATION_COMPLETENESS.md) - What's complete and what's not
 - [Examples](examples/) - Working code examples
 - [Tests](tests/) - Test suite ([Test Guide](tests/README.md))
