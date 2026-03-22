@@ -1,0 +1,169 @@
+# Static Members Demonstration
+
+# Example 1: Math utilities with static methods
+class Math {
+    static let PI: float = 3.14159
+    static let E: float = 2.71828
+    
+    static fn square(x: int) -> int {
+        return x * x
+    }
+    
+    static fn cube(x: int) -> int {
+        return x * x * x
+    }
+    
+    static fn max(a: int, b: int) -> int {
+        if a > b {
+            return a
+        } else {
+            return b
+        }
+    }
+}
+
+println("=== Math Utilities ===")
+println("PI = ")
+println(Math.PI)
+println("E = ")
+println(Math.E)
+println("square(5) = ")
+println(Math.square(5))
+println("cube(3) = ")
+println(Math.cube(3))
+println("max(10, 20) = ")
+println(Math.max(10, 20))
+
+# Example 2: Factory pattern with static factory method
+class Counter {
+    let count: int = 0
+    
+    fn init(start: int) {
+        this.count = start
+    }
+    
+    fn increment() {
+        this.count = this.count + 1
+    }
+    
+    fn get_count() -> int {
+        return this.count
+    }
+    
+    static fn create_default() {
+        return new Counter(0)
+    }
+    
+    static fn create_from_value(value: int) {
+        return new Counter(value)
+    }
+}
+
+println("")
+println("=== Factory Pattern ===")
+let c1 = Counter.create_default()
+println("Default counter: ")
+println(c1.get_count())
+
+let c2 = Counter.create_from_value(100)
+println("Counter from value: ")
+println(c2.get_count())
+c2.increment()
+println("After increment: ")
+println(c2.get_count())
+
+# Example 3: Singleton pattern (using static field)
+class Configuration {
+    static let instance_count: int = 0
+    static let app_name: string = "KLang App"
+    static let version: string = "1.0.0"
+    
+    let config_id: int = 0
+    
+    fn init() {
+        Configuration.instance_count = Configuration.instance_count + 1
+        this.config_id = Configuration.instance_count
+    }
+    
+    fn info() {
+        println("Config ID: ")
+        println(this.config_id)
+        println("App: ")
+        println(Configuration.app_name)
+        println("Version: ")
+        println(Configuration.version)
+    }
+    
+    static fn get_instance_count() -> int {
+        return Configuration.instance_count
+    }
+}
+
+println("")
+println("=== Configuration Pattern ===")
+println("Initial instance count: ")
+println(Configuration.get_instance_count())
+
+let cfg1 = new Configuration()
+println("After creating cfg1: ")
+println(Configuration.get_instance_count())
+
+let cfg2 = new Configuration()
+println("After creating cfg2: ")
+println(Configuration.get_instance_count())
+
+cfg1.info()
+println("")
+cfg2.info()
+
+# Example 4: Static and instance members together
+class Person {
+    static let species: string = "Homo Sapiens"
+    static let population: int = 0
+    
+    let name: string = ""
+    let age: int = 0
+    
+    fn init(n: string, a: int) {
+        this.name = n
+        this.age = a
+        Person.population = Person.population + 1
+    }
+    
+    fn greet() {
+        println("Hello, I am ")
+        println(this.name)
+    }
+    
+    fn info() {
+        println("Name: ")
+        println(this.name)
+        println("Age: ")
+        println(this.age)
+        println("Species: ")
+        println(Person.species)
+    }
+    
+    static fn get_population() -> int {
+        return Person.population
+    }
+}
+
+println("")
+println("=== Person Example ===")
+println("Initial population: ")
+println(Person.get_population())
+
+let p1 = new Person("Alice", 25)
+let p2 = new Person("Bob", 30)
+let p3 = new Person("Charlie", 35)
+
+println("After creating 3 persons: ")
+println(Person.get_population())
+
+p1.info()
+println("")
+p2.greet()
+
+println("")
+println("All examples completed!")

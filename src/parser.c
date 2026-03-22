@@ -587,16 +587,28 @@ static ASTNode *parse_class_def(Parser *parser) {
     
     while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
         ASTNode *member;
+        int is_static = 0;
         while (match(parser, TOKEN_SEMICOLON)) {}
         if (check(parser, TOKEN_RBRACE) || check(parser, TOKEN_EOF)) break;
+        
+        /* Check for static keyword */
+        if (match(parser, TOKEN_STATIC)) {
+            is_static = 1;
+        }
         
         /* Parse class members (let statements and function definitions) */
         if (check(parser, TOKEN_LET)) {
             member = parse_let(parser);
-            if (member) nodelist_push(&class_node->data.class_def.members, member);
+            if (member) {
+                member->data.let_stmt.is_static = is_static;
+                nodelist_push(&class_node->data.class_def.members, member);
+            }
         } else if (check(parser, TOKEN_FN)) {
             member = parse_func_def(parser);
-            if (member) nodelist_push(&class_node->data.class_def.members, member);
+            if (member) {
+                member->data.func_def.is_static = is_static;
+                nodelist_push(&class_node->data.class_def.members, member);
+            }
         } else {
             fprintf(stderr, "Parse error at line %d: expected 'let' or 'fn' in class body, got %s\n",
                     parser->current.line, token_type_name(parser->current.type));

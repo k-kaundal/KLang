@@ -30,8 +30,10 @@ typedef struct {
 typedef struct {
     char *name;
     char *parent_name;
-    Env *methods;      // Environment for methods
-    Env *fields;       // Environment for default field values
+    Env *methods;         // Environment for instance methods
+    Env *fields;          // Environment for instance default field values
+    Env *static_methods;  // Environment for static methods
+    Env *static_fields;   // Environment for static field values
 } ClassVal;
 
 typedef struct {

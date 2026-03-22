@@ -179,6 +179,7 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "this") == 0) type = TOKEN_THIS;
             else if (strcmp(buf, "extends") == 0) type = TOKEN_EXTENDS;
             else if (strcmp(buf, "super") == 0) type = TOKEN_SUPER;
+            else if (strcmp(buf, "static") == 0) type = TOKEN_STATIC;
             t.type = type;
             t.value = buf;
             t.line = line;
@@ -276,6 +277,7 @@ const char *token_type_name(TokenType type) {
         case TOKEN_THIS: return "THIS";
         case TOKEN_EXTENDS: return "EXTENDS";
         case TOKEN_SUPER: return "SUPER";
+        case TOKEN_STATIC: return "STATIC";
         case TOKEN_PLUS: return "PLUS";
         case TOKEN_MINUS: return "MINUS";
         case TOKEN_STAR: return "STAR";
