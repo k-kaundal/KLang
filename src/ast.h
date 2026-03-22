@@ -45,9 +45,9 @@ struct ASTNode {
         struct { } break_stmt;
         struct { } continue_stmt;
         struct { NodeList stmts; } block;
-        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; } func_def;
+        struct { char *name; NodeList params; char **param_types; char *return_type; ASTNode *body; int is_static; AccessModifier access; int is_abstract; } func_def;
         struct { NodeList elements; } list;
-        struct { char *name; char *parent_name; NodeList members; } class_def;
+        struct { char *name; char *parent_name; NodeList members; int is_abstract; } class_def;
         struct { char *class_name; NodeList args; } new_expr;
         struct { ASTNode *obj; char *member; } member_access;
         struct { } this_expr;

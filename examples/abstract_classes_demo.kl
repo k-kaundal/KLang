@@ -1,0 +1,263 @@
+# Abstract Classes Demonstration
+
+# Example 1: Abstract Shape class
+abstract class Shape {
+    public let color: string = "white"
+    
+    fn init(c: string) {
+        this.color = c
+    }
+    
+    # Abstract method - must be implemented by subclasses
+    public abstract fn area() -> float;
+    
+    # Abstract method - must be implemented by subclasses
+    public abstract fn perimeter() -> float;
+    
+    # Concrete method - can be used by all subclasses
+    public fn display_color() {
+        println("Color: ")
+        println(this.color)
+    }
+}
+
+# Concrete implementation of Shape
+class Rectangle extends Shape {
+    private let width: float = 0.0
+    private let height: float = 0.0
+    
+    fn init(c: string, w: float, h: float) {
+        super.init(c)
+        this.width = w
+        this.height = h
+    }
+    
+    # Implementation of abstract method
+    public fn area() -> float {
+        return this.width * this.height
+    }
+    
+    # Implementation of abstract method
+    public fn perimeter() -> float {
+        return 2.0 * (this.width + this.height)
+    }
+    
+    public fn info() {
+        this.display_color()
+        println("Width: ")
+        println(this.width)
+        println("Height: ")
+        println(this.height)
+        println("Area: ")
+        println(this.area())
+        println("Perimeter: ")
+        println(this.perimeter())
+    }
+}
+
+class Circle extends Shape {
+    private let radius: float = 0.0
+    
+    fn init(c: string, r: float) {
+        super.init(c)
+        this.radius = r
+    }
+    
+    # Implementation of abstract method
+    public fn area() -> float {
+        return 3.14159 * this.radius * this.radius
+    }
+    
+    # Implementation of abstract method
+    public fn perimeter() -> float {
+        return 2.0 * 3.14159 * this.radius
+    }
+    
+    public fn info() {
+        this.display_color()
+        println("Radius: ")
+        println(this.radius)
+        println("Area: ")
+        println(this.area())
+        println("Circumference: ")
+        println(this.perimeter())
+    }
+}
+
+println("=== Abstract Shape Example ===")
+let rect = new Rectangle("red", 5.0, 3.0)
+rect.info()
+
+println("")
+let circle = new Circle("blue", 4.0)
+circle.info()
+
+# Example 2: Abstract Animal class
+abstract class Animal {
+    public let name: string = ""
+    protected let age: int = 0
+    
+    fn init(n: string, a: int) {
+        this.name = n
+        this.age = a
+    }
+    
+    # Abstract method
+    public abstract fn make_sound();
+    
+    # Concrete method
+    public fn introduce() {
+        println("I am ")
+        println(this.name)
+        println(", age ")
+        println(this.age)
+    }
+}
+
+class Dog extends Animal {
+    private let breed: string = ""
+    
+    fn init(n: string, a: int, b: string) {
+        super.init(n, a)
+        this.breed = b
+    }
+    
+    # Implementation of abstract method
+    public fn make_sound() {
+        println("Woof! Woof!")
+    }
+    
+    public fn info() {
+        this.introduce()
+        println("Breed: ")
+        println(this.breed)
+        this.make_sound()
+    }
+}
+
+class Cat extends Animal {
+    fn init(n: string, a: int) {
+        super.init(n, a)
+    }
+    
+    # Implementation of abstract method
+    public fn make_sound() {
+        println("Meow! Meow!")
+    }
+    
+    public fn info() {
+        this.introduce()
+        this.make_sound()
+    }
+}
+
+println("")
+println("=== Abstract Animal Example ===")
+let dog = new Dog("Buddy", 3, "Golden Retriever")
+dog.info()
+
+println("")
+let cat = new Cat("Whiskers", 2)
+cat.info()
+
+# Example 3: Abstract Payment Processor
+abstract class PaymentProcessor {
+    protected let amount: float = 0.0
+    protected let currency: string = "USD"
+    
+    fn init(amt: float, curr: string) {
+        this.amount = amt
+        this.currency = curr
+    }
+    
+    # Abstract method
+    public abstract fn process_payment() -> int;
+    
+    # Abstract method
+    public abstract fn validate() -> int;
+    
+    # Concrete method
+    public fn get_amount() -> float {
+        return this.amount
+    }
+    
+    public fn display_info() {
+        println("Amount: ")
+        println(this.amount)
+        println(" ")
+        println(this.currency)
+    }
+}
+
+class CreditCardProcessor extends PaymentProcessor {
+    private let card_number: string = ""
+    
+    fn init(amt: float, curr: string, card: string) {
+        super.init(amt, curr)
+        this.card_number = card
+    }
+    
+    public fn validate() -> int {
+        # Simple validation - check if card number is not empty
+        if this.card_number == "" {
+            return 0
+        }
+        return 1
+    }
+    
+    public fn process_payment() -> int {
+        if this.validate() {
+            println("Processing credit card payment...")
+            this.display_info()
+            println("Card: ****")
+            println("Payment successful!")
+            return 1
+        } else {
+            println("Invalid card!")
+            return 0
+        }
+    }
+}
+
+class PayPalProcessor extends PaymentProcessor {
+    private let email: string = ""
+    
+    fn init(amt: float, curr: string, mail: string) {
+        super.init(amt, curr)
+        this.email = mail
+    }
+    
+    public fn validate() -> int {
+        # Simple validation - check if email is not empty
+        if this.email == "" {
+            return 0
+        }
+        return 1
+    }
+    
+    public fn process_payment() -> int {
+        if this.validate() {
+            println("Processing PayPal payment...")
+            this.display_info()
+            println("Email: ")
+            println(this.email)
+            println("Payment successful!")
+            return 1
+        } else {
+            println("Invalid email!")
+            return 0
+        }
+    }
+}
+
+println("")
+println("=== Abstract Payment Processor Example ===")
+let cc = new CreditCardProcessor(99.99, "USD", "1234-5678-9012-3456")
+cc.process_payment()
+
+println("")
+let pp = new PayPalProcessor(49.99, "EUR", "user@example.com")
+pp.process_payment()
+
+println("")
+println("All abstract class examples completed!")

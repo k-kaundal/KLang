@@ -34,6 +34,7 @@ typedef struct {
     Env *fields;          // Environment for instance default field values
     Env *static_methods;  // Environment for static methods
     Env *static_fields;   // Environment for static field values
+    int is_abstract;      // Flag to track if class is abstract
 } ClassVal;
 
 typedef struct {

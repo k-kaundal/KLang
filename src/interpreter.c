@@ -172,6 +172,7 @@ Value make_class(const char *name, const char *parent_name) {
     val.as.class_val.fields = env_new(NULL);
     val.as.class_val.static_methods = env_new(NULL);
     val.as.class_val.static_fields = env_new(NULL);
+    val.as.class_val.is_abstract = 0;
     return val;
 }
 
@@ -820,6 +821,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
         case NODE_CLASS_DEF: {
             // Create class value
             Value class_val = make_class(node->data.class_def.name, node->data.class_def.parent_name);
+            class_val.as.class_val.is_abstract = node->data.class_def.is_abstract;
             
             // If there's a parent, copy parent methods and static members
             if (node->data.class_def.parent_name) {
@@ -919,6 +921,14 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             Value *class_val = env_get(env, node->data.new_expr.class_name);
             if (!class_val || class_val->type != VAL_CLASS) {
                 fprintf(stderr, "Error at line %d: '%s' is not a class\n", 
+                    node->line, node->data.new_expr.class_name);
+                interp->had_error = 1;
+                return make_null();
+            }
+            
+            // Check if class is abstract
+            if (class_val->as.class_val.is_abstract) {
+                fprintf(stderr, "Error at line %d: cannot instantiate abstract class '%s'\n",
                     node->line, node->data.new_expr.class_name);
                 interp->had_error = 1;
                 return make_null();

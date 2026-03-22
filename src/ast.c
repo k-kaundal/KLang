@@ -160,6 +160,7 @@ ASTNode *ast_new_func_def(const char *name, const char *return_type, int line) {
     n->data.func_def.body = NULL;
     n->data.func_def.is_static = 0;
     n->data.func_def.access = ACCESS_PUBLIC;
+    n->data.func_def.is_abstract = 0;
     return n;
 }
 
@@ -174,6 +175,7 @@ ASTNode *ast_new_class_def(const char *name, const char *parent_name, int line) 
     n->data.class_def.name = strdup(name);
     n->data.class_def.parent_name = parent_name ? strdup(parent_name) : NULL;
     nodelist_init(&n->data.class_def.members);
+    n->data.class_def.is_abstract = 0;
     return n;
 }
 
