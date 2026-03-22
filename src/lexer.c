@@ -300,6 +300,7 @@ Token lexer_next_token(Lexer *lexer) {
                 return make_token(TOKEN_DOTDOT, "..", line, col);
             }
             return make_token(TOKEN_DOT, ".", line, col);
+        case '?': return make_token(TOKEN_QUESTION, "?", line, col);
         default: {
             char buf[2] = {c, 0};
             return make_token(TOKEN_EOF, buf, line, col);
@@ -371,6 +372,7 @@ const char *token_type_name(TokenType type) {
         case TOKEN_FAT_ARROW: return "FAT_ARROW";
         case TOKEN_DOTDOT: return "DOTDOT";
         case TOKEN_DOT: return "DOT";
+        case TOKEN_QUESTION: return "QUESTION";
         case TOKEN_EOF: return "EOF";
         default: return "UNKNOWN";
     }

@@ -246,6 +246,14 @@ ASTNode *ast_new_template_literal(int line) {
     return n;
 }
 
+ASTNode *ast_new_ternary(ASTNode *cond, ASTNode *true_expr, ASTNode *false_expr, int line) {
+    ASTNode *n = ast_alloc(NODE_TERNARY, line);
+    n->data.ternary.cond = cond;
+    n->data.ternary.true_expr = true_expr;
+    n->data.ternary.false_expr = false_expr;
+    return n;
+}
+
 void ast_free(ASTNode *node) {
     int i;
     if (!node) return;
@@ -366,6 +374,11 @@ void ast_free(ASTNode *node) {
                 ast_free(node->data.template_literal.exprs[i]);
             }
             free(node->data.template_literal.exprs);
+            break;
+        case NODE_TERNARY:
+            ast_free(node->data.ternary.cond);
+            ast_free(node->data.ternary.true_expr);
+            ast_free(node->data.ternary.false_expr);
             break;
         default:
             break;

@@ -94,6 +94,7 @@ struct Interpreter {
 Interpreter *interpreter_new(void);
 void interpreter_free(Interpreter *interp);
 Value eval_node(Interpreter *interp, ASTNode *node);
+Value eval_block(Interpreter *interp, ASTNode *block, Env *env);
 Value make_int(long long v);
 Value make_float(double v);
 Value make_string(const char *s);

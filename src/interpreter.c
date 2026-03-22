@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <math.h>
 
-static Value eval_block(Interpreter *interp, ASTNode *block, Env *env);
 static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env);
 
 Env *env_new(Env *parent) {
@@ -372,8 +371,34 @@ char *value_to_string(Value *v) {
             return strdup("<function>");
         case VAL_BUILTIN:
             return strdup("<builtin>");
-        case VAL_LIST:
-            return strdup("<list>");
+        case VAL_LIST: {
+            // Build array string representation [1, 2, 3]
+            int count = v->as.list_val.count;
+            if (count == 0) {
+                return strdup("[]");
+            }
+            
+            // Calculate total length needed
+            int total_len = 2; // For [ and ]
+            char **item_strs = malloc(count * sizeof(char *));
+            for (int i = 0; i < count; i++) {
+                item_strs[i] = value_to_string(&v->as.list_val.items[i]);
+                total_len += strlen(item_strs[i]);
+                if (i > 0) total_len += 2; // For ", "
+            }
+            
+            // Build the string
+            char *result = malloc(total_len + 1);
+            strcpy(result, "[");
+            for (int i = 0; i < count; i++) {
+                if (i > 0) strcat(result, ", ");
+                strcat(result, item_strs[i]);
+                free(item_strs[i]);
+            }
+            strcat(result, "]");
+            free(item_strs);
+            return result;
+        }
         case VAL_CLASS:
             snprintf(buf, sizeof(buf), "<class %s>", v->as.class_val.name);
             return strdup(buf);
@@ -404,7 +429,7 @@ void interpreter_free(Interpreter *interp) {
     free(interp);
 }
 
-static Value eval_block(Interpreter *interp, ASTNode *block, Env *env) {
+Value eval_block(Interpreter *interp, ASTNode *block, Env *env) {
     Value result = make_null();
     int i;
     for (i = 0; i < block->data.block.stmts.count; i++) {
@@ -593,7 +618,18 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 Value method = *callee.as.method_val.method;
                 Value receiver = *callee.as.method_val.receiver;
                 
-                if (method.type == VAL_FUNCTION) {
+                if (method.type == VAL_BUILTIN) {
+                    // Builtin method (e.g., array methods)
+                    // Prepend receiver to args
+                    Value *method_args = malloc((argc + 1) * sizeof(Value));
+                    method_args[0] = receiver;
+                    for (i = 0; i < argc; i++) {
+                        method_args[i + 1] = args[i];
+                    }
+                    value_free(&result);
+                    result = method.as.builtin(interp, method_args, argc + 1);
+                    free(method_args);
+                } else if (method.type == VAL_FUNCTION) {
                     Env *call_env = env_new(method.as.func_val.closure);
                     // Bind 'this' to the receiver object
                     env_set_local(call_env, "this", receiver);
@@ -1180,6 +1216,59 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             Value obj = eval_node_env(interp, node->data.member_access.obj, env);
             Value result = make_null();
             
+            // Handle array methods
+            if (obj.type == VAL_LIST) {
+                const char *method_name = node->data.member_access.member;
+                Value *builtin = NULL;
+                
+                // Map method names to builtin functions
+                if (strcmp(method_name, "map") == 0) {
+                    builtin = env_get(interp->global_env, "__array_map");
+                } else if (strcmp(method_name, "filter") == 0) {
+                    builtin = env_get(interp->global_env, "__array_filter");
+                } else if (strcmp(method_name, "reduce") == 0) {
+                    builtin = env_get(interp->global_env, "__array_reduce");
+                } else if (strcmp(method_name, "forEach") == 0) {
+                    builtin = env_get(interp->global_env, "__array_forEach");
+                } else if (strcmp(method_name, "find") == 0) {
+                    builtin = env_get(interp->global_env, "__array_find");
+                } else if (strcmp(method_name, "some") == 0) {
+                    builtin = env_get(interp->global_env, "__array_some");
+                } else if (strcmp(method_name, "every") == 0) {
+                    builtin = env_get(interp->global_env, "__array_every");
+                } else if (strcmp(method_name, "indexOf") == 0) {
+                    builtin = env_get(interp->global_env, "__array_indexOf");
+                } else if (strcmp(method_name, "includes") == 0) {
+                    builtin = env_get(interp->global_env, "__array_includes");
+                } else if (strcmp(method_name, "push") == 0) {
+                    builtin = env_get(interp->global_env, "__array_push");
+                } else if (strcmp(method_name, "pop") == 0) {
+                    builtin = env_get(interp->global_env, "__array_pop");
+                } else if (strcmp(method_name, "slice") == 0) {
+                    builtin = env_get(interp->global_env, "__array_slice");
+                } else if (strcmp(method_name, "concat") == 0) {
+                    builtin = env_get(interp->global_env, "__array_concat");
+                } else if (strcmp(method_name, "join") == 0) {
+                    builtin = env_get(interp->global_env, "__array_join");
+                } else if (strcmp(method_name, "reverse") == 0) {
+                    builtin = env_get(interp->global_env, "__array_reverse");
+                } else if (strcmp(method_name, "sort") == 0) {
+                    builtin = env_get(interp->global_env, "__array_sort");
+                }
+                
+                if (builtin && builtin->type == VAL_BUILTIN) {
+                    // Create a bound method with the array as receiver
+                    result = make_method(obj, *builtin);
+                    return result;
+                }
+                
+                fprintf(stderr, "Error at line %d: array has no method '%s'\n",
+                        node->line, method_name);
+                interp->had_error = 1;
+                value_free(&obj);
+                return make_null();
+            }
+            
             if (obj.type == VAL_OBJECT) {
                 // Determine if we're accessing our own object
                 int is_self_access = (is_inside_class && this_val && 
@@ -1324,6 +1413,23 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             Value v = make_string(result);
             free(result);
             return v;
+        }
+        case NODE_TERNARY: {
+            Value cond = eval_node_env(interp, node->data.ternary.cond, env);
+            int is_true = 0;
+            if (cond.type == VAL_BOOL) is_true = cond.as.bool_val;
+            else if (cond.type == VAL_INT) is_true = cond.as.int_val != 0;
+            else if (cond.type == VAL_FLOAT) is_true = cond.as.float_val != 0.0;
+            else if (cond.type == VAL_STRING) is_true = cond.as.str_val && cond.as.str_val[0] != '\0';
+            else if (cond.type == VAL_NULL) is_true = 0;
+            else is_true = 1;
+            value_free(&cond);
+            
+            if (is_true) {
+                return eval_node_env(interp, node->data.ternary.true_expr, env);
+            } else {
+                return eval_node_env(interp, node->data.ternary.false_expr, env);
+            }
         }
         default:
             return make_null();

@@ -465,6 +465,27 @@ static ASTNode *parse_equality(Parser *parser) {
     return left;
 }
 
+static ASTNode *parse_ternary(Parser *parser) {
+    ASTNode *expr = parse_equality(parser);
+    
+    if (check(parser, TOKEN_QUESTION)) {
+        int line = parser->current.line;
+        Token q = advance(parser);
+        token_free(&q);
+        
+        ASTNode *true_expr = parse_ternary(parser);  // Right-associative, so call parse_ternary recursively
+        
+        Token colon = consume(parser, TOKEN_COLON);
+        token_free(&colon);
+        
+        ASTNode *false_expr = parse_ternary(parser);  // Right-associative
+        
+        expr = ast_new_ternary(expr, true_expr, false_expr, line);
+    }
+    
+    return expr;
+}
+
 static int is_arrow_function_start(Parser *parser) {
     // Check for single param without parens: ident => ...
     if (check(parser, TOKEN_IDENT) && parser->peek.type == TOKEN_FAT_ARROW) {
@@ -510,7 +531,7 @@ static ASTNode *parse_expression(Parser *parser) {
         return parse_arrow_function(parser);
     }
     
-    return parse_equality(parser);
+    return parse_ternary(parser);
 }
 
 static ASTNode *parse_arrow_function(Parser *parser) {
