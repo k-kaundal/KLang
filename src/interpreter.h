@@ -21,6 +21,7 @@ typedef struct {
     Env *closure;
     int is_async;
     int is_generator;
+    int has_rest_param;
 } FunctionVal;
 
 typedef struct {

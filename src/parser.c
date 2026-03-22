@@ -196,7 +196,16 @@ static ASTNode *parse_primary(Parser *parser) {
         token_free(&t);
         list = ast_new_list(line);
         while (!check(parser, TOKEN_RBRACKET) && !check(parser, TOKEN_EOF)) {
-            nodelist_push(&list->data.list.elements, parse_expression(parser));
+            /* Check for spread element */
+            if (check(parser, TOKEN_SPREAD)) {
+                Token spread_tok = advance(parser);
+                token_free(&spread_tok);
+                ASTNode *spread_expr = parse_expression(parser);
+                ASTNode *spread_node = ast_new_spread(spread_expr, line);
+                nodelist_push(&list->data.list.elements, spread_node);
+            } else {
+                nodelist_push(&list->data.list.elements, parse_expression(parser));
+            }
             if (!match(parser, TOKEN_COMMA)) break;
         }
         t2 = consume(parser, TOKEN_RBRACKET);
@@ -217,6 +226,18 @@ static ASTNode *parse_primary(Parser *parser) {
             char *key = NULL;
             ASTNode *key_expr = NULL;
             ASTNode *value = NULL;
+            
+            /* Check for spread property ...obj */
+            if (check(parser, TOKEN_SPREAD)) {
+                Token spread_tok = advance(parser);
+                token_free(&spread_tok);
+                ASTNode *spread_expr = parse_expression(parser);
+                ASTNode *spread_node = ast_new_spread(spread_expr, line);
+                /* Store spread as a special property with NULL key */
+                ast_object_add_property(obj, NULL, NULL, spread_node, 0, 0);
+                if (!match(parser, TOKEN_COMMA)) break;
+                continue;
+            }
             
             /* Check for computed property name [expr] */
             if (check(parser, TOKEN_LBRACKET)) {
@@ -759,6 +780,15 @@ static ASTNode *parse_func_def(Parser *parser) {
     }
 
     while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
+        int is_rest = 0;
+        
+        /* Check for rest parameter */
+        if (check(parser, TOKEN_SPREAD)) {
+            Token spread_tok = advance(parser);
+            token_free(&spread_tok);
+            is_rest = 1;
+        }
+        
         Token pname_tok = consume(parser, TOKEN_IDENT);
         if (param_count >= param_cap) {
             param_cap = param_cap == 0 ? 4 : param_cap * 2;
@@ -774,6 +804,18 @@ static ASTNode *parse_func_def(Parser *parser) {
             token_free(&ptype_tok);
         }
         param_count++;
+        
+        /* Rest parameter must be last */
+        if (is_rest) {
+            func = ast_new_func_def(fname, return_type, line);
+            func->data.func_def.has_rest_param = 1;
+            if (!check(parser, TOKEN_RPAREN)) {
+                fprintf(stderr, "Parse error at line %d: Rest parameter must be last\n", parser->current.line);
+                parser->had_error = 1;
+            }
+            break;
+        }
+        
         if (!match(parser, TOKEN_COMMA)) break;
     }
 
@@ -788,7 +830,10 @@ static ASTNode *parse_func_def(Parser *parser) {
         token_free(&rtype_tok);
     }
 
-    func = ast_new_func_def(fname, return_type, line);
+    /* Create func if not already created (rest param creates it early) */
+    if (!func) {
+        func = ast_new_func_def(fname, return_type, line);
+    }
     free(fname);
     if (return_type) free(return_type);
 

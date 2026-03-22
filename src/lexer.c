@@ -308,6 +308,10 @@ Token lexer_next_token(Lexer *lexer) {
         case '.':
             if (lexer->source[lexer->pos] == '.') {
                 lexer->pos++; lexer->col++;
+                if (lexer->source[lexer->pos] == '.') {
+                    lexer->pos++; lexer->col++;
+                    return make_token(TOKEN_SPREAD, "...", line, col);
+                }
                 return make_token(TOKEN_DOTDOT, "..", line, col);
             }
             return make_token(TOKEN_DOT, ".", line, col);
@@ -392,6 +396,7 @@ const char *token_type_name(TokenType type) {
         case TOKEN_COMMA: return "COMMA";
         case TOKEN_ARROW: return "ARROW";
         case TOKEN_FAT_ARROW: return "FAT_ARROW";
+        case TOKEN_SPREAD: return "SPREAD";
         case TOKEN_DOTDOT: return "DOTDOT";
         case TOKEN_DOT: return "DOT";
         case TOKEN_QUESTION: return "QUESTION";

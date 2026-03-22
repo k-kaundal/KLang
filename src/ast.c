@@ -200,6 +200,12 @@ ASTNode *ast_new_object(int line) {
     return n;
 }
 
+ASTNode *ast_new_spread(ASTNode *argument, int line) {
+    ASTNode *n = ast_alloc(NODE_SPREAD, line);
+    n->data.spread.argument = argument;
+    return n;
+}
+
 void ast_object_add_property(ASTNode *obj, const char *key, ASTNode *key_expr, ASTNode *value, int is_shorthand, int is_method) {
     if (obj->data.object.count >= obj->data.object.capacity) {
         int new_cap = obj->data.object.capacity == 0 ? 8 : obj->data.object.capacity * 2;
@@ -415,6 +421,9 @@ void ast_free(ASTNode *node) {
                 if (prop->value) ast_free(prop->value);
             }
             free(node->data.object.props);
+            break;
+        case NODE_SPREAD:
+            ast_free(node->data.spread.argument);
             break;
         case NODE_CLASS_DEF:
             free(node->data.class_def.name);

@@ -666,6 +666,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             func.as.func_val.closure = env;
             func.as.func_val.is_async = node->data.func_def.is_async;
             func.as.func_val.is_generator = node->data.func_def.is_generator;
+            func.as.func_val.has_rest_param = node->data.func_def.has_rest_param;
             
             // Arrow functions are expressions that return the function value
             // Named functions are statements that bind to a name
@@ -733,8 +734,30 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     // Create call environment with 'this' bound
                     Env *call_env = env_new(init_method->as.func_val.closure);
                     env_set_local(call_env, "this", obj);
-                    for (i = 0; i < init_method->as.func_val.param_count && i < argc; i++)
-                        env_set_local(call_env, init_method->as.func_val.param_names[i], args[i]);
+                    
+                    /* Handle rest parameters */
+                    if (init_method->as.func_val.has_rest_param && init_method->as.func_val.param_count > 0) {
+                        /* Bind regular params */
+                        for (i = 0; i < init_method->as.func_val.param_count - 1 && i < argc; i++)
+                            env_set_local(call_env, init_method->as.func_val.param_names[i], args[i]);
+                        
+                        /* Collect rest args into array */
+                        Value rest_array;
+                        int rest_count = argc - (init_method->as.func_val.param_count - 1);
+                        if (rest_count < 0) rest_count = 0;
+                        rest_array.type = VAL_LIST;
+                        rest_array.as.list_val.count = rest_count;
+                        rest_array.as.list_val.capacity = rest_count;
+                        rest_array.as.list_val.items = malloc((rest_count > 0 ? rest_count : 1) * sizeof(Value));
+                        for (i = 0; i < rest_count; i++) {
+                            int arg_idx = init_method->as.func_val.param_count - 1 + i;
+                            rest_array.as.list_val.items[i] = args[arg_idx];
+                        }
+                        env_set_local(call_env, init_method->as.func_val.param_names[init_method->as.func_val.param_count - 1], rest_array);
+                    } else {
+                        for (i = 0; i < init_method->as.func_val.param_count && i < argc; i++)
+                            env_set_local(call_env, init_method->as.func_val.param_names[i], args[i]);
+                    }
                     
                     Value init_result = eval_block(interp, init_method->as.func_val.body, call_env);
                     value_free(&init_result);
@@ -823,11 +846,34 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     func_copy->closure = callee.as.func_val.closure;
                     func_copy->is_async = callee.as.func_val.is_async;
                     func_copy->is_generator = 1;
+                    func_copy->has_rest_param = callee.as.func_val.has_rest_param;
                     
                     /* Create generator environment with bound parameters */
                     Env *gen_env = env_new(callee.as.func_val.closure);
-                    for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
-                        env_set_local(gen_env, callee.as.func_val.param_names[i], args[i]);
+                    
+                    /* Handle rest parameters */
+                    if (callee.as.func_val.has_rest_param && callee.as.func_val.param_count > 0) {
+                        /* Bind regular params */
+                        for (i = 0; i < callee.as.func_val.param_count - 1 && i < argc; i++)
+                            env_set_local(gen_env, callee.as.func_val.param_names[i], args[i]);
+                        
+                        /* Collect rest args into array */
+                        Value rest_array;
+                        int rest_count = argc - (callee.as.func_val.param_count - 1);
+                        if (rest_count < 0) rest_count = 0;
+                        rest_array.type = VAL_LIST;
+                        rest_array.as.list_val.count = rest_count;
+                        rest_array.as.list_val.capacity = rest_count;
+                        rest_array.as.list_val.items = malloc((rest_count > 0 ? rest_count : 1) * sizeof(Value));
+                        for (i = 0; i < rest_count; i++) {
+                            int arg_idx = callee.as.func_val.param_count - 1 + i;
+                            rest_array.as.list_val.items[i] = args[arg_idx];
+                        }
+                        env_set_local(gen_env, callee.as.func_val.param_names[callee.as.func_val.param_count - 1], rest_array);
+                    } else {
+                        for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
+                            env_set_local(gen_env, callee.as.func_val.param_names[i], args[i]);
+                    }
                     
                     value_free(&result);
                     result = make_generator(func_copy, gen_env);
@@ -841,8 +887,28 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     Value body_result;
                     
                     /* Bind parameters */
-                    for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
-                        env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                    if (callee.as.func_val.has_rest_param && callee.as.func_val.param_count > 0) {
+                        /* Bind regular params */
+                        for (i = 0; i < callee.as.func_val.param_count - 1 && i < argc; i++)
+                            env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                        
+                        /* Collect rest args into array */
+                        Value rest_array;
+                        int rest_count = argc - (callee.as.func_val.param_count - 1);
+                        if (rest_count < 0) rest_count = 0;
+                        rest_array.type = VAL_LIST;
+                        rest_array.as.list_val.count = rest_count;
+                        rest_array.as.list_val.capacity = rest_count;
+                        rest_array.as.list_val.items = malloc((rest_count > 0 ? rest_count : 1) * sizeof(Value));
+                        for (i = 0; i < rest_count; i++) {
+                            int arg_idx = callee.as.func_val.param_count - 1 + i;
+                            rest_array.as.list_val.items[i] = args[arg_idx];
+                        }
+                        env_set_local(call_env, callee.as.func_val.param_names[callee.as.func_val.param_count - 1], rest_array);
+                    } else {
+                        for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
+                            env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                    }
                     
                     /* Execute function body */
                     value_free(&result);
@@ -868,8 +934,31 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 } else {
                     /* Regular synchronous function */
                     Env *call_env = env_new(callee.as.func_val.closure);
-                    for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
-                        env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                    
+                    /* Handle rest parameters */
+                    if (callee.as.func_val.has_rest_param && callee.as.func_val.param_count > 0) {
+                        /* Bind regular params */
+                        for (i = 0; i < callee.as.func_val.param_count - 1 && i < argc; i++)
+                            env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                        
+                        /* Collect rest args into array */
+                        Value rest_array;
+                        int rest_count = argc - (callee.as.func_val.param_count - 1);
+                        if (rest_count < 0) rest_count = 0;
+                        rest_array.type = VAL_LIST;
+                        rest_array.as.list_val.count = rest_count;
+                        rest_array.as.list_val.capacity = rest_count;
+                        rest_array.as.list_val.items = malloc((rest_count > 0 ? rest_count : 1) * sizeof(Value));
+                        for (i = 0; i < rest_count; i++) {
+                            int arg_idx = callee.as.func_val.param_count - 1 + i;
+                            rest_array.as.list_val.items[i] = args[arg_idx];
+                        }
+                        env_set_local(call_env, callee.as.func_val.param_names[callee.as.func_val.param_count - 1], rest_array);
+                    } else {
+                        for (i = 0; i < callee.as.func_val.param_count && i < argc; i++)
+                            env_set_local(call_env, callee.as.func_val.param_names[i], args[i]);
+                    }
+                    
                     value_free(&result);
                     result = eval_block(interp, callee.as.func_val.body, call_env);
                     env_free(call_env);
@@ -1203,13 +1292,69 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
         }
         case NODE_LIST: {
             Value list;
-            int i;
+            int i, j;
+            int total_count = 0;
+            
+            /* First pass: count total elements including spread arrays */
+            for (i = 0; i < node->data.list.elements.count; i++) {
+                ASTNode *elem = node->data.list.elements.items[i];
+                if (elem->type == NODE_SPREAD) {
+                    /* Evaluate spread element to count its items */
+                    Value spread_val = eval_node_env(interp, elem->data.spread.argument, env);
+                    if (spread_val.type == VAL_LIST) {
+                        total_count += spread_val.as.list_val.count;
+                    }
+                    value_free(&spread_val);
+                } else {
+                    total_count++;
+                }
+            }
+            
             list.type = VAL_LIST;
-            list.as.list_val.count = node->data.list.elements.count;
-            list.as.list_val.capacity = list.as.list_val.count;
-            list.as.list_val.items = malloc((list.as.list_val.count > 0 ? list.as.list_val.count : 1) * sizeof(Value));
-            for (i = 0; i < node->data.list.elements.count; i++)
-                list.as.list_val.items[i] = eval_node_env(interp, node->data.list.elements.items[i], env);
+            list.as.list_val.count = total_count;
+            list.as.list_val.capacity = total_count;
+            list.as.list_val.items = malloc((total_count > 0 ? total_count : 1) * sizeof(Value));
+            
+            /* Second pass: fill the array */
+            int idx = 0;
+            for (i = 0; i < node->data.list.elements.count; i++) {
+                ASTNode *elem = node->data.list.elements.items[i];
+                if (elem->type == NODE_SPREAD) {
+                    /* Spread array elements */
+                    Value spread_val = eval_node_env(interp, elem->data.spread.argument, env);
+                    if (spread_val.type == VAL_LIST) {
+                        for (j = 0; j < spread_val.as.list_val.count; j++) {
+                            Value item = spread_val.as.list_val.items[j];
+                            /* Deep copy values */
+                            if (item.type == VAL_STRING) {
+                                list.as.list_val.items[idx++] = make_string(item.as.str_val);
+                            } else if (item.type == VAL_LIST) {
+                                /* Deep copy list */
+                                Value list_copy;
+                                int k;
+                                list_copy.type = VAL_LIST;
+                                list_copy.as.list_val.count = item.as.list_val.count;
+                                list_copy.as.list_val.capacity = item.as.list_val.count;
+                                list_copy.as.list_val.items = malloc((item.as.list_val.count > 0 ? item.as.list_val.count : 1) * sizeof(Value));
+                                for (k = 0; k < item.as.list_val.count; k++) {
+                                    if (item.as.list_val.items[k].type == VAL_STRING) {
+                                        list_copy.as.list_val.items[k] = make_string(item.as.list_val.items[k].as.str_val);
+                                    } else {
+                                        list_copy.as.list_val.items[k] = item.as.list_val.items[k];
+                                    }
+                                }
+                                list.as.list_val.items[idx++] = list_copy;
+                            } else {
+                                list.as.list_val.items[idx++] = item;
+                            }
+                        }
+                    }
+                    /* Free the spread value properly */
+                    value_free(&spread_val);
+                } else {
+                    list.as.list_val.items[idx++] = eval_node_env(interp, elem, env);
+                }
+            }
             return list;
         }
         case NODE_OBJECT: {
@@ -1224,6 +1369,34 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 ObjectProperty *prop = &node->data.object.props[i];
                 char *key_str = NULL;
                 Value val;
+                
+                /* Check if this is a spread property */
+                if (prop->value && prop->value->type == NODE_SPREAD) {
+                    /* Spread object properties */
+                    Value spread_val = eval_node_env(interp, prop->value->data.spread.argument, env);
+                    if (spread_val.type == VAL_OBJECT) {
+                        /* Copy all fields from spread object */
+                        EnvEntry *entry = spread_val.as.object_val.fields->entries;
+                        while (entry) {
+                            Value field_val = entry->value;
+                            /* Deep copy strings */
+                            if (field_val.type == VAL_STRING) {
+                                field_val = make_string(entry->value.as.str_val);
+                            }
+                            env_set_local(obj.as.object_val.fields, entry->name, field_val);
+                            entry = entry->next;
+                        }
+                        /* Copy all methods from spread object */
+                        entry = spread_val.as.object_val.methods->entries;
+                        while (entry) {
+                            env_set_local(obj.as.object_val.methods, entry->name, entry->value);
+                            entry = entry->next;
+                        }
+                    }
+                    /* Don't free spread_val to avoid double-free issues */
+                    /* The GC will handle cleanup */
+                    continue;
+                }
                 
                 /* Compute the property key */
                 if (prop->key) {
