@@ -470,9 +470,11 @@ static Value builtin_array_map(Interpreter *interp, Value *args, int argc) {
         Value mapped = call_function(interp, &callback, callback_args, 3);
         result.as.list_val.items[i] = mapped;
         
-        // Don't free callback_args - they're references
-        value_free(&callback_args[1]); // Free the index we created
-        // Don't free callback_args[0] or [2] as they're from the array
+        // Memory management for callback arguments:
+        // - callback_args[0]: Reference to array element, don't free
+        // - callback_args[1]: Created integer index, must free
+        // - callback_args[2]: Reference to array, don't free
+        value_free(&callback_args[1]);
     }
     
     return result;
