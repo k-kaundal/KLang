@@ -89,20 +89,39 @@ Source Code (.kl)
   * Single and double quote support (`'...'` and `"..."`)
   * Comprehensive string manipulation functions (uppercase, lowercase, trim, split, join, etc.)
   * Rich string operations (substring, contains, replace, repeat)
+* **Math Module** 🆕
+  * 20+ mathematical functions (sin, cos, sqrt, pow, log, etc.)
+  * Constants: Math.PI, Math.E, Math.TAU
+  * Full trigonometric, hyperbolic, and logarithmic support
+* **Python Utilities** 🆕
+  * `range()` function - Python-style range generation
+  * Support for range(n), range(start, stop), range(start, stop, step)
+  * Memory-efficient iteration patterns
+* **Array Methods**
+  * Functional: map, filter, reduce, forEach, find, some, every
+  * Manipulation: push, pop, slice, concat, reverse, sort
+  * Search: indexOf, includes
 * **Enhanced Comments**
   * Multiple comment styles: `#`, `//`, `/* */`, `///` (doc comments)
 * Interactive REPL with `exit()` function
-* Built-in functions (print, println, input, len, type conversion)
+* Built-in functions (print, println, input, len, type conversion, abs, min, max)
 
 ### 🚧 In Progress
 
+* Tuple type (90% complete - fixing bug)
+* Dictionary type
+* Set type
 * Type checker
 * Bytecode VM
 
 ### 📌 Planned
 
+* List comprehensions
+* File I/O module
+* JSON module
+* Regex module
 * Garbage collector
-* Module system
+* Module system enhancements
 * Native compilation
 * Package manager
 
@@ -202,6 +221,35 @@ klang run script.kl     # Run a script
 let x: int = 10   # explicit type
 let y = 20        # type inferred
 type(x)           # -> "int"
+```
+
+### Math Operations (NEW!)
+
+```klang
+// Mathematical calculations with full precision
+let radius = 5.0
+let area = Math.PI * Math.pow(radius, 2)
+println(area)  // 78.5398
+
+// Trigonometry
+let angle = Math.PI / 4  // 45 degrees
+println(Math.sin(angle))  // 0.707...
+
+// Distance calculation
+let distance = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2))
+```
+
+### Python-style range() (NEW!)
+
+```klang
+// Generate sequences easily
+let numbers = range(10)         // [0, 1, 2, ..., 9]
+let evens = range(0, 20, 2)     // [0, 2, 4, ..., 18]
+let countdown = range(10, 0, -1) // [10, 9, 8, ..., 1]
+
+// Use with array methods
+let squares = range(1, 11).map(x => x * x)
+// squares = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
 ```
 
 ### Functions & Parameters
