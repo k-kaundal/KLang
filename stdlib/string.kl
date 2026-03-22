@@ -1,2 +1,57 @@
 # KLang Standard Library - String
-# Built-in string functions are provided by the runtime
+# String utility functions
+# Note: Built-in string functions are provided by the runtime
+# This library provides additional string utilities
+
+# Repeat a string n times
+fn repeat(s: string, n: int) -> string {
+    if n <= 0 {
+        return ""
+    }
+    let result = ""
+    let i = 0
+    while i < n {
+        result = result + s
+        i = i + 1
+    }
+    return result
+}
+
+# Reverse a string
+fn reverse(s: string) -> string {
+    let result = ""
+    let i = len(s) - 1
+    while i >= 0 {
+        result = result + s[i]
+        i = i - 1
+    }
+    return result
+}
+
+# Check if string is empty
+fn isEmpty(s: string) -> int {
+    if len(s) == 0 {
+        return 1
+    }
+    return 0
+}
+
+# Pad string on left with character
+fn padLeft(s: string, totalLength: int, padChar: string) -> string {
+    let currentLen = len(s)
+    if currentLen >= totalLength {
+        return s
+    }
+    let padCount = totalLength - currentLen
+    return repeat(padChar, padCount) + s
+}
+
+# Pad string on right with character
+fn padRight(s: string, totalLength: int, padChar: string) -> string {
+    let currentLen = len(s)
+    if currentLen >= totalLength {
+        return s
+    }
+    let padCount = totalLength - currentLen
+    return s + repeat(padChar, padCount)
+}

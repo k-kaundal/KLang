@@ -1,2 +1,46 @@
 # KLang Standard Library - I/O
-# Built-in print and println are provided by the runtime
+# Input/Output utility functions
+# Note: Built-in print, println, and input are provided by the runtime
+
+# Print without newline (alias for print)
+fn write(value: string) {
+    print(value)
+}
+
+# Print with newline (alias for println)
+fn writeln(value: string) {
+    println(value)
+}
+
+# Read input with a prompt
+fn prompt(message: string) -> string {
+    print(message)
+    return input()
+}
+
+# Print a separator line
+fn printSeparator(length: int, char: string) {
+    let i = 0
+    while i < length {
+        print(char)
+        i = i + 1
+    }
+    println("")
+}
+
+# Print a formatted header
+fn printHeader(title: string) {
+    let headerLen = len(title) + 4
+    printSeparator(headerLen, "=")
+    println("  " + title)
+    printSeparator(headerLen, "=")
+}
+
+# Print multiple blank lines
+fn printBlankLines(count: int) {
+    let i = 0
+    while i < count {
+        println("")
+        i = i + 1
+    }
+}

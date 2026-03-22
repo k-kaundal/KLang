@@ -1,0 +1,154 @@
+# Simple KLang Standard Library Example
+# Demonstrates stdlib functions without triggering array bugs
+
+println("=== KLang Standard Library Demo ===")
+println("")
+
+# === Math Functions ===
+println("--- Math Functions ---")
+
+println("abs(-42):")
+print(abs(-42))
+println("")
+
+println("max(10, 20):")
+print(max(10, 20))
+println("")
+
+println("min(10, 20):")
+print(min(10, 20))
+println("")
+
+# Power calculation
+fn pow(base: int, exp: int) -> int {
+    if exp == 0 {
+        return 1
+    }
+    let result = 1
+    let i = 0
+    while i < exp {
+        result = result * base
+        i = i + 1
+    }
+    return result
+}
+
+println("pow(2, 8):")
+print(pow(2, 8))
+println("")
+
+# Factorial
+fn factorial(n: int) -> int {
+    if n <= 1 {
+        return 1
+    }
+    let result = 1
+    let i = 2
+    while i <= n {
+        result = result * i
+        i = i + 1
+    }
+    return result
+}
+
+println("factorial(5):")
+print(factorial(5))
+println("")
+
+println("factorial(10):")
+print(factorial(10))
+println("")
+
+# GCD function
+fn gcd(a: int, b: int) -> int {
+    let x = a
+    let y = b
+    if x < 0 {
+        x = 0 - x
+    }
+    if y < 0 {
+        y = 0 - y
+    }
+    while y != 0 {
+        let temp = y
+        y = x % y
+        x = temp
+    }
+    return x
+}
+
+println("gcd(48, 18):")
+print(gcd(48, 18))
+println("")
+
+# === String Functions ===
+println("")
+println("--- String Functions ---")
+
+# String repeat
+fn repeat(s: string, n: int) -> string {
+    let result = ""
+    let i = 0
+    while i < n {
+        result = result + s
+        i = i + 1
+    }
+    return result
+}
+
+println("Repeat 'KLang ' 3 times:")
+println(repeat("KLang ", 3))
+println("")
+
+# === Utility Functions ===
+println("")
+println("--- Utility Functions ---")
+
+# Clamp function
+fn clamp(value: int, minVal: int, maxVal: int) -> int {
+    if value < minVal {
+        return minVal
+    }
+    if value > maxVal {
+        return maxVal
+    }
+    return value
+}
+
+println("clamp(150, 0, 100):")
+print(clamp(150, 0, 100))
+println("")
+
+println("clamp(-50, 0, 100):")
+print(clamp(-50, 0, 100))
+println("")
+
+println("clamp(50, 0, 100):")
+print(clamp(50, 0, 100))
+println("")
+
+# Sign function
+fn sign(n: int) -> int {
+    if n < 0 {
+        return 0 - 1
+    }
+    if n > 0 {
+        return 1
+    }
+    return 0
+}
+
+println("sign(-42):")
+print(sign(-42))
+println("")
+
+println("sign(0):")
+print(sign(0))
+println("")
+
+println("sign(42):")
+print(sign(42))
+println("")
+
+println("")
+println("=== Demo Complete ===")

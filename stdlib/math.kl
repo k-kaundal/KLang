@@ -1,4 +1,7 @@
 # KLang Standard Library - Math
+# Basic mathematical functions for integers and floats
+
+# Absolute value
 fn abs(n: int) -> int {
     if n < 0 {
         return 0 - n
@@ -6,6 +9,7 @@ fn abs(n: int) -> int {
     return n
 }
 
+# Maximum of two numbers
 fn max(a: int, b: int) -> int {
     if a > b {
         return a
@@ -13,9 +17,116 @@ fn max(a: int, b: int) -> int {
     return b
 }
 
+# Minimum of two numbers
 fn min(a: int, b: int) -> int {
     if a < b {
         return a
     }
     return b
+}
+
+# Power function (integer exponent)
+fn pow(base: int, exp: int) -> int {
+    if exp == 0 {
+        return 1
+    }
+    let result = 1
+    let i = 0
+    while i < exp {
+        result = result * base
+        i = i + 1
+    }
+    return result
+}
+
+# Square root (integer approximation)
+fn sqrt(n: int) -> int {
+    if n < 0 {
+        return 0
+    }
+    if n == 0 {
+        return 0
+    }
+    if n == 1 {
+        return 1
+    }
+    
+    let x = n
+    let y = (x + 1) / 2
+    
+    while y < x {
+        x = y
+        y = (x + n / x) / 2
+    }
+    return x
+}
+
+# Factorial
+fn factorial(n: int) -> int {
+    if n < 0 {
+        return 0
+    }
+    if n == 0 {
+        return 1
+    }
+    if n == 1 {
+        return 1
+    }
+    let result = 1
+    let i = 2
+    while i <= n {
+        result = result * i
+        i = i + 1
+    }
+    return result
+}
+
+# Greatest common divisor (Euclidean algorithm)
+fn gcd(a: int, b: int) -> int {
+    let x = abs(a)
+    let y = abs(b)
+    while y != 0 {
+        let temp = y
+        y = x % y
+        x = temp
+    }
+    return x
+}
+
+# Least common multiple
+fn lcm(a: int, b: int) -> int {
+    if a == 0 {
+        return 0
+    }
+    if b == 0 {
+        return 0
+    }
+    return abs(a * b) / gcd(a, b)
+}
+
+# Check if number is even
+fn isEven(n: int) -> int {
+    if n % 2 == 0 {
+        return 1
+    }
+    return 0
+}
+
+# Check if number is odd
+fn isOdd(n: int) -> int {
+    if n % 2 != 0 {
+        return 1
+    }
+    return 0
+}
+
+# Clamp value between min and max
+fn clamp(value: int, minVal: int, maxVal: int) -> int {
+    if value < minVal {
+        return minVal
+    }
+    if value > maxVal {
+        return maxVal
+    }
+    return value
 }

@@ -11,6 +11,14 @@
 
 void run_repl(void);
 
+static int validate_file_extension(const char *path) {
+    const char *ext = strrchr(path, '.');
+    if (ext == NULL) {
+        return 0;
+    }
+    return (strcmp(ext, ".kl") == 0 || strcmp(ext, ".k") == 0 || strcmp(ext, ".klang") == 0);
+}
+
 static char *read_file(const char *path) {
     FILE *f = fopen(path, "r");
     long size;
@@ -31,12 +39,20 @@ static char *read_file(const char *path) {
 }
 
 static void run_file(const char *path) {
-    char *source = read_file(path);
+    char *source;
     Lexer lexer;
     Parser parser;
     int count = 0;
     ASTNode **nodes;
     int i;
+    
+    if (!validate_file_extension(path)) {
+        fprintf(stderr, "Error: Invalid file extension. KLang files must have .kl, .k, or .klang extension\n");
+        fprintf(stderr, "Given file: %s\n", path);
+        return;
+    }
+    
+    source = read_file(path);
     if (!source) return;
 
     lexer_init(&lexer, source);
@@ -71,12 +87,20 @@ static void run_file(const char *path) {
 }
 
 static void build_file(const char *path) {
-    char *source = read_file(path);
+    char *source;
     Lexer lexer;
     Parser parser;
     int count = 0;
     ASTNode **nodes;
     int i;
+    
+    if (!validate_file_extension(path)) {
+        fprintf(stderr, "Error: Invalid file extension. KLang files must have .kl, .k, or .klang extension\n");
+        fprintf(stderr, "Given file: %s\n", path);
+        return;
+    }
+    
+    source = read_file(path);
     if (!source) return;
 
     lexer_init(&lexer, source);

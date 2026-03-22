@@ -1,0 +1,163 @@
+# KLang Standard Library Example
+# Demonstrates various stdlib functions
+
+println("=== KLang Standard Library Demo ===")
+println("")
+
+# === Math Functions ===
+println("--- Math Functions ---")
+
+# Basic operations
+let num = -42
+println("abs(-42):")
+print(abs(num))
+println("")
+
+println("max(10, 20):")
+print(max(10, 20))
+println("")
+
+println("min(10, 20):")
+print(min(10, 20))
+println("")
+
+# Power calculation (manual)
+fn pow(base: int, exp: int) -> int {
+    if exp == 0 {
+        return 1
+    }
+    let result = 1
+    let i = 0
+    while i < exp {
+        result = result * base
+        i = i + 1
+    }
+    return result
+}
+
+println("pow(2, 8):")
+print(pow(2, 8))
+println("")
+
+# Factorial
+fn factorial(n: int) -> int {
+    if n <= 1 {
+        return 1
+    }
+    let result = 1
+    let i = 2
+    while i <= n {
+        result = result * i
+        i = i + 1
+    }
+    return result
+}
+
+println("factorial(5):")
+print(factorial(5))
+println("")
+
+# === Array Functions ===
+println("")
+println("--- Array Functions ---")
+
+let numbers = [1, 2, 3, 4, 5]
+println("Array: [1, 2, 3, 4, 5]")
+
+# Sum
+fn sum(arr: array) -> int {
+    let total = 0
+    let i = 0
+    while i < len(arr) {
+        total = total + arr[i]
+        i = i + 1
+    }
+    return total
+}
+
+println("Sum of array:")
+print(sum(numbers))
+println("")
+
+# Average
+println("Average:")
+print(sum(numbers) / len(numbers))
+println("")
+
+# Find max in array
+fn arrayMax(arr: array) -> int {
+    let maxVal = arr[0]
+    let i = 1
+    while i < len(arr) {
+        if arr[i] > maxVal {
+            maxVal = arr[i]
+        }
+        i = i + 1
+    }
+    return maxVal
+}
+
+println("Maximum value:")
+print(arrayMax(numbers))
+println("")
+
+# === String Functions ===
+println("")
+println("--- String Functions ---")
+
+# String repeat
+fn repeat(s: string, n: int) -> string {
+    let result = ""
+    let i = 0
+    while i < n {
+        result = result + s
+        i = i + 1
+    }
+    return result
+}
+
+let pattern = "KLang "
+println("Repeat 'KLang ' 3 times:")
+println(repeat(pattern, 3))
+
+# === Range Functions ===
+println("")
+println("--- Range Functions ---")
+
+println("range(10):")
+print(range(10))
+println("")
+
+println("range(5, 10):")
+print(range(5, 10))
+println("")
+
+# === Utility Functions ===
+println("")
+println("--- Utility Functions ---")
+
+# Clamp function
+fn clamp(value: int, minVal: int, maxVal: int) -> int {
+    if value < minVal {
+        return minVal
+    }
+    if value > maxVal {
+        return maxVal
+    }
+    return value
+}
+
+println("clamp(150, 0, 100):")
+print(clamp(150, 0, 100))
+println("")
+
+println("clamp(-50, 0, 100):")
+print(clamp(-50, 0, 100))
+println("")
+
+println("clamp(50, 0, 100):")
+print(clamp(50, 0, 100))
+println("")
+
+println("")
+println("=== Demo Complete ===")
