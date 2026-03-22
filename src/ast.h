@@ -4,11 +4,11 @@
 typedef enum {
     NODE_NUMBER, NODE_STRING, NODE_BOOL, NODE_IDENT, NODE_NULL,
     NODE_BINOP, NODE_UNOP, NODE_CALL, NODE_INDEX,
-    NODE_LET, NODE_ASSIGN, NODE_IF, NODE_WHILE, NODE_FOR,
+    NODE_LET, NODE_ASSIGN, NODE_IF, NODE_WHILE, NODE_FOR, NODE_FOR_OF,
     NODE_RETURN, NODE_BREAK, NODE_CONTINUE, NODE_BLOCK, NODE_FUNC_DEF, NODE_STRUCT_DEF, NODE_IMPORT,
     NODE_LIST, NODE_OBJECT,
     NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER,
-    NODE_TEMPLATE_LITERAL, NODE_TERNARY
+    NODE_TEMPLATE_LITERAL, NODE_TERNARY, NODE_SWITCH, NODE_CASE
 } NodeType;
 
 typedef enum {
@@ -56,6 +56,7 @@ struct ASTNode {
         struct { ASTNode *cond; ASTNode *then_block; ASTNode *else_block; } if_stmt;
         struct { ASTNode *cond; ASTNode *body; } while_stmt;
         struct { char *var; ASTNode *start; ASTNode *end; ASTNode *body; } for_stmt;
+        struct { char *var; ASTNode *iterable; ASTNode *body; DeclType decl_type; } for_of_stmt;
         struct { ASTNode *value; } return_stmt;
         struct { } break_stmt;
         struct { } continue_stmt;
@@ -70,6 +71,8 @@ struct ASTNode {
         struct { char *member; } super_expr;
         struct { char **parts; ASTNode **exprs; int count; } template_literal;
         struct { ASTNode *cond; ASTNode *true_expr; ASTNode *false_expr; } ternary;
+        struct { ASTNode *expr; NodeList cases; ASTNode *default_case; } switch_stmt;
+        struct { ASTNode *value; NodeList body; } case_stmt;
     } data;
 };
 
@@ -92,6 +95,7 @@ ASTNode *ast_new_assign(const char *name, ASTNode *value, int line);
 ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_block, ASTNode *else_block, int line);
 ASTNode *ast_new_while(ASTNode *cond, ASTNode *body, int line);
 ASTNode *ast_new_for(const char *var, ASTNode *start, ASTNode *end, ASTNode *body, int line);
+ASTNode *ast_new_for_of(const char *var, ASTNode *iterable, ASTNode *body, DeclType decl_type, int line);
 ASTNode *ast_new_return(ASTNode *value, int line);
 ASTNode *ast_new_break(int line);
 ASTNode *ast_new_continue(int line);
@@ -107,6 +111,8 @@ ASTNode *ast_new_this(int line);
 ASTNode *ast_new_super(const char *member, int line);
 ASTNode *ast_new_template_literal(int line);
 ASTNode *ast_new_ternary(ASTNode *cond, ASTNode *true_expr, ASTNode *false_expr, int line);
+ASTNode *ast_new_switch(ASTNode *expr, int line);
+ASTNode *ast_new_case(ASTNode *value, int line);
 void ast_free(ASTNode *node);
 
 #endif

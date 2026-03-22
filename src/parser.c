@@ -756,33 +756,148 @@ static ASTNode *parse_while(Parser *parser) {
     return ast_new_while(cond, body, line);
 }
 
+static ASTNode *parse_switch(Parser *parser) {
+    int line = parser->current.line;
+    Token t = consume(parser, TOKEN_SWITCH);
+    ASTNode *expr;
+    ASTNode *switch_node;
+    token_free(&t);
+    
+    /* Consume '(' */
+    {
+        Token lparen = consume(parser, TOKEN_LPAREN);
+        token_free(&lparen);
+    }
+    
+    expr = parse_expression(parser);
+    
+    /* Consume ')' */
+    {
+        Token rparen = consume(parser, TOKEN_RPAREN);
+        token_free(&rparen);
+    }
+    
+    switch_node = ast_new_switch(expr, line);
+    
+    /* Consume '{' */
+    {
+        Token lbrace = consume(parser, TOKEN_LBRACE);
+        token_free(&lbrace);
+    }
+    
+    /* Parse cases and default */
+    while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+        if (check(parser, TOKEN_CASE)) {
+            Token case_tok = consume(parser, TOKEN_CASE);
+            ASTNode *case_value = parse_expression(parser);
+            ASTNode *case_node;
+            token_free(&case_tok);
+            
+            /* Consume ':' */
+            {
+                Token colon = consume(parser, TOKEN_COLON);
+                token_free(&colon);
+            }
+            
+            case_node = ast_new_case(case_value, line);
+            
+            /* Parse statements until next case/default/closing brace */
+            while (!check(parser, TOKEN_CASE) && !check(parser, TOKEN_DEFAULT) && 
+                   !check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+                ASTNode *stmt = parse_statement(parser);
+                if (stmt) {
+                    nodelist_push(&case_node->data.case_stmt.body, stmt);
+                }
+            }
+            
+            nodelist_push(&switch_node->data.switch_stmt.cases, case_node);
+        } else if (check(parser, TOKEN_DEFAULT)) {
+            Token default_tok = consume(parser, TOKEN_DEFAULT);
+            ASTNode *default_block = ast_new_block(line);
+            token_free(&default_tok);
+            
+            /* Consume ':' */
+            {
+                Token colon = consume(parser, TOKEN_COLON);
+                token_free(&colon);
+            }
+            
+            /* Parse statements until closing brace */
+            while (!check(parser, TOKEN_CASE) && !check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+                ASTNode *stmt = parse_statement(parser);
+                if (stmt) {
+                    nodelist_push(&default_block->data.block.stmts, stmt);
+                }
+            }
+            
+            switch_node->data.switch_stmt.default_case = default_block;
+        } else {
+            break;
+        }
+    }
+    
+    /* Consume '}' */
+    {
+        Token rbrace = consume(parser, TOKEN_RBRACE);
+        token_free(&rbrace);
+    }
+    
+    return switch_node;
+}
+
 static ASTNode *parse_for(Parser *parser) {
     int line = parser->current.line;
     Token t = consume(parser, TOKEN_FOR);
     Token var_tok;
     char *varname;
-    ASTNode *start;
-    ASTNode *end;
+    DeclType decl_type = DECL_LET;  // Default to let for simple for loops
     ASTNode *body;
     ASTNode *n;
     token_free(&t);
+    
+    // Check if we have var/let/const declaration
+    if (check(parser, TOKEN_VAR) || check(parser, TOKEN_LET) || check(parser, TOKEN_CONST)) {
+        Token decl_tok = advance(parser);
+        if (decl_tok.type == TOKEN_VAR) decl_type = DECL_VAR;
+        else if (decl_tok.type == TOKEN_LET) decl_type = DECL_LET;
+        else if (decl_tok.type == TOKEN_CONST) decl_type = DECL_CONST;
+        token_free(&decl_tok);
+    }
+    
     var_tok = consume(parser, TOKEN_IDENT);
     varname = strdup(var_tok.value);
     token_free(&var_tok);
-    {
+    
+    // Check if it's for-of or for-in
+    if (check(parser, TOKEN_OF)) {
+        // for-of loop: for (item of iterable) { ... }
+        Token of_tok = consume(parser, TOKEN_OF);
+        ASTNode *iterable;
+        token_free(&of_tok);
+        
+        iterable = parse_expression(parser);
+        body = parse_block(parser);
+        n = ast_new_for_of(varname, iterable, body, decl_type, line);
+        free(varname);
+        return n;
+    } else {
+        // for-in loop: for (i in start..end) { ... }
+        ASTNode *start;
+        ASTNode *end;
         Token in_tok = consume(parser, TOKEN_IN);
         token_free(&in_tok);
+        
+        start = parse_expression(parser);
+        {
+            Token dd_tok = consume(parser, TOKEN_DOTDOT);
+            token_free(&dd_tok);
+        }
+        end = parse_expression(parser);
+        body = parse_block(parser);
+        n = ast_new_for(varname, start, end, body, line);
+        free(varname);
+        return n;
     }
-    start = parse_expression(parser);
-    {
-        Token dd_tok = consume(parser, TOKEN_DOTDOT);
-        token_free(&dd_tok);
-    }
-    end = parse_expression(parser);
-    body = parse_block(parser);
-    n = ast_new_for(varname, start, end, body, line);
-    free(varname);
-    return n;
 }
 
 static ASTNode *parse_return(Parser *parser) {
@@ -814,6 +929,7 @@ static ASTNode *parse_statement(Parser *parser) {
     if (check(parser, TOKEN_VAR)) return parse_var(parser);
     if (check(parser, TOKEN_CONST)) return parse_const(parser);
     if (check(parser, TOKEN_IF)) return parse_if(parser);
+    if (check(parser, TOKEN_SWITCH)) return parse_switch(parser);
     if (check(parser, TOKEN_WHILE)) return parse_while(parser);
     if (check(parser, TOKEN_FOR)) return parse_for(parser);
     if (check(parser, TOKEN_RETURN)) return parse_return(parser);

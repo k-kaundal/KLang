@@ -759,6 +759,92 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             return make_null();
         }
+        case NODE_FOR_OF: {
+            // Evaluate the iterable expression
+            Value iterable = eval_node_env(interp, node->data.for_of_stmt.iterable, env);
+            int i;
+            
+            if (iterable.type == VAL_LIST) {
+                // Iterate over list/array elements
+                for (i = 0; i < iterable.as.list_val.count; i++) {
+                    Env *loop_env = env_new(env);
+                    Value elem = iterable.as.list_val.items[i];
+                    // Copy strings to avoid double-free
+                    if (elem.type == VAL_STRING) {
+                        elem = make_string(elem.as.str_val);
+                    }
+                    env_set_local(loop_env, node->data.for_of_stmt.var, elem);
+                    {
+                        Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
+                        value_free(&r);
+                    }
+                    env_free(loop_env);
+                    
+                    if (interp->last_result.is_return || interp->last_result.is_break) {
+                        interp->last_result.is_break = 0;
+                        break;
+                    }
+                    if (interp->last_result.is_continue) {
+                        interp->last_result.is_continue = 0;
+                        continue;
+                    }
+                }
+            } else if (iterable.type == VAL_STRING) {
+                // Iterate over string characters
+                const char *str = iterable.as.str_val;
+                int len = strlen(str);
+                for (i = 0; i < len; i++) {
+                    Env *loop_env = env_new(env);
+                    char char_str[2] = {str[i], '\0'};
+                    Value char_val = make_string(char_str);
+                    env_set_local(loop_env, node->data.for_of_stmt.var, char_val);
+                    {
+                        Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
+                        value_free(&r);
+                    }
+                    env_free(loop_env);
+                    
+                    if (interp->last_result.is_return || interp->last_result.is_break) {
+                        interp->last_result.is_break = 0;
+                        break;
+                    }
+                    if (interp->last_result.is_continue) {
+                        interp->last_result.is_continue = 0;
+                        continue;
+                    }
+                }
+            } else if (iterable.type == VAL_OBJECT) {
+                // Iterate over object keys
+                Env *obj_env = iterable.as.object_val.fields;
+                EnvEntry *entry = obj_env->entries;
+                
+                while (entry) {
+                    Env *loop_env = env_new(env);
+                    Value key_val = make_string(entry->name);
+                    env_set_local(loop_env, node->data.for_of_stmt.var, key_val);
+                    {
+                        Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
+                        value_free(&r);
+                    }
+                    env_free(loop_env);
+                    
+                    if (interp->last_result.is_return || interp->last_result.is_break) {
+                        interp->last_result.is_break = 0;
+                        break;
+                    }
+                    if (interp->last_result.is_continue) {
+                        interp->last_result.is_continue = 0;
+                    }
+                    
+                    entry = entry->next;
+                }
+            } else {
+                fprintf(stderr, "Runtime error: for-of requires an iterable (list, string, or object)\n");
+            }
+            
+            value_free(&iterable);
+            return make_null();
+        }
         case NODE_BINOP: {
             const char *op = node->data.binop.op;
             

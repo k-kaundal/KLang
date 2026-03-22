@@ -143,6 +143,15 @@ ASTNode *ast_new_for(const char *var, ASTNode *start, ASTNode *end, ASTNode *bod
     return n;
 }
 
+ASTNode *ast_new_for_of(const char *var, ASTNode *iterable, ASTNode *body, DeclType decl_type, int line) {
+    ASTNode *n = ast_alloc(NODE_FOR_OF, line);
+    n->data.for_of_stmt.var = strdup(var);
+    n->data.for_of_stmt.iterable = iterable;
+    n->data.for_of_stmt.body = body;
+    n->data.for_of_stmt.decl_type = decl_type;
+    return n;
+}
+
 ASTNode *ast_new_return(ASTNode *value, int line) {
     ASTNode *n = ast_alloc(NODE_RETURN, line);
     n->data.return_stmt.value = value;
@@ -254,6 +263,21 @@ ASTNode *ast_new_ternary(ASTNode *cond, ASTNode *true_expr, ASTNode *false_expr,
     return n;
 }
 
+ASTNode *ast_new_switch(ASTNode *expr, int line) {
+    ASTNode *n = ast_alloc(NODE_SWITCH, line);
+    n->data.switch_stmt.expr = expr;
+    nodelist_init(&n->data.switch_stmt.cases);
+    n->data.switch_stmt.default_case = NULL;
+    return n;
+}
+
+ASTNode *ast_new_case(ASTNode *value, int line) {
+    ASTNode *n = ast_alloc(NODE_CASE, line);
+    n->data.case_stmt.value = value;
+    nodelist_init(&n->data.case_stmt.body);
+    return n;
+}
+
 void ast_free(ASTNode *node) {
     int i;
     if (!node) return;
@@ -304,6 +328,11 @@ void ast_free(ASTNode *node) {
             ast_free(node->data.for_stmt.start);
             ast_free(node->data.for_stmt.end);
             ast_free(node->data.for_stmt.body);
+            break;
+        case NODE_FOR_OF:
+            free(node->data.for_of_stmt.var);
+            ast_free(node->data.for_of_stmt.iterable);
+            ast_free(node->data.for_of_stmt.body);
             break;
         case NODE_RETURN:
             ast_free(node->data.return_stmt.value);
@@ -379,6 +408,19 @@ void ast_free(ASTNode *node) {
             ast_free(node->data.ternary.cond);
             ast_free(node->data.ternary.true_expr);
             ast_free(node->data.ternary.false_expr);
+            break;
+        case NODE_SWITCH:
+            ast_free(node->data.switch_stmt.expr);
+            for (i = 0; i < node->data.switch_stmt.cases.count; i++)
+                ast_free(node->data.switch_stmt.cases.items[i]);
+            nodelist_free(&node->data.switch_stmt.cases);
+            ast_free(node->data.switch_stmt.default_case);
+            break;
+        case NODE_CASE:
+            ast_free(node->data.case_stmt.value);
+            for (i = 0; i < node->data.case_stmt.body.count; i++)
+                ast_free(node->data.case_stmt.body.items[i]);
+            nodelist_free(&node->data.case_stmt.body);
             break;
         default:
             break;
