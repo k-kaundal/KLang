@@ -1,6 +1,6 @@
 # 🚀 KLang
 
-> A high-performance, statically-typed programming language with its own runtime — combining the power of C, the simplicity of Python, and the safety of TypeScript.
+> A high-performance, statically-typed, **AI-Native** programming language — combining the power of C, the simplicity of Python, the safety of TypeScript, and **first-class AI integration**.
 
 ---
 
@@ -12,8 +12,9 @@ KLang is a modern programming language designed for:
 * 🔒 Strong type safety
 * 🧩 Clean, minimal syntax
 * 🛠️ Full control with a custom runtime
+* 🤖 **AI-Native core** (LLM, embeddings, RAG, agents) - **100% implemented in KLang**
 
-It bridges the gap between low-level systems programming and high-level developer productivity.
+It bridges the gap between low-level systems programming, high-level developer productivity, and **AI-powered applications**.
 
 ---
 
@@ -25,16 +26,45 @@ It bridges the gap between low-level systems programming and high-level develope
 * Memory safety (GC initially, advanced models later)
 * REPL support for interactive execution
 * Modular and scalable architecture
+* **🤖 AI-Native capabilities** - LLM, embeddings, RAG, autonomous agents
+* **🌐 HTTP client** - Built-in REST API support
+* **🔐 Environment variables** - Secure configuration management
 
 ---
 
-## 🧪 Example
+## 🧪 Examples
 
+### Basic Example
 ```klang
 fn main() {
     let x = 5 + 3 * 2
     print(x)
 }
+```
+
+### 🤖 AI-Native Example (NEW!)
+```klang
+# Simple AI query
+let apiKey = env.get("OPENAI_API_KEY")
+let config = new LLMConfig("openai", apiKey)
+let client = new LLMClient(config)
+
+let response = client.complete("What is KLang?")
+println(response)
+
+# RAG system
+let rag = new RAGSystem(client, 500, 3)
+rag.ingestDocument("doc1", "KLang is an AI-native language...")
+
+let answer = rag.query("What makes KLang special?")
+println(answer)
+
+# Autonomous agent
+let agent = new Agent("Assistant", "helpful AI", client)
+agent.addGoal("Help users learn KLang")
+
+let thought = agent.think("User wants to learn AI features")
+println(thought)
 ```
 
 ---
@@ -135,6 +165,15 @@ Source Code (.kl)
 * **File Extension Validation** 🆕
   * Validates `.kl`, `.k`, `.klang` extensions
   * Clear error messages for invalid files
+* **🤖 AI-Native Features** 🆕 **[100% KLang Implementation]**
+  * **LLM Integration** - OpenAI, Anthropic, Ollama support
+  * **Vector Embeddings** - Semantic search and similarity
+  * **RAG Systems** - Retrieval-Augmented Generation
+  * **Autonomous Agents** - Memory, reasoning, and actions
+  * **Prompt Engineering** - Templates, few-shot, chain-of-thought
+  * **HTTP Client** - REST API calls (`http.get()`, `http.post()`)
+  * **Environment Variables** - Secure config (`env.get()`, `env.set()`)
+  * **6 AI stdlib modules** - ai.kl, llm.kl, embedding.kl, prompt.kl, rag.kl, agents.kl
 
 ### 🚧 In Progress
 

@@ -1,0 +1,128 @@
+# ============================================
+# Advanced RAG (Retrieval-Augmented Generation) Example
+# ============================================
+# Demonstrates semantic search and RAG in KLang
+
+println("=== KLang AI-Native RAG Demo ===\n")
+
+# Sample documents for the knowledge base
+let documents = [
+    {
+        "id": "doc1",
+        "content": "KLang is a high-performance programming language combining C's speed, Python's simplicity, and TypeScript's type safety. It features static typing, garbage collection, and a custom runtime."
+    },
+    {
+        "id": "doc2",
+        "content": "KLang supports object-oriented programming with classes, inheritance, abstract classes, access modifiers, and static members. The OOP system is fully integrated into the language."
+    },
+    {
+        "id": "doc3",
+        "content": "The KLang standard library includes 43+ utility functions across math, string, array, I/O, and core modules. All written in pure KLang code for transparency and extensibility."
+    },
+    {
+        "id": "doc4",
+        "content": "KLang now has AI-native capabilities including LLM integration, embeddings, RAG systems, and autonomous agents. These features are implemented 100% in KLang itself."
+    }
+]
+
+println("Knowledge Base:")
+println("- " + str(len(documents)) + " documents loaded")
+println()
+
+# Example 1: Embedding and Similarity
+println("--- Example 1: Vector Embeddings & Similarity ---")
+
+# Create sample embeddings (in real use, these would come from LLM API)
+let embedding1 = new Embedding([0.8, 0.2, 0.1, 0.3], "KLang programming")
+let embedding2 = new Embedding([0.7, 0.3, 0.2, 0.2], "KLang language")
+let embedding3 = new Embedding([0.1, 0.1, 0.9, 0.8], "Python tutorial")
+
+let similarity = embedding1.cosineSimilarity(embedding2)
+println("Similarity between 'KLang programming' and 'KLang language': " + str(similarity))
+
+let similarity2 = embedding1.cosineSimilarity(embedding3)
+println("Similarity between 'KLang programming' and 'Python tutorial': " + str(similarity2))
+
+let distance = embedding1.euclideanDistance(embedding2)
+println("Euclidean distance: " + str(distance))
+
+let magnitude = embedding1.magnitude()
+println("Embedding magnitude: " + str(magnitude))
+println()
+
+# Example 2: Embedding Store and Search
+println("--- Example 2: Embedding Store & Semantic Search ---")
+
+let store = new EmbeddingStore()
+
+# Add embeddings to store
+store.addText("KLang programming", embedding1, {"category": "language"})
+store.addText("KLang language", embedding2, {"category": "language"})
+store.addText("Python tutorial", embedding3, {"category": "tutorial"})
+
+println("Store size: " + str(store.size()))
+
+# Search with query
+let queryEmbedding = new Embedding([0.75, 0.25, 0.15, 0.25], "KLang")
+let searchResults = store.search(queryEmbedding, 2)
+
+println("Top 2 search results:")
+let i = 0
+while i < len(searchResults) {
+    let result = searchResults[i]
+    println("  " + str(i + 1) + ". Similarity: " + str(result.similarity))
+    i = i + 1
+}
+println()
+
+# Example 3: Text Chunking
+println("--- Example 3: Text Chunking ---")
+
+let longText = "This is a very long document that needs to be split into smaller chunks for processing. Each chunk will be embedded separately to enable better semantic search. Overlapping chunks ensure context continuity. KLang makes this easy with built-in chunking utilities."
+
+let chunker = new TextChunker(10, 2)  # 10 words per chunk, 2 word overlap
+let chunks = chunker.chunk(longText)
+
+println("Chunks created: " + str(len(chunks)))
+i = 0
+while i < len(chunks) {
+    println("Chunk " + str(i + 1) + ": " + chunks[i])
+    i = i + 1
+}
+println()
+
+# Example 4: Token Counting and Cost Estimation
+println("--- Example 4: Token Counting & Cost Estimation ---")
+
+let samplePrompt = "Write a function in KLang that calculates the factorial of a number using recursion."
+let tokenCount = countTokens(samplePrompt)
+let cost = estimateCost(tokenCount, "gpt-4")
+
+println("Prompt: " + samplePrompt)
+println("Estimated tokens: " + str(tokenCount))
+println("Estimated cost: $" + str(cost))
+println()
+
+# Example 5: Message and ChatSession
+println("--- Example 5: Chat Session Management ---")
+
+let session = new ChatSession("You are a helpful programming assistant.")
+
+session.addUserMessage("What is KLang?")
+session.addAssistantMessage("KLang is a modern programming language with AI-native capabilities.")
+
+session.addUserMessage("Can it do machine learning?")
+session.addAssistantMessage("Yes! KLang has built-in AI features including LLM integration and embeddings.")
+
+println("Messages in session: " + str(session.getMessageCount()))
+
+let messages = session.getMessages()
+i = 0
+while i < len(messages) {
+    let msg = messages[i]
+    println(msg.role + ": " + msg.content)
+    i = i + 1
+}
+
+println("\n=== Demo Complete ===")
+println("All AI-native features working in pure KLang!")

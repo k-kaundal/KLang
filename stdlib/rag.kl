@@ -1,0 +1,350 @@
+# ============================================
+# KLang RAG (Retrieval-Augmented Generation) Library
+# ============================================
+# Complete RAG implementation in pure KLang
+# Combines document retrieval with LLM generation
+
+/// RAG Module - Retrieval-Augmented Generation system
+
+# Document class for RAG system
+class Document {
+    public let id: string = ""
+    public let content: string = ""
+    public let metadata = null
+    public let embedding = null
+    
+    fn init(id: string, content: string, metadata = null) {
+        this.id = id
+        this.content = content
+        this.metadata = metadata
+    }
+    
+    public fn setEmbedding(embedding) {
+        this.embedding = embedding
+    }
+    
+    public fn getEmbedding() {
+        return this.embedding
+    }
+    
+    public fn getSnippet(maxLength: int = 100) -> string {
+        if len(this.content) <= maxLength {
+            return this.content
+        }
+        
+        return substring(this.content, 0, maxLength) + "..."
+    }
+}
+
+# Vector Database (in-memory)
+class VectorDB {
+    private let documents = []
+    private let embeddings = []
+    private let index = dict()
+    
+    fn init() {
+        this.documents = []
+        this.embeddings = []
+        this.index = dict()
+    }
+    
+    public fn addDocument(document) {
+        let docId = document.id
+        
+        # Check if already exists
+        if this.index.has(docId) {
+            println("Warning: Document " + docId + " already exists, skipping")
+            return
+        }
+        
+        # Add to collections
+        let idx = len(this.documents)
+        this.documents.push(document)
+        this.embeddings.push(document.getEmbedding())
+        this.index.set(docId, idx)
+    }
+    
+    public fn search(queryEmbedding, topK: int = 5) {
+        let results = []
+        
+        # Calculate similarities
+        let i = 0
+        while i < len(this.embeddings) {
+            let similarity = queryEmbedding.cosineSimilarity(this.embeddings[i])
+            
+            results.push({
+                "document": this.documents[i],
+                "similarity": similarity,
+                "index": i
+            })
+            
+            i = i + 1
+        }
+        
+        # Sort by similarity (bubble sort - descending)
+        let n = len(results)
+        let i = 0
+        while i < n - 1 {
+            let j = 0
+            while j < n - i - 1 {
+                if results[j].similarity < results[j + 1].similarity {
+                    let temp = results[j]
+                    results[j] = results[j + 1]
+                    results[j + 1] = temp
+                }
+                j = j + 1
+            }
+            i = i + 1
+        }
+        
+        # Return top K
+        let topResults = []
+        let count = topK
+        if count > len(results) {
+            count = len(results)
+        }
+        
+        i = 0
+        while i < count {
+            topResults.push(results[i])
+            i = i + 1
+        }
+        
+        return topResults
+    }
+    
+    public fn getDocument(docId: string) {
+        if this.index.has(docId) {
+            let idx = this.index.get(docId)
+            return this.documents[idx]
+        }
+        return null
+    }
+    
+    public fn size() -> int {
+        return len(this.documents)
+    }
+    
+    public fn clear() {
+        this.documents = []
+        this.embeddings = []
+        this.index = dict()
+    }
+}
+
+# RAG System that combines retrieval and generation
+class RAGSystem {
+    private let vectorDB = null
+    private let llmClient = null
+    private let chunkSize: int = 500
+    private let topK: int = 3
+    
+    fn init(llmClient, chunkSize: int = 500, topK: int = 3) {
+        this.vectorDB = new VectorDB()
+        this.llmClient = llmClient
+        this.chunkSize = chunkSize
+        this.topK = topK
+    }
+    
+    # Ingest a document into the system
+    public fn ingestDocument(docId: string, content: string, metadata = null) {
+        # Chunk the document
+        let chunks = this.chunkText(content)
+        
+        # Create embeddings and add to vector DB
+        let i = 0
+        while i < len(chunks) {
+            let chunkId = docId + "_chunk_" + str(i)
+            let chunk = chunks[i]
+            
+            # Create embedding
+            let embedding = this.llmClient.embed(chunk)
+            
+            # Create document
+            let chunkMeta = metadata
+            if chunkMeta == null {
+                chunkMeta = dict()
+            }
+            chunkMeta.set("parent_id", docId)
+            chunkMeta.set("chunk_index", i)
+            
+            let doc = new Document(chunkId, chunk, chunkMeta)
+            doc.setEmbedding(embedding)
+            
+            # Add to vector DB
+            this.vectorDB.addDocument(doc)
+            
+            i = i + 1
+        }
+    }
+    
+    # Chunk text into smaller pieces
+    private fn chunkText(text: string) {
+        let chunks = []
+        let words = split(text, " ")
+        let currentChunk = ""
+        let wordCount = 0
+        
+        let i = 0
+        while i < len(words) {
+            currentChunk = currentChunk + words[i] + " "
+            wordCount = wordCount + 1
+            
+            if wordCount >= this.chunkSize || i == len(words) - 1 {
+                chunks.push(trim(currentChunk))
+                currentChunk = ""
+                wordCount = 0
+            }
+            
+            i = i + 1
+        }
+        
+        return chunks
+    }
+    
+    # Query the RAG system
+    public fn query(question: string) -> string {
+        # Create embedding for question
+        let queryEmbedding = this.llmClient.embed(question)
+        
+        # Retrieve relevant documents
+        let results = this.vectorDB.search(queryEmbedding, this.topK)
+        
+        # Build context from retrieved documents
+        let context = ""
+        let i = 0
+        while i < len(results) {
+            let doc = results[i].document
+            context = context + doc.content + "\n\n"
+            i = i + 1
+        }
+        
+        # Build RAG prompt
+        let prompt = "Context:\n" + context + "\n"
+        prompt = prompt + "Question: " + question + "\n"
+        prompt = prompt + "Answer the question based on the context provided. "
+        prompt = prompt + "If the context doesn't contain enough information, say so.\n\n"
+        prompt = prompt + "Answer:"
+        
+        # Generate response
+        let response = this.llmClient.complete(prompt)
+        
+        return response
+    }
+    
+    # Query with citation
+    public fn queryWithCitations(question: string) {
+        # Create embedding for question
+        let queryEmbedding = this.llmClient.embed(question)
+        
+        # Retrieve relevant documents
+        let results = this.vectorDB.search(queryEmbedding, this.topK)
+        
+        # Build context with sources
+        let context = ""
+        let sources = []
+        
+        let i = 0
+        while i < len(results) {
+            let doc = results[i].document
+            let sourceNum = i + 1
+            
+            context = context + "[" + str(sourceNum) + "] " + doc.content + "\n\n"
+            sources.push({
+                "number": sourceNum,
+                "id": doc.id,
+                "similarity": results[i].similarity
+            })
+            
+            i = i + 1
+        }
+        
+        # Build RAG prompt with citation instruction
+        let prompt = "Context (with source numbers):\n" + context + "\n"
+        prompt = prompt + "Question: " + question + "\n"
+        prompt = prompt + "Answer the question based on the context. "
+        prompt = prompt + "Cite your sources using [number] notation.\n\n"
+        prompt = prompt + "Answer:"
+        
+        # Generate response
+        let response = this.llmClient.complete(prompt)
+        
+        # Return answer with sources
+        let result = dict()
+        result.set("answer", response)
+        result.set("sources", sources)
+        
+        return result
+    }
+    
+    public fn getDocumentCount() -> int {
+        return this.vectorDB.size()
+    }
+}
+
+# Semantic caching for RAG
+class SemanticCache {
+    private let cache = []
+    private let threshold: float = 0.95
+    
+    fn init(threshold: float = 0.95) {
+        this.threshold = threshold
+    }
+    
+    public fn get(queryEmbedding) {
+        # Search for similar cached query
+        let i = 0
+        while i < len(this.cache) {
+            let cached = this.cache[i]
+            let similarity = queryEmbedding.cosineSimilarity(cached.queryEmbedding)
+            
+            if similarity >= this.threshold {
+                return cached.response
+            }
+            
+            i = i + 1
+        }
+        
+        return null
+    }
+    
+    public fn set(queryEmbedding, response: string) {
+        let entry = dict()
+        entry.set("queryEmbedding", queryEmbedding)
+        entry.set("response", response)
+        
+        this.cache.push(entry)
+    }
+    
+    public fn clear() {
+        this.cache = []
+    }
+    
+    public fn size() -> int {
+        return len(this.cache)
+    }
+}
+
+# Helper function to build RAG system from files
+fn buildRAGFromFiles(llmClient, filePaths) {
+    let rag = new RAGSystem(llmClient, 500, 3)
+    
+    let i = 0
+    while i < len(filePaths) {
+        let filePath = filePaths[i]
+        
+        # Read file
+        let content = readFile(filePath)
+        
+        # Ingest into RAG
+        let metadata = dict()
+        metadata.set("source_file", filePath)
+        
+        rag.ingestDocument(filePath, content, metadata)
+        
+        println("Ingested: " + filePath)
+        i = i + 1
+    }
+    
+    return rag
+}

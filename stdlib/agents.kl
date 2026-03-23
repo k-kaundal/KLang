@@ -1,0 +1,425 @@
+# ============================================
+# KLang AI Agents Library
+# ============================================
+# Autonomous AI agents with memory and actions
+# 100% Pure KLang implementation
+
+/// AI Agents Module - Autonomous agents with goals and actions
+
+# Agent Memory for storing conversation history and facts
+class AgentMemory {
+    private let shortTermMemory = []
+    private let longTermMemory = []
+    private let facts = dict()
+    private let maxShortTerm: int = 10
+    
+    fn init(maxShortTerm: int = 10) {
+        this.maxShortTerm = maxShortTerm
+    }
+    
+    public fn remember(key: string, value: string) {
+        # Add to short-term memory
+        this.shortTermMemory.push({
+            "key": key,
+            "value": value,
+            "timestamp": 0
+        })
+        
+        # Limit short-term memory size
+        if len(this.shortTermMemory) > this.maxShortTerm {
+            # Move oldest to long-term
+            let oldest = this.shortTermMemory[0]
+            this.longTermMemory.push(oldest)
+            
+            # Remove from short-term
+            let newShortTerm = []
+            let i = 1
+            while i < len(this.shortTermMemory) {
+                newShortTerm.push(this.shortTermMemory[i])
+                i = i + 1
+            }
+            this.shortTermMemory = newShortTerm
+        }
+    }
+    
+    public fn recall(key: string) -> string {
+        # Search short-term memory first
+        let i = len(this.shortTermMemory) - 1
+        while i >= 0 {
+            if this.shortTermMemory[i].key == key {
+                return this.shortTermMemory[i].value
+            }
+            i = i - 1
+        }
+        
+        # Search long-term memory
+        i = len(this.longTermMemory) - 1
+        while i >= 0 {
+            if this.longTermMemory[i].key == key {
+                return this.longTermMemory[i].value
+            }
+            i = i - 1
+        }
+        
+        return ""
+    }
+    
+    public fn storeFact(key: string, value: string) {
+        this.facts.set(key, value)
+    }
+    
+    public fn retrieveFact(key: string) -> string {
+        if this.facts.has(key) {
+            return this.facts.get(key)
+        }
+        return ""
+    }
+    
+    public fn getRecentMemories(count: int = 5) {
+        let recent = []
+        let start = len(this.shortTermMemory) - count
+        if start < 0 {
+            start = 0
+        }
+        
+        let i = start
+        while i < len(this.shortTermMemory) {
+            recent.push(this.shortTermMemory[i])
+            i = i + 1
+        }
+        
+        return recent
+    }
+    
+    public fn clear() {
+        this.shortTermMemory = []
+        this.longTermMemory = []
+        this.facts = dict()
+    }
+}
+
+# Agent Action - represents an action the agent can take
+class AgentAction {
+    public let name: string = ""
+    public let description: string = ""
+    public let handler = null
+    
+    fn init(name: string, description: string, handler) {
+        this.name = name
+        this.description = description
+        this.handler = handler
+    }
+    
+    public fn execute(args) {
+        if this.handler != null {
+            return this.handler(args)
+        }
+        return null
+    }
+}
+
+# Base Agent class
+class Agent {
+    public let name: string = ""
+    public let role: string = ""
+    private let llmClient = null
+    private let memory = null
+    private let actions = dict()
+    private let goals = []
+    
+    fn init(name: string, role: string, llmClient) {
+        this.name = name
+        this.role = role
+        this.llmClient = llmClient
+        this.memory = new AgentMemory(10)
+    }
+    
+    public fn registerAction(action) {
+        this.actions.set(action.name, action)
+    }
+    
+    public fn addGoal(goal: string) {
+        this.goals.push(goal)
+    }
+    
+    public fn think(observation: string) -> string {
+        # Remember the observation
+        this.memory.remember("observation", observation)
+        
+        # Build thinking prompt
+        let prompt = "You are " + this.name + ", " + this.role + ".\n\n"
+        
+        # Add goals
+        if len(this.goals) > 0 {
+            prompt = prompt + "Your goals:\n"
+            let i = 0
+            while i < len(this.goals) {
+                prompt = prompt + "- " + this.goals[i] + "\n"
+                i = i + 1
+            }
+            prompt = prompt + "\n"
+        }
+        
+        # Add available actions
+        let actionNames = this.actions.keys()
+        if len(actionNames) > 0 {
+            prompt = prompt + "Available actions:\n"
+            let i = 0
+            while i < len(actionNames) {
+                let actionName = actionNames[i]
+                let action = this.actions.get(actionName)
+                prompt = prompt + "- " + action.name + ": " + action.description + "\n"
+                i = i + 1
+            }
+            prompt = prompt + "\n"
+        }
+        
+        # Add observation
+        prompt = prompt + "Current observation: " + observation + "\n\n"
+        prompt = prompt + "What should you do next? Think step by step and choose an action."
+        
+        # Get LLM response
+        let thought = this.llmClient.complete(prompt)
+        
+        # Remember the thought
+        this.memory.remember("thought", thought)
+        
+        return thought
+    }
+    
+    public fn act(actionName: string, args) {
+        if this.actions.has(actionName) {
+            let action = this.actions.get(actionName)
+            let result = action.execute(args)
+            
+            # Remember the action
+            this.memory.remember("action", actionName)
+            this.memory.remember("action_result", str(result))
+            
+            return result
+        }
+        
+        println("Error: Unknown action " + actionName)
+        return null
+    }
+    
+    public fn run(initialObservation: string, maxSteps: int = 10) {
+        let observation = initialObservation
+        let step = 0
+        
+        while step < maxSteps {
+            println("\n--- Step " + str(step + 1) + " ---")
+            println("Observation: " + observation)
+            
+            # Think about what to do
+            let thought = this.think(observation)
+            println("Thought: " + thought)
+            
+            # Extract action from thought (simplified - would use better parsing)
+            let actionName = this.parseAction(thought)
+            
+            if actionName == "DONE" || actionName == "" {
+                println("Agent completed its goals")
+                break
+            }
+            
+            # Execute action
+            println("Action: " + actionName)
+            let result = this.act(actionName, null)
+            
+            observation = str(result)
+            step = step + 1
+        }
+    }
+    
+    # Simple action parsing from thought
+    private fn parseAction(thought: string) -> string {
+        # Look for "Action: <name>" pattern
+        let actionIndex = indexof(thought, "Action:")
+        if actionIndex == -1 {
+            return ""
+        }
+        
+        let start = actionIndex + 7  # Length of "Action:"
+        let end = start
+        
+        while end < len(thought) {
+            let char = substring(thought, end, end + 1)
+            if char == "\n" || char == "," || char == "." {
+                break
+            }
+            end = end + 1
+        }
+        
+        let actionName = trim(substring(thought, start, end))
+        return actionName
+    }
+    
+    public fn getMemorySummary() -> string {
+        let recent = this.memory.getRecentMemories(5)
+        let summary = "Recent memories:\n"
+        
+        let i = 0
+        while i < len(recent) {
+            summary = summary + "- " + recent[i].key + ": " + recent[i].value + "\n"
+            i = i + 1
+        }
+        
+        return summary
+    }
+}
+
+# ReAct (Reasoning + Acting) Agent
+class ReActAgent {
+    private let agent = null
+    
+    fn init(name: string, role: string, llmClient) {
+        this.agent = new Agent(name, role, llmClient)
+    }
+    
+    public fn registerAction(action) {
+        this.agent.registerAction(action)
+    }
+    
+    public fn addGoal(goal: string) {
+        this.agent.addGoal(goal)
+    }
+    
+    # ReAct loop: Thought -> Action -> Observation
+    public fn solve(problem: string) -> string {
+        let maxIterations = 10
+        let iteration = 0
+        let observation = problem
+        
+        while iteration < maxIterations {
+            println("\n=== Iteration " + str(iteration + 1) + " ===")
+            
+            # Reasoning phase
+            let thought = this.agent.think(observation)
+            println("Thought: " + thought)
+            
+            # Check if done
+            if contains(lowercase(thought), "final answer") {
+                # Extract final answer
+                let answerIndex = indexof(lowercase(thought), "final answer")
+                let answer = substring(thought, answerIndex + 13, len(thought))
+                return trim(answer)
+            }
+            
+            # Acting phase - parse action from thought
+            let action = this.parseReActAction(thought)
+            if action == null {
+                println("No valid action found, stopping")
+                break
+            }
+            
+            println("Action: " + action.name)
+            
+            # Execute action
+            let result = this.agent.act(action.name, action.args)
+            observation = "Action result: " + str(result)
+            
+            iteration = iteration + 1
+        }
+        
+        return "Could not solve problem within iteration limit"
+    }
+    
+    # Parse ReAct format: Thought: ... Action: ... Action Input: ...
+    private fn parseReActAction(thought: string) {
+        let actionIndex = indexof(thought, "Action:")
+        if actionIndex == -1 {
+            return null
+        }
+        
+        # Extract action name
+        let start = actionIndex + 7
+        let end = start
+        
+        while end < len(thought) {
+            let char = substring(thought, end, end + 1)
+            if char == "\n" {
+                break
+            }
+            end = end + 1
+        }
+        
+        let actionName = trim(substring(thought, start, end))
+        
+        # Extract action input (if present)
+        let inputIndex = indexof(thought, "Action Input:")
+        let actionArgs = null
+        
+        if inputIndex != -1 {
+            let inputStart = inputIndex + 13
+            let inputEnd = len(thought)
+            actionArgs = trim(substring(thought, inputStart, inputEnd))
+        }
+        
+        let result = dict()
+        result.set("name", actionName)
+        result.set("args", actionArgs)
+        
+        return result
+    }
+}
+
+# Task-oriented agent
+class TaskAgent {
+    private let agent = null
+    private let tasks = []
+    
+    fn init(name: string, llmClient) {
+        this.agent = new Agent(name, "task executor", llmClient)
+    }
+    
+    public fn addTask(task: string) {
+        this.tasks.push({
+            "description": task,
+            "status": "pending",
+            "result": null
+        })
+    }
+    
+    public fn executeTasks() {
+        let i = 0
+        while i < len(this.tasks) {
+            let task = this.tasks[i]
+            
+            if task.status == "pending" {
+                println("\nExecuting task: " + task.description)
+                
+                # Ask agent to complete task
+                let result = this.agent.think(task.description)
+                
+                task.status = "completed"
+                task.result = result
+                
+                println("Result: " + result)
+            }
+            
+            i = i + 1
+        }
+    }
+    
+    public fn getStatus() {
+        let completed = 0
+        let pending = 0
+        
+        let i = 0
+        while i < len(this.tasks) {
+            if this.tasks[i].status == "completed" {
+                completed = completed + 1
+            } else {
+                pending = pending + 1
+            }
+            i = i + 1
+        }
+        
+        return {
+            "completed": completed,
+            "pending": pending,
+            "total": len(this.tasks)
+        }
+    }
+}

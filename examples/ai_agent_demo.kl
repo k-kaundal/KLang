@@ -1,0 +1,156 @@
+# ============================================
+# AI Agent Example - Autonomous Task Execution
+# ============================================
+# Demonstrates AI agents with memory and actions in KLang
+
+println("=== KLang AI Agent Demo ===\n")
+
+# Example 1: Agent with Memory
+println("--- Example 1: Agent Memory ---")
+
+let memory = new AgentMemory(5)
+
+# Store some facts
+memory.storeFact("name", "Alice")
+memory.storeFact("language", "KLang")
+memory.storeFact("year", "2026")
+
+# Remember some events
+memory.remember("event1", "Started learning KLang")
+memory.remember("event2", "Built first AI application")
+memory.remember("event3", "Created an autonomous agent")
+
+# Recall information
+let name = memory.retrieveFact("name")
+println("Name: " + name)
+
+let recent = memory.getRecentMemories(3)
+println("Recent memories: " + str(len(recent)))
+
+let i = 0
+while i < len(recent) {
+    let mem = recent[i]
+    println("  - " + mem.key + ": " + mem.value)
+    i = i + 1
+}
+println()
+
+# Example 2: Agent Actions
+println("--- Example 2: Agent Actions ---")
+
+# Define custom actions
+fn searchAction(args) {
+    let query = args
+    println("  [Searching for: " + query + "]")
+    return "Found information about " + query
+}
+
+fn writeAction(args) {
+    let content = args
+    println("  [Writing: " + content + "]")
+    return "Content written successfully"
+}
+
+fn calculateAction(args) {
+    let expression = args
+    println("  [Calculating: " + expression + "]")
+    return "Result: 42"
+}
+
+let searchActionDef = new AgentAction("search", "Search for information", searchAction)
+let writeActionDef = new AgentAction("write", "Write content to output", writeAction)
+let calculateActionDef = new AgentAction("calculate", "Perform calculations", calculateAction)
+
+println("Actions defined:")
+println("  1. " + searchActionDef.name + " - " + searchActionDef.description)
+println("  2. " + writeActionDef.name + " - " + writeActionDef.description)
+println("  3. " + calculateActionDef.name + " - " + calculateActionDef.description)
+println()
+
+# Execute actions
+println("Executing actions:")
+let result1 = searchActionDef.execute("KLang AI features")
+println("Result: " + result1)
+
+let result2 = calculateActionDef.execute("2 + 2")
+println("Result: " + result2)
+println()
+
+# Example 3: Task Agent
+println("--- Example 3: Task Agent ---")
+
+# Note: This example shows the structure
+# In real use with LLM, it would make actual API calls
+
+println("Task Agent Structure:")
+println("1. Create agent with goals")
+println("2. Register available actions")
+println("3. Agent thinks and acts autonomously")
+println("4. Memory persists across actions")
+println()
+
+# Example 4: Simulated Agent Reasoning
+println("--- Example 4: Agent Reasoning Flow ---")
+
+println("Agent: ResearchBot")
+println("Goal: Find information about KLang AI features\n")
+
+println("Step 1:")
+println("  Thought: I need to search for KLang AI documentation")
+println("  Action: search")
+println("  Observation: Found AI features documentation")
+println()
+
+println("Step 2:")
+println("  Thought: I should summarize the key features")
+println("  Action: write")
+println("  Observation: Summary written")
+println()
+
+println("Step 3:")
+println("  Thought: Task completed successfully")
+println("  Action: DONE")
+println()
+
+# Example 5: Multi-Agent Collaboration (structure)
+println("--- Example 5: Multi-Agent System (Structure) ---")
+
+println("Multi-agent system components:")
+println("1. Researcher Agent - Finds information")
+println("2. Analyzer Agent - Processes information")
+println("3. Writer Agent - Creates output")
+println("4. Coordinator - Manages workflow")
+println()
+
+println("Workflow:")
+println("  Coordinator → Researcher (find data)")
+println("  Researcher → Analyzer (process data)")
+println("  Analyzer → Writer (create output)")
+println("  Writer → Coordinator (deliver result)")
+println()
+
+# Example 6: Agent with Goals
+println("--- Example 6: Goal-Oriented Agent ---")
+
+let goals = [
+    "Understand the user's question",
+    "Find relevant information",
+    "Provide accurate answer",
+    "Verify answer quality"
+]
+
+println("Agent Goals:")
+i = 0
+while i < len(goals) {
+    println("  " + str(i + 1) + ". " + goals[i])
+    i = i + 1
+}
+println()
+
+println("=== Demo Complete ===")
+println("KLang agents can:")
+println("✓ Store and recall memories")
+println("✓ Define and execute actions")
+println("✓ Pursue goals autonomously")
+println("✓ Reason and make decisions")
+println("✓ Collaborate with other agents")
