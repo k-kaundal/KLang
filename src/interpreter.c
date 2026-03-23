@@ -342,6 +342,29 @@ Value make_module(const char *module_path, Env *exports, Env *module_env) {
     return val;
 }
 
+Value make_dict(void) {
+    Value val;
+    DictVal *dict = malloc(sizeof(DictVal));
+    val.type = VAL_DICT;
+    dict->count = 0;
+    dict->capacity = 8;
+    dict->keys = malloc(8 * sizeof(Value));
+    dict->values = malloc(8 * sizeof(Value));
+    val.as.dict_val = dict;
+    return val;
+}
+
+Value make_set(void) {
+    Value val;
+    SetVal *set = malloc(sizeof(SetVal));
+    val.type = VAL_SET;
+    set->count = 0;
+    set->capacity = 8;
+    set->items = malloc(8 * sizeof(Value));
+    val.as.set_val = set;
+    return val;
+}
+
 Value make_generator(FunctionVal *func, Env *env) {
     Value v;
     v.type = VAL_GENERATOR;
@@ -485,6 +508,20 @@ void value_free(Value *v) {
         v->as.file_val.path = NULL;
         v->as.file_val.mode = NULL;
     }
+    if (v->type == VAL_DICT) {
+        /* Don't free dict resources - dicts are reference types */
+        /* Like objects, they're shared across copies */
+        /* This prevents double-free when dict values are shared */
+        /* Memory will be reclaimed when the interpreter exits */
+        v->as.dict_val = NULL;
+    }
+    if (v->type == VAL_SET) {
+        /* Don't free set resources - sets are reference types */
+        /* Like objects, they're shared across copies */
+        /* This prevents double-free when set values are shared */
+        /* Memory will be reclaimed when the interpreter exits */
+        v->as.set_val = NULL;
+    }
 }
 
 char *value_to_string(Value *v) {
@@ -605,6 +642,68 @@ char *value_to_string(Value *v) {
             snprintf(buf, sizeof(buf), "<generator %s>", state_str);
             return strdup(buf);
         }
+        case VAL_DICT: {
+            // Build dictionary string representation {key: value, ...}
+            int count = v->as.dict_val->count;
+            if (count == 0) {
+                return strdup("{}");
+            }
+            
+            // Calculate total length needed
+            int total_len = 2; // For { and }
+            char **key_strs = malloc(count * sizeof(char *));
+            char **val_strs = malloc(count * sizeof(char *));
+            for (int i = 0; i < count; i++) {
+                key_strs[i] = value_to_string(&v->as.dict_val->keys[i]);
+                val_strs[i] = value_to_string(&v->as.dict_val->values[i]);
+                total_len += strlen(key_strs[i]) + strlen(val_strs[i]) + 2; // +2 for ": "
+                if (i > 0) total_len += 2; // For ", "
+            }
+            
+            // Build the string
+            char *result = malloc(total_len + 1);
+            strcpy(result, "{");
+            for (int i = 0; i < count; i++) {
+                if (i > 0) strcat(result, ", ");
+                strcat(result, key_strs[i]);
+                strcat(result, ": ");
+                strcat(result, val_strs[i]);
+                free(key_strs[i]);
+                free(val_strs[i]);
+            }
+            strcat(result, "}");
+            free(key_strs);
+            free(val_strs);
+            return result;
+        }
+        case VAL_SET: {
+            // Build set string representation {value, ...}
+            int count = v->as.set_val->count;
+            if (count == 0) {
+                return strdup("set()");
+            }
+            
+            // Calculate total length needed
+            int total_len = 2; // For { and }
+            char **item_strs = malloc(count * sizeof(char *));
+            for (int i = 0; i < count; i++) {
+                item_strs[i] = value_to_string(&v->as.set_val->items[i]);
+                total_len += strlen(item_strs[i]);
+                if (i > 0) total_len += 2; // For ", "
+            }
+            
+            // Build the string
+            char *result = malloc(total_len + 1);
+            strcpy(result, "{");
+            for (int i = 0; i < count; i++) {
+                if (i > 0) strcat(result, ", ");
+                strcat(result, item_strs[i]);
+                free(item_strs[i]);
+            }
+            strcat(result, "}");
+            free(item_strs);
+            return result;
+        }
         default:
             return strdup("<unknown>");
     }
@@ -714,6 +813,25 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
                 return copy;
             }
+            if (v->type == VAL_TUPLE) {
+                /* Deep copy tuple to avoid double-free issues */
+                Value copy;
+                int ii;
+                copy.type = VAL_TUPLE;
+                copy.as.tuple_val.count = v->as.tuple_val.count;
+                copy.as.tuple_val.elements = malloc((v->as.tuple_val.count > 0 ? v->as.tuple_val.count : 1) * sizeof(Value));
+                for (ii = 0; ii < v->as.tuple_val.count; ii++) {
+                    /* Recursively copy each item */
+                    if (v->as.tuple_val.elements[ii].type == VAL_STRING) {
+                        copy.as.tuple_val.elements[ii] = make_string(v->as.tuple_val.elements[ii].as.str_val);
+                    } else {
+                        copy.as.tuple_val.elements[ii] = v->as.tuple_val.elements[ii];
+                    }
+                }
+                return copy;
+            }
+            /* Dicts and sets are mutable reference types like objects - don't deep copy */
+            /* They need to be modified in-place by methods */
             if (v->type == VAL_FUNCTION) {
                 Value copy = *v;
                 /* Deep copy parameter names if they exist */
@@ -1438,8 +1556,58 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     
                     entry = entry->next;
                 }
+            } else if (iterable.type == VAL_DICT) {
+                // Iterate over dictionary keys
+                for (i = 0; i < iterable.as.dict_val->count; i++) {
+                    Env *loop_env = env_new(env);
+                    Value key = iterable.as.dict_val->keys[i];
+                    // Copy strings to avoid double-free
+                    if (key.type == VAL_STRING) {
+                        key = make_string(key.as.str_val);
+                    }
+                    env_set_local(loop_env, node->data.for_of_stmt.var, key);
+                    {
+                        Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
+                        value_free(&r);
+                    }
+                    env_release(loop_env);
+                    
+                    if (interp->last_result.is_return || interp->last_result.is_break) {
+                        interp->last_result.is_break = 0;
+                        break;
+                    }
+                    if (interp->last_result.is_continue) {
+                        interp->last_result.is_continue = 0;
+                        continue;
+                    }
+                }
+            } else if (iterable.type == VAL_SET) {
+                // Iterate over set elements
+                for (i = 0; i < iterable.as.set_val->count; i++) {
+                    Env *loop_env = env_new(env);
+                    Value elem = iterable.as.set_val->items[i];
+                    // Copy strings to avoid double-free
+                    if (elem.type == VAL_STRING) {
+                        elem = make_string(elem.as.str_val);
+                    }
+                    env_set_local(loop_env, node->data.for_of_stmt.var, elem);
+                    {
+                        Value r = eval_block(interp, node->data.for_of_stmt.body, loop_env);
+                        value_free(&r);
+                    }
+                    env_release(loop_env);
+                    
+                    if (interp->last_result.is_return || interp->last_result.is_break) {
+                        interp->last_result.is_break = 0;
+                        break;
+                    }
+                    if (interp->last_result.is_continue) {
+                        interp->last_result.is_continue = 0;
+                        continue;
+                    }
+                }
             } else {
-                fprintf(stderr, "Runtime error: for-of requires an iterable (list, tuple, string, or object)\n");
+                fprintf(stderr, "Runtime error: for-of requires an iterable (list, tuple, string, dict, set, or object)\n");
             }
             
             value_free(&iterable);
@@ -1502,6 +1670,65 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
         case NODE_BINOP: {
             const char *op = node->data.binop.op;
             
+            // Handle logical operators with short-circuit evaluation
+            if (strcmp(op, "&&") == 0) {
+                Value left = eval_node_env(interp, node->data.binop.left, env);
+                int left_truthy = 0;
+                if (left.type == VAL_BOOL) left_truthy = left.as.bool_val;
+                else if (left.type == VAL_INT) left_truthy = left.as.int_val != 0;
+                else if (left.type == VAL_FLOAT) left_truthy = left.as.float_val != 0.0;
+                else if (left.type == VAL_STRING) left_truthy = strlen(left.as.str_val) > 0;
+                else if (left.type == VAL_NULL) left_truthy = 0;
+                
+                if (!left_truthy) {
+                    // Short-circuit: return false without evaluating right
+                    value_free(&left);
+                    return make_bool(0);
+                }
+                value_free(&left);
+                
+                // Evaluate right side
+                Value right = eval_node_env(interp, node->data.binop.right, env);
+                int right_truthy = 0;
+                if (right.type == VAL_BOOL) right_truthy = right.as.bool_val;
+                else if (right.type == VAL_INT) right_truthy = right.as.int_val != 0;
+                else if (right.type == VAL_FLOAT) right_truthy = right.as.float_val != 0.0;
+                else if (right.type == VAL_STRING) right_truthy = strlen(right.as.str_val) > 0;
+                else if (right.type == VAL_NULL) right_truthy = 0;
+                
+                value_free(&right);
+                return make_bool(right_truthy);
+            }
+            
+            if (strcmp(op, "||") == 0) {
+                Value left = eval_node_env(interp, node->data.binop.left, env);
+                int left_truthy = 0;
+                if (left.type == VAL_BOOL) left_truthy = left.as.bool_val;
+                else if (left.type == VAL_INT) left_truthy = left.as.int_val != 0;
+                else if (left.type == VAL_FLOAT) left_truthy = left.as.float_val != 0.0;
+                else if (left.type == VAL_STRING) left_truthy = strlen(left.as.str_val) > 0;
+                else if (left.type == VAL_NULL) left_truthy = 0;
+                
+                if (left_truthy) {
+                    // Short-circuit: return true without evaluating right
+                    value_free(&left);
+                    return make_bool(1);
+                }
+                value_free(&left);
+                
+                // Evaluate right side
+                Value right = eval_node_env(interp, node->data.binop.right, env);
+                int right_truthy = 0;
+                if (right.type == VAL_BOOL) right_truthy = right.as.bool_val;
+                else if (right.type == VAL_INT) right_truthy = right.as.int_val != 0;
+                else if (right.type == VAL_FLOAT) right_truthy = right.as.float_val != 0.0;
+                else if (right.type == VAL_STRING) right_truthy = strlen(right.as.str_val) > 0;
+                else if (right.type == VAL_NULL) right_truthy = 0;
+                
+                value_free(&right);
+                return make_bool(right_truthy);
+            }
+            
             // Handle member assignment (this.x = value or ClassName.staticField = value)
             if (strcmp(op, "=") == 0 && node->data.binop.left->type == NODE_MEMBER_ACCESS) {
                 ASTNode *member_node = node->data.binop.left;
@@ -1534,21 +1761,40 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             // Handle index assignment (arr[0] = value)
             if (strcmp(op, "=") == 0 && node->data.binop.left->type == NODE_INDEX) {
                 ASTNode *index_node = node->data.binop.left;
-                Value obj = eval_node_env(interp, index_node->data.index_expr.obj, env);
-                Value idx = eval_node_env(interp, index_node->data.index_expr.index, env);
                 Value val = eval_node_env(interp, node->data.binop.right, env);
                 
-                if (obj.type == VAL_LIST && idx.type == VAL_INT) {
-                    long long i = idx.as.int_val;
-                    if (i >= 0 && i < (long long)obj.as.list_val.count) {
-                        value_free(&obj.as.list_val.items[i]);
-                        obj.as.list_val.items[i] = val;
+                // Special case: if the object is an identifier, we need to modify it in-place
+                if (index_node->data.index_expr.obj->type == NODE_IDENT) {
+                    const char *arr_name = index_node->data.index_expr.obj->data.ident.name;
+                    Value *arr_ptr = env_get(env, arr_name);
+                    Value idx = eval_node_env(interp, index_node->data.index_expr.index, env);
+                    
+                    if (arr_ptr && arr_ptr->type == VAL_LIST && idx.type == VAL_INT) {
+                        long long i = idx.as.int_val;
+                        if (i >= 0 && i < (long long)arr_ptr->as.list_val.count) {
+                            value_free(&arr_ptr->as.list_val.items[i]);
+                            arr_ptr->as.list_val.items[i] = val;
+                        }
                     }
+                    value_free(&idx);
+                    return make_null();
+                } else {
+                    // General case: evaluate the object (might be an expression)
+                    Value obj = eval_node_env(interp, index_node->data.index_expr.obj, env);
+                    Value idx = eval_node_env(interp, index_node->data.index_expr.index, env);
+                    
+                    if (obj.type == VAL_LIST && idx.type == VAL_INT) {
+                        long long i = idx.as.int_val;
+                        if (i >= 0 && i < (long long)obj.as.list_val.count) {
+                            value_free(&obj.as.list_val.items[i]);
+                            obj.as.list_val.items[i] = val;
+                        }
+                    }
+                    
+                    value_free(&obj);
+                    value_free(&idx);
+                    return make_null();
                 }
-                
-                value_free(&obj);
-                value_free(&idx);
-                return make_null();
             }
             
             Value left = eval_node_env(interp, node->data.binop.left, env);
@@ -2126,6 +2372,84 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 return make_null();
             }
             
+            // Handle dict methods
+            if (obj.type == VAL_DICT) {
+                const char *method_name = node->data.member_access.member;
+                
+                // Handle .size property
+                if (strcmp(method_name, "size") == 0) {
+                    result = make_int(obj.as.dict_val->count);
+                    value_free(&obj);
+                    return result;
+                }
+                
+                Value *builtin = NULL;
+                
+                // Map method names to builtin functions
+                if (strcmp(method_name, "set") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_set");
+                } else if (strcmp(method_name, "get") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_get");
+                } else if (strcmp(method_name, "has") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_has");
+                } else if (strcmp(method_name, "delete") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_delete");
+                } else if (strcmp(method_name, "keys") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_keys");
+                } else if (strcmp(method_name, "values") == 0) {
+                    builtin = env_get(interp->global_env, "__dict_values");
+                }
+                
+                if (builtin && builtin->type == VAL_BUILTIN) {
+                    // Create a bound method with the dict as receiver
+                    result = make_method(obj, *builtin);
+                    return result;
+                }
+                
+                fprintf(stderr, "Error at line %d: dict has no method '%s'\n",
+                        node->line, method_name);
+                interp->had_error = 1;
+                value_free(&obj);
+                return make_null();
+            }
+            
+            // Handle set methods
+            if (obj.type == VAL_SET) {
+                const char *method_name = node->data.member_access.member;
+                
+                // Handle .size property
+                if (strcmp(method_name, "size") == 0) {
+                    result = make_int(obj.as.set_val->count);
+                    value_free(&obj);
+                    return result;
+                }
+                
+                Value *builtin = NULL;
+                
+                // Map method names to builtin functions
+                if (strcmp(method_name, "add") == 0) {
+                    builtin = env_get(interp->global_env, "__set_add");
+                } else if (strcmp(method_name, "remove") == 0) {
+                    builtin = env_get(interp->global_env, "__set_remove");
+                } else if (strcmp(method_name, "has") == 0) {
+                    builtin = env_get(interp->global_env, "__set_has");
+                } else if (strcmp(method_name, "clear") == 0) {
+                    builtin = env_get(interp->global_env, "__set_clear");
+                }
+                
+                if (builtin && builtin->type == VAL_BUILTIN) {
+                    // Create a bound method with the set as receiver
+                    result = make_method(obj, *builtin);
+                    return result;
+                }
+                
+                fprintf(stderr, "Error at line %d: set has no method '%s'\n",
+                        node->line, method_name);
+                interp->had_error = 1;
+                value_free(&obj);
+                return make_null();
+            }
+            
             // Handle generator methods
             if (obj.type == VAL_GENERATOR) {
                 const char *method_name = node->data.member_access.member;
@@ -2504,6 +2828,128 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 return eval_node_env(interp, node->data.export_stmt.declaration, env);
             }
             return make_null();
+        
+        case NODE_POSTFIX: {
+            /* Handle prefix/postfix increment and decrement */
+            const char *op = node->data.postfix.op;
+            ASTNode *operand_node = node->data.postfix.operand;
+            int is_postfix = node->data.postfix.is_postfix;
+            
+            /* Get current value */
+            Value old_val = eval_node_env(interp, operand_node, env);
+            Value new_val = make_null();
+            
+            /* Calculate new value */
+            if (strcmp(op, "++") == 0) {
+                if (old_val.type == VAL_INT) {
+                    new_val = make_int(old_val.as.int_val + 1);
+                } else if (old_val.type == VAL_FLOAT) {
+                    new_val = make_float(old_val.as.float_val + 1.0);
+                } else {
+                    value_free(&old_val);
+                    return make_null();
+                }
+            } else if (strcmp(op, "--") == 0) {
+                if (old_val.type == VAL_INT) {
+                    new_val = make_int(old_val.as.int_val - 1);
+                } else if (old_val.type == VAL_FLOAT) {
+                    new_val = make_float(old_val.as.float_val - 1.0);
+                } else {
+                    value_free(&old_val);
+                    return make_null();
+                }
+            }
+            
+            /* Store the new value */
+            if (operand_node->type == NODE_IDENT) {
+                env_set(env, operand_node->data.ident.name, new_val);
+            } else if (operand_node->type == NODE_MEMBER_ACCESS) {
+                Value obj = eval_node_env(interp, operand_node->data.member_access.obj, env);
+                if (obj.type == VAL_OBJECT) {
+                    env_set(obj.as.object_val.fields, operand_node->data.member_access.member, new_val);
+                }
+                value_free(&obj);
+            } else if (operand_node->type == NODE_INDEX) {
+                // Special case: if the object is an identifier, modify it in-place
+                if (operand_node->data.index_expr.obj->type == NODE_IDENT) {
+                    const char *arr_name = operand_node->data.index_expr.obj->data.ident.name;
+                    Value *arr_ptr = env_get(env, arr_name);
+                    Value idx = eval_node_env(interp, operand_node->data.index_expr.index, env);
+                    
+                    if (arr_ptr && arr_ptr->type == VAL_LIST && idx.type == VAL_INT) {
+                        long long i = idx.as.int_val;
+                        if (i >= 0 && i < (long long)arr_ptr->as.list_val.count) {
+                            value_free(&arr_ptr->as.list_val.items[i]);
+                            arr_ptr->as.list_val.items[i] = new_val;
+                        }
+                    }
+                    value_free(&idx);
+                } else {
+                    Value obj = eval_node_env(interp, operand_node->data.index_expr.obj, env);
+                    Value idx = eval_node_env(interp, operand_node->data.index_expr.index, env);
+                    if (obj.type == VAL_LIST && idx.type == VAL_INT) {
+                        long long i = idx.as.int_val;
+                        if (i >= 0 && i < (long long)obj.as.list_val.count) {
+                            value_free(&obj.as.list_val.items[i]);
+                            obj.as.list_val.items[i] = new_val;
+                        }
+                    }
+                    value_free(&obj);
+                    value_free(&idx);
+                }
+            }
+            
+            /* Return old value for postfix, new value for prefix */
+            if (is_postfix) {
+                return old_val;
+            } else {
+                value_free(&old_val);
+                return new_val;
+            }
+        }
+        
+        case NODE_OPTIONAL_CHAIN: {
+            /* Handle optional chaining (?.) */
+            Value obj = eval_node_env(interp, node->data.optional_chain.obj, env);
+            
+            /* If obj is null or undefined, return null */
+            if (obj.type == VAL_NULL) {
+                value_free(&obj);
+                return make_null();
+            }
+            
+            /* Otherwise, perform normal member access */
+            const char *member = node->data.optional_chain.member;
+            Value result = make_null();
+            
+            if (obj.type == VAL_OBJECT) {
+                Value *val = env_get(obj.as.object_val.fields, member);
+                if (val) {
+                    if (val->type == VAL_STRING) {
+                        result = make_string(val->as.str_val);
+                    } else {
+                        result = *val;
+                    }
+                }
+            }
+            
+            value_free(&obj);
+            return result;
+        }
+        
+        case NODE_NULLISH_COALESCE: {
+            /* Handle nullish coalescing (??) */
+            Value left = eval_node_env(interp, node->data.nullish_coalesce.left, env);
+            
+            /* If left is null or undefined, evaluate and return right */
+            if (left.type == VAL_NULL) {
+                value_free(&left);
+                return eval_node_env(interp, node->data.nullish_coalesce.right, env);
+            }
+            
+            /* Otherwise return left */
+            return left;
+        }
         
         default:
             return make_null();

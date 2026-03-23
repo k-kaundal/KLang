@@ -263,16 +263,48 @@ Token lexer_next_token(Lexer *lexer) {
     lexer->pos++; lexer->col++;
 
     switch (c) {
-        case '+': return make_token(TOKEN_PLUS, "+", line, col);
+        case '+':
+            if (lexer->source[lexer->pos] == '+') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_PLUS_PLUS, "++", line, col);
+            }
+            if (lexer->source[lexer->pos] == '=') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_PLUS_ASSIGN, "+=", line, col);
+            }
+            return make_token(TOKEN_PLUS, "+", line, col);
         case '-':
+            if (lexer->source[lexer->pos] == '-') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_MINUS_MINUS, "--", line, col);
+            }
+            if (lexer->source[lexer->pos] == '=') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_MINUS_ASSIGN, "-=", line, col);
+            }
             if (lexer->source[lexer->pos] == '>') {
                 lexer->pos++; lexer->col++;
                 return make_token(TOKEN_ARROW, "->", line, col);
             }
             return make_token(TOKEN_MINUS, "-", line, col);
-        case '*': return make_token(TOKEN_STAR, "*", line, col);
-        case '/': return make_token(TOKEN_SLASH, "/", line, col);
-        case '%': return make_token(TOKEN_PERCENT, "%", line, col);
+        case '*':
+            if (lexer->source[lexer->pos] == '=') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_STAR_ASSIGN, "*=", line, col);
+            }
+            return make_token(TOKEN_STAR, "*", line, col);
+        case '/':
+            if (lexer->source[lexer->pos] == '=') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_SLASH_ASSIGN, "/=", line, col);
+            }
+            return make_token(TOKEN_SLASH, "/", line, col);
+        case '%':
+            if (lexer->source[lexer->pos] == '=') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_PERCENT_ASSIGN, "%=", line, col);
+            }
+            return make_token(TOKEN_PERCENT, "%", line, col);
         case '=':
             if (lexer->source[lexer->pos] == '=') {
                 lexer->pos++; lexer->col++;
@@ -320,7 +352,38 @@ Token lexer_next_token(Lexer *lexer) {
                 return make_token(TOKEN_DOTDOT, "..", line, col);
             }
             return make_token(TOKEN_DOT, ".", line, col);
-        case '?': return make_token(TOKEN_QUESTION, "?", line, col);
+        case '?':
+            if (lexer->source[lexer->pos] == '?') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_NULLISH_COALESCE, "??", line, col);
+            }
+            if (lexer->source[lexer->pos] == '.') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_OPTIONAL_CHAIN, "?.", line, col);
+            }
+            return make_token(TOKEN_QUESTION, "?", line, col);
+        case '&':
+            if (lexer->source[lexer->pos] == '&') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_AND_AND, "&&", line, col);
+            }
+            // Single & is not supported (bitwise operators not implemented)
+            fprintf(stderr, "Lexer error at line %d, col %d: unexpected character '&' (bitwise operators not supported yet)\n", line, col);
+            {
+                char buf[2] = {c, 0};
+                return make_token(TOKEN_EOF, buf, line, col);
+            }
+        case '|':
+            if (lexer->source[lexer->pos] == '|') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_OR_OR, "||", line, col);
+            }
+            // Single | is not supported (bitwise operators not implemented)
+            fprintf(stderr, "Lexer error at line %d, col %d: unexpected character '|' (bitwise operators not supported yet)\n", line, col);
+            {
+                char buf[2] = {c, 0};
+                return make_token(TOKEN_EOF, buf, line, col);
+            }
         default: {
             char buf[2] = {c, 0};
             return make_token(TOKEN_EOF, buf, line, col);
@@ -394,6 +457,17 @@ const char *token_type_name(TokenType type) {
         case TOKEN_GEQ: return "GEQ";
         case TOKEN_ASSIGN: return "ASSIGN";
         case TOKEN_BANG: return "BANG";
+        case TOKEN_AND_AND: return "AND_AND";
+        case TOKEN_OR_OR: return "OR_OR";
+        case TOKEN_PLUS_ASSIGN: return "PLUS_ASSIGN";
+        case TOKEN_MINUS_ASSIGN: return "MINUS_ASSIGN";
+        case TOKEN_STAR_ASSIGN: return "STAR_ASSIGN";
+        case TOKEN_SLASH_ASSIGN: return "SLASH_ASSIGN";
+        case TOKEN_PERCENT_ASSIGN: return "PERCENT_ASSIGN";
+        case TOKEN_PLUS_PLUS: return "PLUS_PLUS";
+        case TOKEN_MINUS_MINUS: return "MINUS_MINUS";
+        case TOKEN_OPTIONAL_CHAIN: return "OPTIONAL_CHAIN";
+        case TOKEN_NULLISH_COALESCE: return "NULLISH_COALESCE";
         case TOKEN_LBRACE: return "LBRACE";
         case TOKEN_RBRACE: return "RBRACE";
         case TOKEN_LPAREN: return "LPAREN";
