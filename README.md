@@ -136,6 +136,12 @@ Source Code (.kl)
   * Methods: set(), get(), has(), delete(), keys(), values()
   * Support for any type as keys/values
   * For-of iteration over keys
+* **Object Literals** ✅
+  * JSON-like syntax: `{key: value, key2: value2}`
+  * Objects in arrays: `[{id: 1}, {id: 2}]`
+  * Nested objects: `{outer: {inner: value}}`
+  * Perfect for AI data, configurations, and JSON-like structures
+  * Note: Avoid reserved keywords as property names (use `source` not `from`)
 * **Set Type** 🆕
   * Unique value collections with automatic deduplication
   * Methods: add(), remove(), has(), clear()
@@ -371,9 +377,25 @@ while true {
 ### Collections & Indexing
 
 ```klang
+# Arrays
 let nums = [1, 2, 3]
 println(nums[0])  # 1
 println(len(nums))# 3
+
+# Object literals
+let person = {name: "Alice", age: 30, city: "NYC"}
+
+# Objects in arrays
+let users = [
+    {id: 1, name: "Alice"},
+    {id: 2, name: "Bob"}
+]
+
+# Nested objects
+let config = {
+    server: {host: "localhost", port: 8080},
+    database: {name: "mydb"}
+}
 ```
 
 ### Comments & Printing

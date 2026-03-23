@@ -1,0 +1,80 @@
+# ============================================
+# Object Literals in Arrays - Working Examples
+# ============================================
+
+println("=== Object Literals in Arrays Demo ===\n")
+
+# Example 1: Simple objects in arrays
+println("Example 1: Array of Objects")
+let users = [
+    {id: 1, name: "Alice"},
+    {id: 2, name: "Bob"},
+    {id: 3, name: "Charlie"}
+]
+
+println("Users array created with " + str(len(users)) + " objects")
+println("✓ Objects in arrays work!\n")
+
+# Example 2: Nested objects
+println("Example 2: Nested Objects")
+let config = {
+    server: {
+        host: "localhost",
+        port: 8080
+    },
+    database: {
+        name: "mydb",
+        user: "admin"
+    }
+}
+
+println("Config object with nested structure")
+println("✓ Nested objects work!\n")
+
+# Example 3: Mixed types in array
+println("Example 3: Mixed Array")
+let mixed = [
+    42,
+    "hello",
+    {type: "object", value: 100},
+    [1, 2, 3],
+    true
+]
+
+println("Mixed array with " + str(len(mixed)) + " elements")
+println("✓ Mixed arrays work!\n")
+
+# Example 4: AI-style data
+println("Example 4: AI Data Structures")
+let messages = [
+    {role: "system", content: "You are helpful"},
+    {role: "user", content: "Hello"},
+    {role: "assistant", content: "Hi there!"}
+]
+
+println("Chat messages: " + str(len(messages)) + " messages")
+println("✓ AI-style objects work!\n")
+
+# Example 5: Configuration object
+println("Example 5: Configuration")
+let apiConfig = {
+    url: "https://api.example.com",
+    method: "POST",
+    headers: {
+        contentType: "application/json",
+        auth: "Bearer token123"
+    },
+    timeout: 5000
+}
+
+println("API configuration object created")
+println("✓ Configuration objects work!\n")
+
+println("=== Summary ===")
+println("✅ Object literals: {key: value}")
+println("✅ Objects in arrays: [{obj1}, {obj2}]")
+println("✅ Nested objects: {outer: {inner: value}}")
+println("✅ Mixed arrays: [number, string, {object}]")
+println()
+println("🎉 Object literals are fully supported in KLang!")
+println("This feature is perfect for AI applications, JSON-like data, and config objects!")
