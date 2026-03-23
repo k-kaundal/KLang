@@ -72,11 +72,11 @@ class VectorDB {
         while i < len(this.embeddings) {
             let similarity = queryEmbedding.cosineSimilarity(this.embeddings[i])
             
-            results.push({
-                "document": this.documents[i],
-                "similarity": similarity,
-                "index": i
-            })
+            let entry = dict()
+            entry.set("document", this.documents[i])
+            entry.set("similarity", similarity)
+            entry.set("index", i)
+            results.push(entry)
             
             i = i + 1
         }
@@ -250,11 +250,12 @@ class RAGSystem {
             let sourceNum = i + 1
             
             context = context + "[" + str(sourceNum) + "] " + doc.content + "\n\n"
-            sources.push({
-                "number": sourceNum,
-                "id": doc.id,
-                "similarity": results[i].similarity
-            })
+            
+            let source = dict()
+            source.set("number", sourceNum)
+            source.set("id", doc.id)
+            source.set("similarity", results[i].similarity)
+            sources.push(source)
             
             i = i + 1
         }

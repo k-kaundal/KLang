@@ -6,24 +6,23 @@
 println("=== KLang AI-Native RAG Demo ===\n")
 
 # Sample documents for the knowledge base
-let documents = [
-    {
-        "id": "doc1",
-        "content": "KLang is a high-performance programming language combining C's speed, Python's simplicity, and TypeScript's type safety. It features static typing, garbage collection, and a custom runtime."
-    },
-    {
-        "id": "doc2",
-        "content": "KLang supports object-oriented programming with classes, inheritance, abstract classes, access modifiers, and static members. The OOP system is fully integrated into the language."
-    },
-    {
-        "id": "doc3",
-        "content": "The KLang standard library includes 43+ utility functions across math, string, array, I/O, and core modules. All written in pure KLang code for transparency and extensibility."
-    },
-    {
-        "id": "doc4",
-        "content": "KLang now has AI-native capabilities including LLM integration, embeddings, RAG systems, and autonomous agents. These features are implemented 100% in KLang itself."
-    }
-]
+let doc1 = dict()
+doc1.set("id", "doc1")
+doc1.set("content", "KLang is a high-performance programming language combining C's speed, Python's simplicity, and TypeScript's type safety. It features static typing, garbage collection, and a custom runtime.")
+
+let doc2 = dict()
+doc2.set("id", "doc2")
+doc2.set("content", "KLang supports object-oriented programming with classes, inheritance, abstract classes, access modifiers, and static members. The OOP system is fully integrated into the language.")
+
+let doc3 = dict()
+doc3.set("id", "doc3")
+doc3.set("content", "The KLang standard library includes 43+ utility functions across math, string, array, I/O, and core modules. All written in pure KLang code for transparency and extensibility.")
+
+let doc4 = dict()
+doc4.set("id", "doc4")
+doc4.set("content", "KLang now has AI-native capabilities including LLM integration, embeddings, RAG systems, and autonomous agents. These features are implemented 100% in KLang itself.")
+
+let documents = [doc1, doc2, doc3, doc4]
 
 println("Knowledge Base:")
 println("- " + str(len(documents)) + " documents loaded")
@@ -56,9 +55,17 @@ println("--- Example 2: Embedding Store & Semantic Search ---")
 let store = new EmbeddingStore()
 
 # Add embeddings to store
-store.addText("KLang programming", embedding1, {"category": "language"})
-store.addText("KLang language", embedding2, {"category": "language"})
-store.addText("Python tutorial", embedding3, {"category": "tutorial"})
+let meta1 = dict()
+meta1.set("category", "language")
+store.addText("KLang programming", embedding1, meta1)
+
+let meta2 = dict()
+meta2.set("category", "language")
+store.addText("KLang language", embedding2, meta2)
+
+let meta3 = dict()
+meta3.set("category", "tutorial")
+store.addText("Python tutorial", embedding3, meta3)
 
 println("Store size: " + str(store.size()))
 

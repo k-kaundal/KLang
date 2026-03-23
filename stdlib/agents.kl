@@ -19,11 +19,11 @@ class AgentMemory {
     
     public fn remember(key: string, value: string) {
         # Add to short-term memory
-        this.shortTermMemory.push({
-            "key": key,
-            "value": value,
-            "timestamp": 0
-        })
+        let memory = dict()
+        memory.set("key", key)
+        memory.set("value", value)
+        memory.set("timestamp", 0)
+        this.shortTermMemory.push(memory)
         
         # Limit short-term memory size
         if len(this.shortTermMemory) > this.maxShortTerm {
@@ -374,11 +374,11 @@ class TaskAgent {
     }
     
     public fn addTask(task: string) {
-        this.tasks.push({
-            "description": task,
-            "status": "pending",
-            "result": null
-        })
+        let taskEntry = dict()
+        taskEntry.set("description", task)
+        taskEntry.set("status", "pending")
+        taskEntry.set("result", null)
+        this.tasks.push(taskEntry)
     }
     
     public fn executeTasks() {

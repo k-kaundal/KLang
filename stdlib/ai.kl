@@ -15,7 +15,7 @@ class AIConfig {
     private let maxTokens: int = 1000
     private let timeout: int = 30
     
-    fn init(apiKey: string, model: string = "gpt-4") {
+    fn init(apiKey: string, model: string) {
         this.apiKey = apiKey
         this.model = model
     }
@@ -89,7 +89,7 @@ class ChatSession {
     private let systemPrompt: string = ""
     private let config = null
     
-    fn init(systemPrompt: string = "", config = null) {
+    fn init(systemPrompt: string, config) {
         this.systemPrompt = systemPrompt
         this.config = config
         
@@ -161,7 +161,7 @@ class Embedding {
     public let text: string = ""
     public let model: string = ""
     
-    fn init(vector, text: string = "", model: string = "text-embedding-3-small") {
+    fn init(vector, text: string, model: string) {
         this.vector = vector
         this.text = text
         this.model = model
@@ -265,7 +265,7 @@ fn countTokens(text: string) -> int {
 }
 
 # Helper function to estimate cost
-fn estimateCost(tokens: int, model: string = "gpt-4") -> float {
+fn estimateCost(tokens: int, model: string) -> float {
     # Pricing as of 2026 (approximate)
     let pricePerToken = 0.00003
     
@@ -290,11 +290,11 @@ class BatchProcessor {
     }
     
     public fn addPrompt(prompt: string) {
-        this.results.push({
-            "prompt": prompt,
-            "result": null,
-            "status": "pending"
-        })
+        let entry = dict()
+        entry.set("prompt", prompt)
+        entry.set("result", null)
+        entry.set("status", "pending")
+        this.results.push(entry)
     }
     
     public fn getResults() {

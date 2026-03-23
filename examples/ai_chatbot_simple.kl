@@ -56,18 +56,29 @@ println()
 println("--- Example 2: Multi-turn Conversation ---")
 
 # Simulate a conversation
-let conversation = [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "Hi! My name is Alice."},
-    {"role": "assistant", "content": "Hello Alice! Nice to meet you."},
-    {"role": "user", "content": "What's my name?"}
-]
+let msg1 = dict()
+msg1.set("role", "system")
+msg1.set("content", "You are a helpful assistant.")
+
+let msg2 = dict()
+msg2.set("role", "user")
+msg2.set("content", "Hi! My name is Alice.")
+
+let msg3 = dict()
+msg3.set("role", "assistant")
+msg3.set("content", "Hello Alice! Nice to meet you.")
+
+let msg4 = dict()
+msg4.set("role", "user")
+msg4.set("content", "What's my name?")
+
+let conversation = [msg1, msg2, msg3, msg4]
 
 println("Multi-turn conversation test:")
 let i = 0
 while i < len(conversation) {
     let msg = conversation[i]
-    println(msg.role + ": " + msg.content)
+    println(msg.get("role") + ": " + msg.get("content"))
     i = i + 1
 }
 

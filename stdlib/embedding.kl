@@ -38,12 +38,12 @@ class EmbeddingStore {
         let i = 0
         while i < len(this.embeddings) {
             let similarity = queryEmbedding.cosineSimilarity(this.embeddings[i])
-            similarities.push({
-                "index": i,
-                "similarity": similarity,
-                "embedding": this.embeddings[i],
-                "metadata": this.metadata[i]
-            })
+            let entry = dict()
+            entry.set("index", i)
+            entry.set("similarity", similarity)
+            entry.set("embedding", this.embeddings[i])
+            entry.set("metadata", this.metadata[i])
+            similarities.push(entry)
             i = i + 1
         }
         
