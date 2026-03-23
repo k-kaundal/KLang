@@ -474,6 +474,63 @@ if fexists("/tmp/data.txt") {
 }
 ```
 
+### 🤖 AI-Native Features (NEW!)
+
+KLang includes comprehensive AI capabilities implemented **100% in KLang**:
+
+```klang
+# Environment Variables - Secure API key management
+let apiKey = env.get("OPENAI_API_KEY")
+env.set("MODEL", "gpt-4")
+
+# HTTP Client - REST API calls
+let response = http.get("https://api.example.com/data")
+let result = http.post("https://api.example.com", jsonBody)
+
+# LLM Integration - Talk to AI models
+let answer = llm("What is KLang?", apiKey)
+
+# Full LLM Client
+let config = new LLMConfig("openai", apiKey)
+let client = new LLMClient(config)
+let response = client.complete("Explain AI")
+
+# Chat with History
+let session = new ChatSession("You are a KLang expert")
+session.addUserMessage("How do I create a class?")
+let answer = client.chat(session)
+
+# Vector Embeddings
+let emb1 = new Embedding([0.1, 0.2, 0.3], "text1")
+let emb2 = new Embedding([0.2, 0.3, 0.4], "text2")
+let similarity = emb1.cosineSimilarity(emb2)
+
+# Semantic Search
+let store = new EmbeddingStore()
+store.addText("document", embedding)
+let results = store.search(queryEmbedding, 5)
+
+# RAG System - Knowledge-augmented AI
+let rag = new RAGSystem(client, 500, 3)
+rag.ingestDocument("doc1", "KLang is a programming language...")
+let answer = rag.query("What is KLang?")
+
+# Prompt Engineering
+let template = new PromptTemplate("Write a {language} function that {task}")
+let values = dict()
+values.set("language", "KLang")
+values.set("task", "sorts an array")
+let prompt = template.fill(values)
+
+# Autonomous Agents
+let agent = new Agent("Assistant", "helpful AI", client)
+agent.addGoal("Help the user")
+let thought = agent.think("User needs assistance")
+agent.act("search", "KLang documentation")
+```
+
+**See the complete AI guide:** [AI-Native Guide](docs/AI_NATIVE_GUIDE.md)
+
 ---
 
 ## 🧠 Design Principles
@@ -597,15 +654,26 @@ klang help run
 
 ## 📚 Standard Library
 
-KLang includes a **basic standard library** with 43+ utility functions:
+KLang includes a comprehensive standard library:
 
+### Core Modules (43+ functions)
 * **math.kl** - Mathematical functions (abs, pow, sqrt, factorial, gcd, lcm, etc.)
 * **string.kl** - String utilities (repeat, reverse, padding, etc.)
 * **array.kl** - Array operations (sum, average, min, max, etc.)
 * **io.kl** - I/O utilities (prompt, headers, separators, etc.)
 * **core.kl** - Core utilities (sign, compare, logical operations, etc.)
 
-See [`stdlib/README.md`](stdlib/README.md) for complete documentation and [`examples/stdlib_simple.kl`](examples/stdlib_simple.kl) for usage examples.
+### 🤖 AI-Native Modules (NEW!)
+* **ai.kl** - Core AI utilities (AIConfig, Message, ChatSession, Embedding)
+* **llm.kl** - LLM integration (OpenAI, Anthropic, Ollama)
+* **embedding.kl** - Vector embeddings and semantic search
+* **prompt.kl** - Prompt engineering (templates, few-shot, CoT, RAG)
+* **rag.kl** - Complete RAG system implementation
+* **agents.kl** - Autonomous agents with memory and reasoning
+
+**Total:** 11 modules, 100+ functions, 24 AI classes
+
+See [`stdlib/README.md`](stdlib/README.md) for complete documentation, [`stdlib/AI_README.md`](stdlib/AI_README.md) for AI modules, and [`examples/`](examples/) for usage examples.
 
 ## ✅ File Extension Validation
 
@@ -649,6 +717,8 @@ MIT License
 * TypeScript (type safety)
 * Rust (memory safety)
 * Go (developer experience)
+* **LangChain (AI patterns) 🆕**
+* **AutoGPT (autonomous agents) 🆕**
 
 ---
 
@@ -660,6 +730,9 @@ A language that is:
 * As simple as Python
 * As safe as Rust
 * As productive as JavaScript
+* **As intelligent as AI** 🆕
+
+**KLang: The first AI-Native Core Language** - Where AI is not a library, but a native feature of the language itself.
 
 ---
 
