@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <regex.h>
 
 /* Forward declarations for helper functions */
 extern Value eval_block(Interpreter *interp, ASTNode *block, Env *env);
@@ -2422,6 +2423,209 @@ static Value builtin_set_clear(Interpreter *interp, Value *args, int argc) {
     return make_null();
 }
 
+// ============================================================================
+// Regex Functions using POSIX regex
+// ============================================================================
+
+static Value builtin_regexTest(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+        fprintf(stderr, "Error: regexTest requires two string arguments (pattern, text)\n");
+        return make_bool(0);
+    }
+    
+    const char *pattern = args[0].as.str_val;
+    const char *text = args[1].as.str_val;
+    
+    regex_t regex;
+    int result = regcomp(&regex, pattern, REG_EXTENDED);
+    
+    if (result != 0) {
+        fprintf(stderr, "Error: Invalid regex pattern: %s\n", pattern);
+        regfree(&regex);
+        return make_bool(0);
+    }
+    
+    result = regexec(&regex, text, 0, NULL, 0);
+    regfree(&regex);
+    
+    return make_bool(result == 0);
+}
+
+static Value builtin_regexMatch(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+        fprintf(stderr, "Error: regexMatch requires two string arguments (pattern, text)\n");
+        return make_null();
+    }
+    
+    const char *pattern = args[0].as.str_val;
+    const char *text = args[1].as.str_val;
+    
+    regex_t regex;
+    int result = regcomp(&regex, pattern, REG_EXTENDED);
+    
+    if (result != 0) {
+        fprintf(stderr, "Error: Invalid regex pattern: %s\n", pattern);
+        regfree(&regex);
+        return make_null();
+    }
+    
+    regmatch_t matches[10];  // Support up to 10 capture groups
+    result = regexec(&regex, text, 10, matches, 0);
+    
+    if (result != 0) {
+        regfree(&regex);
+        return make_null();
+    }
+    
+    // Count actual matches
+    int match_count = 0;
+    for (int i = 0; i < 10 && matches[i].rm_so != -1; i++) {
+        match_count++;
+    }
+    
+    // Create array of matches
+    Value match_list;
+    match_list.type = VAL_LIST;
+    match_list.as.list_val.items = malloc(match_count * sizeof(Value));
+    match_list.as.list_val.count = match_count;
+    match_list.as.list_val.capacity = match_count;
+    
+    for (int i = 0; i < match_count; i++) {
+        int len = matches[i].rm_eo - matches[i].rm_so;
+        char *match_str = malloc(len + 1);
+        strncpy(match_str, text + matches[i].rm_so, len);
+        match_str[len] = '\0';
+        
+        match_list.as.list_val.items[i] = make_string(match_str);
+        free(match_str);
+    }
+    
+    regfree(&regex);
+    return match_list;
+}
+
+static Value builtin_regexReplace(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 3 || args[0].type != VAL_STRING || 
+        args[1].type != VAL_STRING || args[2].type != VAL_STRING) {
+        fprintf(stderr, "Error: regexReplace requires three string arguments (pattern, text, replacement)\n");
+        return make_null();
+    }
+    
+    const char *pattern = args[0].as.str_val;
+    const char *text = args[1].as.str_val;
+    const char *replacement = args[2].as.str_val;
+    
+    regex_t regex;
+    int result = regcomp(&regex, pattern, REG_EXTENDED);
+    
+    if (result != 0) {
+        fprintf(stderr, "Error: Invalid regex pattern: %s\n", pattern);
+        regfree(&regex);
+        return make_string((char*)text);
+    }
+    
+    regmatch_t match;
+    result = regexec(&regex, text, 1, &match, 0);
+    
+    if (result != 0) {
+        regfree(&regex);
+        return make_string((char*)text);
+    }
+    
+    // Build result string with replacement
+    int text_len = strlen(text);
+    int repl_len = strlen(replacement);
+    int new_len = text_len - (match.rm_eo - match.rm_so) + repl_len;
+    char *new_text = malloc(new_len + 1);
+    
+    // Copy before match
+    strncpy(new_text, text, match.rm_so);
+    // Copy replacement
+    strcpy(new_text + match.rm_so, replacement);
+    // Copy after match
+    strcpy(new_text + match.rm_so + repl_len, text + match.rm_eo);
+    
+    Value result_val = make_string(new_text);
+    free(new_text);
+    regfree(&regex);
+    return result_val;
+}
+
+static Value builtin_regexSplit(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+        fprintf(stderr, "Error: regexSplit requires two string arguments (pattern, text)\n");
+        return make_null();
+    }
+    
+    const char *pattern = args[0].as.str_val;
+    const char *text = args[1].as.str_val;
+    
+    regex_t regex;
+    int result = regcomp(&regex, pattern, REG_EXTENDED);
+    
+    if (result != 0) {
+        fprintf(stderr, "Error: Invalid regex pattern: %s\n", pattern);
+        regfree(&regex);
+        // Return array with original text
+        Value list;
+        list.type = VAL_LIST;
+        list.as.list_val.items = malloc(sizeof(Value));
+        list.as.list_val.count = 1;
+        list.as.list_val.capacity = 1;
+        list.as.list_val.items[0] = make_string((char*)text);
+        return list;
+    }
+    
+    // First, count how many splits we'll have
+    int split_count = 1;  // At least one part
+    const char *current = text;
+    regmatch_t match;
+    
+    while (regexec(&regex, current, 1, &match, 0) == 0) {
+        split_count++;
+        current += match.rm_eo;
+        if (match.rm_eo == 0) break;  // Prevent infinite loop
+    }
+    
+    // Create result list
+    Value list;
+    list.type = VAL_LIST;
+    list.as.list_val.items = malloc(split_count * sizeof(Value));
+    list.as.list_val.capacity = split_count;
+    list.as.list_val.count = 0;
+    
+    // Now do the actual splitting
+    current = text;
+    while (regexec(&regex, current, 1, &match, 0) == 0) {
+        // Add part before match
+        if (match.rm_so >= 0) {
+            char *part = malloc(match.rm_so + 1);
+            strncpy(part, current, match.rm_so);
+            part[match.rm_so] = '\0';
+            list.as.list_val.items[list.as.list_val.count++] = make_string(part);
+            free(part);
+        }
+        
+        // Move past the match
+        current += match.rm_eo;
+        
+        // Prevent infinite loop on empty matches
+        if (match.rm_eo == 0) break;
+    }
+    
+    // Add remaining text
+    if (*current) {
+        list.as.list_val.items[list.as.list_val.count++] = make_string((char*)current);
+    }
+    
+    regfree(&regex);
+    return list;
+}
+
 void runtime_init(Interpreter *interp) {
     Value v;
     v.type = VAL_BUILTIN;
@@ -2723,6 +2927,19 @@ void runtime_init(Interpreter *interp) {
     
     v.as.builtin = builtin_set_clear;
     env_set_local(interp->global_env, "__set_clear", v);
+    
+    /* Regex functions */
+    v.as.builtin = builtin_regexTest;
+    env_set_local(interp->global_env, "regexTest", v);
+    
+    v.as.builtin = builtin_regexMatch;
+    env_set_local(interp->global_env, "regexMatch", v);
+    
+    v.as.builtin = builtin_regexReplace;
+    env_set_local(interp->global_env, "regexReplace", v);
+    
+    v.as.builtin = builtin_regexSplit;
+    env_set_local(interp->global_env, "regexSplit", v);
     
     // Create Promise "class" with static methods
     Value promise_class = make_class("Promise", NULL);
