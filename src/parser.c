@@ -1064,7 +1064,6 @@ static ASTNode *parse_func_def(Parser *parser) {
 
     while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
         int is_rest = 0;
-        int has_default = 0;
         
         /* Check for rest parameter */
         if (check(parser, TOKEN_SPREAD)) {
@@ -1094,7 +1093,6 @@ static ASTNode *parse_func_def(Parser *parser) {
         /* Check for default value: name = expr */
         if (match(parser, TOKEN_ASSIGN)) {
             param_defaults[param_count] = parse_expression(parser);
-            has_default = 1;
             seen_default = 1;
         } else if (seen_default && !is_rest) {
             /* Required parameter after default parameter */
