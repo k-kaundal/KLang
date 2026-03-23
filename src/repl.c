@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "lexer.h"
 #include "parser.h"
 #include "interpreter.h"
@@ -34,60 +36,81 @@ void run_repl(void) {
     printf("\n");
     printf("%s╔═══════════════════════════════════════════════════════════╗%s\n",
            get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
-    printf("%s║              %sKLang REPL v0.2.0%s                       ║%s\n",
+    printf("%s║              %sKLang REPL v0.3.0%s                       ║%s\n",
            get_color(COLOR_BOLD_CYAN), get_color(COLOR_BOLD_WHITE),
            get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
     printf("%s║        Interactive Programming Environment              ║%s\n",
            get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+    printf("%s║        Now with readline support!                       ║%s\n",
+           get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
     printf("%s╚═══════════════════════════════════════════════════════════╝%s\n",
            get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
     printf("\n");
-    printf("%sTip:%s Type %sexit%s or %squit%s to leave the REPL\n",
-           get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET),
+    printf("%sFeatures:%s\n", get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET));
+    printf("  • Command history (↑/↓ arrows)\n");
+    printf("  • Line editing (←/→/Home/End)\n");
+    printf("  • Type %sexit%s or %squit%s to leave, or press Ctrl+D\n",
            get_color(COLOR_CYAN), get_color(COLOR_RESET),
            get_color(COLOR_CYAN), get_color(COLOR_RESET));
-    printf("%sTip:%s Use %sexit(n)%s to exit with a specific code\n\n",
-           get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET),
-           get_color(COLOR_CYAN), get_color(COLOR_RESET));
+    printf("\n");
 
-    {
-        char line[4096];
-        while (1) {
-            Lexer lexer;
-            Parser parser;
-            int count = 0;
-            ASTNode **nodes;
-            int i;
+    char *line;
+    while (1) {
+        Lexer lexer;
+        Parser parser;
+        int count = 0;
+        ASTNode **nodes;
+        int i;
 
-            printf("%s>%s ", get_color(COLOR_BOLD_GREEN), get_color(COLOR_RESET));
-            fflush(stdout);
-            if (!fgets(line, sizeof(line), stdin)) break;
-            {
-                int len = (int)strlen(line);
-                if (len > 0 && line[len-1] == '\n') line[len-1] = '\0';
-            }
-            if (strcmp(line, "exit") == 0 || strcmp(line, "quit") == 0) break;
-            if (line[0] == '\0') continue;
-
-            lexer_init(&lexer, line);
-            parser_init(&parser, &lexer);
-
-            nodes = parse_program(&parser, &count);
-
-            for (i = 0; i < count; i++) {
-                Value result = eval_node(interp, nodes[i]);
-                if (result.type != VAL_NULL) {
-                    printf("%s=> %s", get_color(COLOR_CYAN), get_color(COLOR_RESET));
-                    value_print(&result);
-                    printf("\n");
-                }
-                value_free(&result);
-                ast_free(nodes[i]);
-            }
-            free(nodes);
-            parser_free(&parser);
-            lexer_free(&lexer);
+        // Use readline for better input handling
+        char prompt[256];
+        snprintf(prompt, sizeof(prompt), "%s>%s ", 
+                get_color(COLOR_BOLD_GREEN), get_color(COLOR_RESET));
+        
+        line = readline(prompt);
+        
+        // Check for EOF (Ctrl+D)
+        if (!line) {
+            printf("\n");
+            break;
         }
+        
+        // Skip empty lines
+        if (line[0] == '\0') {
+            free(line);
+            continue;
+        }
+        
+        // Add to history if not empty
+        add_history(line);
+        
+        // Check for exit commands
+        if (strcmp(line, "exit") == 0 || strcmp(line, "quit") == 0) {
+            free(line);
+            break;
+        }
+
+        lexer_init(&lexer, line);
+        parser_init(&parser, &lexer);
+
+        nodes = parse_program(&parser, &count);
+
+        for (i = 0; i < count; i++) {
+            Value result = eval_node(interp, nodes[i]);
+            if (result.type != VAL_NULL) {
+                printf("%s=> %s", get_color(COLOR_CYAN), get_color(COLOR_RESET));
+                value_print(&result);
+                printf("\n");
+            }
+            value_free(&result);
+            ast_free(nodes[i]);
+        }
+        free(nodes);
+        parser_free(&parser);
+        lexer_free(&lexer);
+        
+        // Free readline allocated memory
+        free(line);
     }
 
     printf("\n%sGoodbye!%s\n", get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
