@@ -448,7 +448,6 @@ LLVMValueRef llvm_compile_unop(LLVMCompilerContext *ctx, ASTNode *node) {
 // ============================================================================
 
 LLVMValueRef llvm_compile_call(LLVMCompilerContext *ctx, ASTNode *node) {
-    fprintf(stderr, "[DEBUG] llvm_compile_call: entry\n");
     // Get function name
     if (node->data.call.callee->type != NODE_IDENT) {
         fprintf(stderr, "Complex function calls not yet supported\n");
@@ -457,65 +456,38 @@ LLVMValueRef llvm_compile_call(LLVMCompilerContext *ctx, ASTNode *node) {
     }
     
     const char *func_name = node->data.call.callee->data.ident.name;
-    fprintf(stderr, "[DEBUG] func_name=%s\n", func_name);
     
-    // Handle built-in print function
+    // Handle built-in print function with a simpler approach
     if (strcmp(func_name, "print") == 0 || strcmp(func_name, "println") == 0) {
-        fprintf(stderr, "[DEBUG] Handling print/println\n");
         int arg_count = node->data.call.args.count;
-        fprintf(stderr, "[DEBUG] arg_count=%d\n", arg_count);
+        
+        // Build format string and collect all arguments
+        char format_str[1024] = "";
+        LLVMValueRef *print_args = malloc(sizeof(LLVMValueRef) * (arg_count + 1));
+        int print_arg_count = 1; // Start with 1 for format string
         
         for (int i = 0; i < arg_count; i++) {
-            fprintf(stderr, "[DEBUG] Processing arg %d\n", i);
             ASTNode *arg_node = node->data.call.args.items[i];
-            if (!arg_node) {
-                fprintf(stderr, "[DEBUG] Null arg node at %d\n", i);
-                continue;
-            }
+            if (!arg_node) continue;
             
-            fprintf(stderr, "[DEBUG] Compiling arg expression\n");
             LLVMValueRef arg = llvm_compile_expr(ctx, arg_node);
-            if (!arg) {
-                fprintf(stderr, "[DEBUG] Failed to compile arg\n");
-                continue;
-            }
-            fprintf(stderr, "[DEBUG] Arg compiled successfully\n");
+            if (!arg) continue;
             
-            // Check that builder is positioned in a valid block
-            if (!LLVMGetInsertBlock(ctx->builder)) {
-                fprintf(stderr, "Error: Builder not positioned in a basic block\n");
-                ctx->has_error = 1;
-                return NULL;
-            }
-            fprintf(stderr, "[DEBUG] Builder is positioned correctly\n");
-            
-            // Determine format string and possibly convert arg based on type
-            LLVMValueRef format;
-            fprintf(stderr, "[DEBUG] Getting arg type\n");
             LLVMTypeRef arg_type = LLVMTypeOf(arg);
-            if (!arg_type) {
-                fprintf(stderr, "Error: Could not determine argument type\n");
-                continue;
-            }
-            
-            fprintf(stderr, "[DEBUG] Getting type kind\n");
             LLVMTypeKind kind = LLVMGetTypeKind(arg_type);
-            fprintf(stderr, "[DEBUG] Type kind=%d\n", kind);
+            
+            // Add space separator if not first argument
+            if (i > 0) {
+                strcat(format_str, " ");
+            }
             
             if (kind == LLVMPointerTypeKind) {
-                fprintf(stderr, "[DEBUG] String type - creating format\n");
                 // String argument
-                format = llvm_compile_string(ctx, "%s");
-                fprintf(stderr, "[DEBUG] Format created\n");
+                strcat(format_str, "%s");
+                print_args[print_arg_count++] = arg;
             } else if (kind == LLVMIntegerTypeKind) {
-                fprintf(stderr, "[DEBUG] Integer/bool type\n");
-                // Boolean - convert to string
+                // Boolean - convert to "true" or "false" string inline
                 LLVMValueRef current_func = ctx->current_function;
-                if (!current_func) {
-                    fprintf(stderr, "Error: No current function context\n");
-                    ctx->has_error = 1;
-                    return NULL;
-                }
                 
                 LLVMBasicBlockRef true_bb = LLVMAppendBasicBlock(current_func, "bool.true");
                 LLVMBasicBlockRef false_bb = LLVMAppendBasicBlock(current_func, "bool.false");
@@ -539,72 +511,29 @@ LLVMValueRef llvm_compile_call(LLVMCompilerContext *ctx, ASTNode *node) {
                 LLVMBasicBlockRef incoming_blocks[] = { true_end, false_end };
                 LLVMAddIncoming(phi, incoming_values, incoming_blocks, 2);
                 
-                format = llvm_compile_string(ctx, "%s");
-                arg = phi;
+                strcat(format_str, "%s");
+                print_args[print_arg_count++] = phi;
             } else {
-                fprintf(stderr, "[DEBUG] Numeric type - creating format\n");
                 // Numeric (double)
-                format = llvm_compile_string(ctx, "%g");
-                fprintf(stderr, "[DEBUG] Format created\n");
-            }
-            
-            // Make the printf call with proper error checking
-            fprintf(stderr, "[DEBUG] Checking printf_func\n");
-            if (!ctx->printf_func) {
-                fprintf(stderr, "Error: printf function not initialized\n");
-                ctx->has_error = 1;
-                return NULL;
-            }
-            
-            fprintf(stderr, "[DEBUG] Getting printf function type\n");
-            LLVMTypeRef printf_func_type = LLVMTypeOf(ctx->printf_func);
-            if (!printf_func_type) {
-                fprintf(stderr, "Error: Could not get printf function type\n");
-                ctx->has_error = 1;
-                return NULL;
-            }
-            
-            fprintf(stderr, "[DEBUG] Getting printf element type\n");
-            LLVMTypeRef printf_type = LLVMGetElementType(printf_func_type);
-            if (!printf_type) {
-                fprintf(stderr, "Error: Could not get printf element type\n");
-                ctx->has_error = 1;
-                return NULL;
-            }
-            
-            fprintf(stderr, "[DEBUG] Allocating args array\n");
-            // Allocate args array on stack (not as compound literal)
-            LLVMValueRef *printf_args = malloc(sizeof(LLVMValueRef) * 2);
-            printf_args[0] = format;
-            printf_args[1] = arg;
-            
-            fprintf(stderr, "[DEBUG] About to call LLVMBuildCall2\n");
-            LLVMBuildCall2(ctx->builder, printf_type, ctx->printf_func, printf_args, 2, "");
-            fprintf(stderr, "[DEBUG] LLVMBuildCall2 succeeded\n");
-            
-            free(printf_args);
-            
-            // Add space between arguments
-            if (i < arg_count - 1) {
-                LLVMValueRef space = llvm_compile_string(ctx, " ");
-                LLVMValueRef *space_arg = malloc(sizeof(LLVMValueRef));
-                space_arg[0] = space;
-                LLVMBuildCall2(ctx->builder, printf_type, ctx->printf_func, space_arg, 1, "");
-                free(space_arg);
+                strcat(format_str, "%g");
+                print_args[print_arg_count++] = arg;
             }
         }
         
         // Add newline for println
         if (strcmp(func_name, "println") == 0) {
-            LLVMValueRef newline = llvm_compile_string(ctx, "\n");
-            LLVMTypeRef printf_type = LLVMGetElementType(LLVMTypeOf(ctx->printf_func));
-            LLVMValueRef *newline_arg = malloc(sizeof(LLVMValueRef));
-            newline_arg[0] = newline;
-            LLVMBuildCall2(ctx->builder, printf_type, ctx->printf_func, newline_arg, 1, "");
-            free(newline_arg);
+            strcat(format_str, "\n");
         }
         
-        fprintf(stderr, "[DEBUG] print/println completed\n");
+        // Create format string constant
+        print_args[0] = llvm_compile_string(ctx, format_str);
+        
+        // Call printf directly with the function type we declared
+        LLVMTypeRef printf_args_types[] = { ctx->string_type };
+        LLVMTypeRef printf_type = LLVMFunctionType(ctx->i32_type, printf_args_types, 1, 1);
+        LLVMBuildCall2(ctx->builder, printf_type, ctx->printf_func, print_args, print_arg_count, "");
+        
+        free(print_args);
         return LLVMConstReal(ctx->double_type, 0.0);
     }
     
@@ -1173,9 +1102,9 @@ int llvm_write_object_file(LLVMCompilerContext *ctx, const char *path) {
 }
 
 int llvm_link_executable(const char *object_path, const char *executable_path) {
-    // Use system linker (gcc or clang)
+    // Use system linker (gcc or clang) with -no-pie flag for compatibility
     char cmd[1024];
-    snprintf(cmd, sizeof(cmd), "gcc %s -o %s -lm", object_path, executable_path);
+    snprintf(cmd, sizeof(cmd), "gcc -no-pie %s -o %s -lm", object_path, executable_path);
     
     int result = system(cmd);
     if (result != 0) {
