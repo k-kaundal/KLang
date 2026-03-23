@@ -977,18 +977,15 @@ void llvm_compile_function(LLVMCompilerContext *ctx, ASTNode *node) {
 // ============================================================================
 
 static LLVMValueRef create_main_wrapper(LLVMCompilerContext *ctx, ASTNode **nodes, int count) {
-    printf("[DEBUG] create_main_wrapper: count=%d\n", count);
     
     // First pass: compile function definitions
     for (int i = 0; i < count; i++) {
-        printf("[DEBUG] Pass 1: node %d, type=%d\n", i, nodes[i] ? nodes[i]->type : -1);
         if (nodes[i] && nodes[i]->type == NODE_FUNC_DEF) {
             llvm_compile_function(ctx, nodes[i]);
             if (ctx->has_error) return NULL;
         }
     }
     
-    printf("[DEBUG] Creating main function\n");
     
     // Create main function: int main(void)
     LLVMTypeRef main_type = LLVMFunctionType(ctx->i32_type, NULL, 0, 0);
@@ -999,25 +996,21 @@ static LLVMValueRef create_main_wrapper(LLVMCompilerContext *ctx, ASTNode **node
     
     ctx->current_function = main_func;
     
-    printf("[DEBUG] Starting pass 2\n");
     
     // Second pass: compile top-level statements (excluding function definitions)
     for (int i = 0; i < count; i++) {
-        printf("[DEBUG] Pass 2: node %d, type=%d\n", i, nodes[i] ? nodes[i]->type : -1);
         if (nodes[i] && nodes[i]->type != NODE_FUNC_DEF) {
             llvm_compile_stmt(ctx, nodes[i]);
             if (ctx->has_error) return NULL;
         }
     }
     
-    printf("[DEBUG] Adding return\n");
     
     // Add return 0 if not already terminated
     if (!LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(ctx->builder))) {
         LLVMBuildRet(ctx->builder, LLVMConstInt(ctx->i32_type, 0, 0));
     }
     
-    printf("[DEBUG] Main wrapper complete\n");
     
     return main_func;
 }
@@ -1120,7 +1113,6 @@ int llvm_link_executable(const char *object_path, const char *executable_path) {
 // ============================================================================
 
 int llvm_compile_to_object(ASTNode **nodes, int count, const char *output_path) {
-    printf("[DEBUG] Starting compilation with %d nodes\n", count);
     
     LLVMCompilerContext *ctx = llvm_context_new("klang_module");
     if (!ctx) {
@@ -1128,12 +1120,10 @@ int llvm_compile_to_object(ASTNode **nodes, int count, const char *output_path) 
         return -1;
     }
     
-    printf("[DEBUG] Created LLVM context\n");
     
     // Create main function and compile AST
     create_main_wrapper(ctx, nodes, count);
     
-    printf("[DEBUG] Created main wrapper\n");
     
     if (ctx->has_error) {
         fprintf(stderr, "Compilation errors occurred\n");
@@ -1150,17 +1140,14 @@ int llvm_compile_to_object(ASTNode **nodes, int count, const char *output_path) 
         return -1;
     }
     
-    printf("[DEBUG] Verified module\n");
     
     // Apply optimizations
     llvm_apply_optimizations(ctx);
     
-    printf("[DEBUG] Applied optimizations\n");
     
     // Write object file
     int result = llvm_write_object_file(ctx, output_path);
     
-    printf("[DEBUG] Wrote object file: %d\n", result);
     
     llvm_context_free(ctx);
     return result;
