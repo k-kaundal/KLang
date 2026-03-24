@@ -6,6 +6,7 @@ const html = document.documentElement;
 const savedTheme = localStorage.getItem('theme') || 'dark';
 html.setAttribute('data-theme', savedTheme);
 updateThemeIcon(savedTheme);
+updateHighlightTheme(savedTheme);
 
 themeToggle.addEventListener('click', () => {
     const currentTheme = html.getAttribute('data-theme');
@@ -14,6 +15,7 @@ themeToggle.addEventListener('click', () => {
     html.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     updateThemeIcon(newTheme);
+    updateHighlightTheme(newTheme);
 });
 
 function updateThemeIcon(theme) {
@@ -26,6 +28,21 @@ function updateThemeIcon(theme) {
     } else {
         sunIcon.style.display = 'none';
         moonIcon.style.display = 'block';
+    }
+}
+
+function updateHighlightTheme(theme) {
+    const darkTheme = document.getElementById('highlight-theme-dark');
+    const lightTheme = document.getElementById('highlight-theme-light');
+    
+    if (darkTheme && lightTheme) {
+        if (theme === 'dark') {
+            darkTheme.disabled = false;
+            lightTheme.disabled = true;
+        } else {
+            darkTheme.disabled = true;
+            lightTheme.disabled = false;
+        }
     }
 }
 
@@ -62,7 +79,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     // Highlight all code blocks
     document.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightBlock(block);
+        hljs.highlightElement(block);
     });
 });
 
@@ -443,7 +460,7 @@ function updateCodeExample(language, code) {
     const codeBlock = document.querySelector(`[data-language="${language}"] code`);
     if (codeBlock) {
         codeBlock.textContent = code;
-        hljs.highlightBlock(codeBlock);
+        hljs.highlightElement(codeBlock);
     }
 }
 

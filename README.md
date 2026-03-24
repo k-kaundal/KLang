@@ -387,8 +387,8 @@ Special thanks to all [contributors](https://github.com/k-kaundal/KLang/graphs/c
 - 📖 **Documentation**: [docs/](docs/)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/k-kaundal/KLang/discussions)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/k-kaundal/KLang/issues)
-- 📧 **Email**: [INSERT EMAIL]
-- 🐦 **Twitter**: [INSERT TWITTER]
+- 🐦 **X (Twitter)**: [@k_k_kaundal](https://x.com/k_k_kaundal)
+- 💻 **GitHub**: [@k-kaundal](https://github.com/k-kaundal)
 
 ---
 
