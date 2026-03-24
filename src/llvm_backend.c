@@ -3,7 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <llvm-c/TargetMachine.h>
-#include <llvm-c/Transforms/PassBuilder.h>
+
+// Try to detect LLVM version by checking for legacy pass headers
+// Legacy pass manager was removed in LLVM 17
+#if __has_include(<llvm-c/Transforms/Scalar.h>)
+    #include <llvm-c/Transforms/Scalar.h>
+    #include <llvm-c/Transforms/Utils.h>
+    #define LLVM_LEGACY_PASSES 1
+#else
+    #include <llvm-c/Transforms/PassBuilder.h>
+    #include <llvm-c/Target.h>
+    #define LLVM_LEGACY_PASSES 0
+#endif
 
 #define SYMBOL_TABLE_SIZE 256
 
@@ -1020,7 +1031,8 @@ static LLVMValueRef create_main_wrapper(LLVMCompilerContext *ctx, ASTNode **node
 // ============================================================================
 
 void llvm_apply_optimizations(LLVMCompilerContext *ctx) {
-    // Create pass manager
+#if LLVM_LEGACY_PASSES
+    // Use legacy pass manager for LLVM < 17
     LLVMPassManagerRef pm = LLVMCreatePassManager();
     
     // Add optimization passes
@@ -1038,6 +1050,53 @@ void llvm_apply_optimizations(LLVMCompilerContext *ctx) {
     
     // Cleanup
     LLVMDisposePassManager(pm);
+#else
+    // Use new pass manager for LLVM >= 17
+    // Create a target machine for optimization (required by new PM)
+    char *triple = LLVMGetDefaultTargetTriple();
+    char *cpu = LLVMGetHostCPUName();
+    char *features = LLVMGetHostCPUFeatures();
+    
+    LLVMTargetRef target;
+    char *error = NULL;
+    if (LLVMGetTargetFromTriple(triple, &target, &error) != 0) {
+        fprintf(stderr, "Failed to get target: %s\n", error);
+        LLVMDisposeMessage(error);
+        LLVMDisposeMessage(triple);
+        LLVMDisposeMessage(cpu);
+        LLVMDisposeMessage(features);
+        return;
+    }
+    
+    LLVMTargetMachineRef tm = LLVMCreateTargetMachine(
+        target, triple, cpu, features,
+        LLVMCodeGenLevelDefault,
+        LLVMRelocDefault,
+        LLVMCodeModelDefault
+    );
+    
+    // Create pass builder options
+    LLVMPassBuilderOptionsRef options = LLVMCreatePassBuilderOptions();
+    LLVMPassBuilderOptionsSetVerifyEach(options, 0);
+    
+    // Run optimization pipeline similar to -O2
+    // This includes mem2reg, instcombine, reassociate, gvn, simplifycfg, dse, adce, and more
+    const char *passes = "default<O2>";
+    
+    LLVMErrorRef err = LLVMRunPasses(ctx->module, passes, tm, options);
+    if (err) {
+        char *err_msg = LLVMGetErrorMessage(err);
+        fprintf(stderr, "Failed to run optimization passes: %s\n", err_msg);
+        LLVMDisposeErrorMessage(err_msg);
+    }
+    
+    // Cleanup
+    LLVMDisposePassBuilderOptions(options);
+    LLVMDisposeTargetMachine(tm);
+    LLVMDisposeMessage(triple);
+    LLVMDisposeMessage(cpu);
+    LLVMDisposeMessage(features);
+#endif
 }
 
 // ============================================================================
