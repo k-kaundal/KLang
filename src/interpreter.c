@@ -11,6 +11,15 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env);
 // Forward declaration for Promise constructor
 extern Value builtin_Promise_constructor(Interpreter *interp, Value *args, int argc);
 
+/* Helper function to increment reference count when copying dict/set values */
+static void value_retain(Value *v) {
+    if (v->type == VAL_DICT && v->as.dict_val) {
+        v->as.dict_val->ref_count++;
+    } else if (v->type == VAL_SET && v->as.set_val) {
+        v->as.set_val->ref_count++;
+    }
+}
+
 Env *env_new(Env *parent) {
     Env *e = calloc(1, sizeof(Env));
     e->parent = parent;
@@ -98,6 +107,8 @@ void env_set_local(Env *env, const char *name, Value val) {
             env_retain(val_copy.as.func_val.closure);
         }
     }
+    // Note: For dict/set, we do shallow copy (share the same dict/set object)
+    // Reference counting is handled when retrieving and storing elsewhere
     
     EnvEntry *e = env->entries;
     while (e) {
@@ -139,6 +150,8 @@ void env_set_local_with_access(Env *env, const char *name, Value val, AccessModi
             env_retain(val_copy.as.func_val.closure);
         }
     }
+    // Note: For dict/set, we do shallow copy (share the same dict/set object)
+    // Reference counting is handled when retrieving and storing elsewhere
     
     EnvEntry *e = env->entries;
     while (e) {
@@ -350,6 +363,7 @@ Value make_dict(void) {
     dict->capacity = 8;
     dict->keys = malloc(8 * sizeof(Value));
     dict->values = malloc(8 * sizeof(Value));
+    dict->ref_count = 1;  // Initialize reference count
     val.as.dict_val = dict;
     return val;
 }
@@ -361,6 +375,7 @@ Value make_set(void) {
     set->count = 0;
     set->capacity = 8;
     set->items = malloc(8 * sizeof(Value));
+    set->ref_count = 1;  // Initialize reference count
     val.as.set_val = set;
     return val;
 }
@@ -509,18 +524,38 @@ void value_free(Value *v) {
         v->as.file_val.mode = NULL;
     }
     if (v->type == VAL_DICT) {
-        /* Don't free dict resources - dicts are reference types */
-        /* Like objects, they're shared across copies */
-        /* This prevents double-free when dict values are shared */
-        /* Memory will be reclaimed when the interpreter exits */
-        v->as.dict_val = NULL;
+        /* Decrement reference count and free only when it reaches 0 */
+        if (v->as.dict_val != NULL) {
+            v->as.dict_val->ref_count--;
+            if (v->as.dict_val->ref_count <= 0) {
+                /* Free all keys and values */
+                int i;
+                for (i = 0; i < v->as.dict_val->count; i++) {
+                    value_free(&v->as.dict_val->keys[i]);
+                    value_free(&v->as.dict_val->values[i]);
+                }
+                free(v->as.dict_val->keys);
+                free(v->as.dict_val->values);
+                free(v->as.dict_val);
+            }
+            v->as.dict_val = NULL;
+        }
     }
     if (v->type == VAL_SET) {
-        /* Don't free set resources - sets are reference types */
-        /* Like objects, they're shared across copies */
-        /* This prevents double-free when set values are shared */
-        /* Memory will be reclaimed when the interpreter exits */
-        v->as.set_val = NULL;
+        /* Decrement reference count and free only when it reaches 0 */
+        if (v->as.set_val != NULL) {
+            v->as.set_val->ref_count--;
+            if (v->as.set_val->ref_count <= 0) {
+                /* Free all items */
+                int i;
+                for (i = 0; i < v->as.set_val->count; i++) {
+                    value_free(&v->as.set_val->items[i]);
+                }
+                free(v->as.set_val->items);
+                free(v->as.set_val);
+            }
+            v->as.set_val = NULL;
+        }
     }
 }
 
@@ -644,6 +679,9 @@ char *value_to_string(Value *v) {
         }
         case VAL_DICT: {
             // Build dictionary string representation {key: value, ...}
+            if (!v->as.dict_val) {
+                return strdup("{<freed>}");
+            }
             int count = v->as.dict_val->count;
             if (count == 0) {
                 return strdup("{}");
@@ -678,6 +716,9 @@ char *value_to_string(Value *v) {
         }
         case VAL_SET: {
             // Build set string representation {value, ...}
+            if (!v->as.set_val) {
+                return strdup("set(<freed>)");
+            }
             int count = v->as.set_val->count;
             if (count == 0) {
                 return strdup("set()");
@@ -807,8 +848,27 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     /* Recursively copy each item */
                     if (v->as.list_val.items[ii].type == VAL_STRING) {
                         copy.as.list_val.items[ii] = make_string(v->as.list_val.items[ii].as.str_val);
+                    } else if (v->as.list_val.items[ii].type == VAL_LIST) {
+                        /* Deep copy nested arrays */
+                        Value nested_copy;
+                        int jj;
+                        nested_copy.type = VAL_LIST;
+                        nested_copy.as.list_val.count = v->as.list_val.items[ii].as.list_val.count;
+                        nested_copy.as.list_val.capacity = v->as.list_val.items[ii].as.list_val.count;
+                        nested_copy.as.list_val.items = malloc((nested_copy.as.list_val.count > 0 ? nested_copy.as.list_val.count : 1) * sizeof(Value));
+                        for (jj = 0; jj < nested_copy.as.list_val.count; jj++) {
+                            if (v->as.list_val.items[ii].as.list_val.items[jj].type == VAL_STRING) {
+                                nested_copy.as.list_val.items[jj] = make_string(v->as.list_val.items[ii].as.list_val.items[jj].as.str_val);
+                            } else {
+                                nested_copy.as.list_val.items[jj] = v->as.list_val.items[ii].as.list_val.items[jj];
+                                value_retain(&nested_copy.as.list_val.items[jj]);
+                            }
+                        }
+                        copy.as.list_val.items[ii] = nested_copy;
                     } else {
                         copy.as.list_val.items[ii] = v->as.list_val.items[ii];
+                        /* Retain dict/set values when copying arrays */
+                        value_retain(&copy.as.list_val.items[ii]);
                     }
                 }
                 return copy;
@@ -832,6 +892,13 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             /* Dicts and sets are mutable reference types like objects - don't deep copy */
             /* They need to be modified in-place by methods */
+            /* Increment reference count when returning */
+            if (v->type == VAL_DICT && v->as.dict_val) {
+                v->as.dict_val->ref_count++;
+            }
+            if (v->type == VAL_SET && v->as.set_val) {
+                v->as.set_val->ref_count++;
+            }
             if (v->type == VAL_FUNCTION) {
                 Value copy = *v;
                 /* Deep copy parameter names if they exist */
@@ -1123,8 +1190,11 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             Value *args = malloc((argc > 0 ? argc : 1) * sizeof(Value));
             Value result = make_null();
             int i;
-            for (i = 0; i < argc; i++)
+            for (i = 0; i < argc; i++) {
                 args[i] = eval_node_env(interp, node->data.call.args.items[i], env);
+                /* Increment ref count for dict/set values passed as arguments */
+                value_retain(&args[i]);
+            }
 
             if (callee.type == VAL_BUILTIN) {
                 result = callee.as.builtin(interp, args, argc);
@@ -1455,6 +1525,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
         case NODE_FOR_OF: {
             // Evaluate the iterable expression
             Value iterable = eval_node_env(interp, node->data.for_of_stmt.iterable, env);
+            /* Increment ref count for dict/set iterables */
+            value_retain(&iterable);
             int i;
             
             if (iterable.type == VAL_LIST) {
@@ -1465,6 +1537,26 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     // Copy strings to avoid double-free
                     if (elem.type == VAL_STRING) {
                         elem = make_string(elem.as.str_val);
+                    } else if (elem.type == VAL_LIST) {
+                        /* Deep copy nested arrays to avoid double-free */
+                        Value list_copy;
+                        int j;
+                        list_copy.type = VAL_LIST;
+                        list_copy.as.list_val.count = elem.as.list_val.count;
+                        list_copy.as.list_val.capacity = elem.as.list_val.count;
+                        list_copy.as.list_val.items = malloc((elem.as.list_val.count > 0 ? elem.as.list_val.count : 1) * sizeof(Value));
+                        for (j = 0; j < elem.as.list_val.count; j++) {
+                            if (elem.as.list_val.items[j].type == VAL_STRING) {
+                                list_copy.as.list_val.items[j] = make_string(elem.as.list_val.items[j].as.str_val);
+                            } else {
+                                list_copy.as.list_val.items[j] = elem.as.list_val.items[j];
+                                value_retain(&list_copy.as.list_val.items[j]);
+                            }
+                        }
+                        elem = list_copy;
+                    } else {
+                        /* Increment ref count for dict/set elements */
+                        value_retain(&elem);
                     }
                     env_set_local(loop_env, node->data.for_of_stmt.var, elem);
                     {
@@ -1490,6 +1582,26 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     // Copy strings to avoid double-free
                     if (elem.type == VAL_STRING) {
                         elem = make_string(elem.as.str_val);
+                    } else if (elem.type == VAL_LIST) {
+                        /* Deep copy nested arrays to avoid double-free */
+                        Value list_copy;
+                        int j;
+                        list_copy.type = VAL_LIST;
+                        list_copy.as.list_val.count = elem.as.list_val.count;
+                        list_copy.as.list_val.capacity = elem.as.list_val.count;
+                        list_copy.as.list_val.items = malloc((elem.as.list_val.count > 0 ? elem.as.list_val.count : 1) * sizeof(Value));
+                        for (j = 0; j < elem.as.list_val.count; j++) {
+                            if (elem.as.list_val.items[j].type == VAL_STRING) {
+                                list_copy.as.list_val.items[j] = make_string(elem.as.list_val.items[j].as.str_val);
+                            } else {
+                                list_copy.as.list_val.items[j] = elem.as.list_val.items[j];
+                                value_retain(&list_copy.as.list_val.items[j]);
+                            }
+                        }
+                        elem = list_copy;
+                    } else {
+                        /* Increment ref count for dict/set elements */
+                        value_retain(&elem);
                     }
                     env_set_local(loop_env, node->data.for_of_stmt.var, elem);
                     {
@@ -1564,6 +1676,9 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     // Copy strings to avoid double-free
                     if (key.type == VAL_STRING) {
                         key = make_string(key.as.str_val);
+                    } else {
+                        /* Increment ref count for dict/set keys */
+                        value_retain(&key);
                     }
                     env_set_local(loop_env, node->data.for_of_stmt.var, key);
                     {
@@ -1589,6 +1704,9 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     // Copy strings to avoid double-free
                     if (elem.type == VAL_STRING) {
                         elem = make_string(elem.as.str_val);
+                    } else {
+                        /* Increment ref count for dict/set elements */
+                        value_retain(&elem);
                     }
                     env_set_local(loop_env, node->data.for_of_stmt.var, elem);
                     {
@@ -1939,17 +2057,20 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                                         list_copy.as.list_val.items[k] = make_string(item.as.list_val.items[k].as.str_val);
                                     } else {
                                         list_copy.as.list_val.items[k] = item.as.list_val.items[k];
+                                        value_retain(&list_copy.as.list_val.items[k]);
                                     }
                                 }
                                 list.as.list_val.items[idx++] = list_copy;
                             } else {
                                 list.as.list_val.items[idx++] = item;
+                                value_retain(&list.as.list_val.items[idx-1]);
                             }
                         }
                     }
                     /* Free the spread value properly */
                     value_free(&spread_val);
                 } else {
+                    /* Evaluate non-spread elements */
                     list.as.list_val.items[idx++] = eval_node_env(interp, elem, env);
                 }
             }
@@ -1967,6 +2088,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             /* Evaluate each element */
             for (i = 0; i < count; i++) {
                 tuple.as.tuple_val.elements[i] = eval_node_env(interp, node->data.tuple.elements.items[i], env);
+                value_retain(&tuple.as.tuple_val.elements[i]);
             }
             
             return tuple;
@@ -1996,6 +2118,9 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                             /* Deep copy strings */
                             if (field_val.type == VAL_STRING) {
                                 field_val = make_string(entry->value.as.str_val);
+                            } else {
+                                /* Retain dict/set values */
+                                value_retain(&field_val);
                             }
                             env_set_local(obj.as.object_val.fields, entry->name, field_val);
                             entry = entry->next;
@@ -2033,6 +2158,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                             val = make_string(var_val->as.str_val);
                         } else {
                             val = *var_val;
+                            /* Retain dict/set values when copying to object */
+                            value_retain(&val);
                         }
                     } else {
                         fprintf(stderr, "Runtime error: undefined variable '%s' in object shorthand\n", key_str);
@@ -2040,6 +2167,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     }
                 } else {
                     val = eval_node_env(interp, prop->value, env);
+                    /* Retain dict/set values when adding to object */
+                    value_retain(&val);
                 }
                 
                 /* Add to object */
@@ -2061,15 +2190,59 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 long long i = idx.as.int_val;
                 if (i >= 0 && i < (long long)obj.as.list_val.count) {
                     Value *item = &obj.as.list_val.items[i];
-                    if (item->type == VAL_STRING) result = make_string(item->as.str_val);
-                    else result = *item;
+                    if (item->type == VAL_STRING) {
+                        result = make_string(item->as.str_val);
+                    } else if (item->type == VAL_LIST) {
+                        /* Deep copy nested arrays to avoid double-free */
+                        Value list_copy;
+                        int j;
+                        list_copy.type = VAL_LIST;
+                        list_copy.as.list_val.count = item->as.list_val.count;
+                        list_copy.as.list_val.capacity = item->as.list_val.count;
+                        list_copy.as.list_val.items = malloc((item->as.list_val.count > 0 ? item->as.list_val.count : 1) * sizeof(Value));
+                        for (j = 0; j < item->as.list_val.count; j++) {
+                            if (item->as.list_val.items[j].type == VAL_STRING) {
+                                list_copy.as.list_val.items[j] = make_string(item->as.list_val.items[j].as.str_val);
+                            } else {
+                                list_copy.as.list_val.items[j] = item->as.list_val.items[j];
+                                value_retain(&list_copy.as.list_val.items[j]);
+                            }
+                        }
+                        result = list_copy;
+                    } else {
+                        result = *item;
+                        /* Retain dict/set values when accessing from array */
+                        value_retain(&result);
+                    }
                 }
             } else if (obj.type == VAL_TUPLE && idx.type == VAL_INT) {
                 long long i = idx.as.int_val;
                 if (i >= 0 && i < (long long)obj.as.tuple_val.count) {
                     Value *item = &obj.as.tuple_val.elements[i];
-                    if (item->type == VAL_STRING) result = make_string(item->as.str_val);
-                    else result = *item;
+                    if (item->type == VAL_STRING) {
+                        result = make_string(item->as.str_val);
+                    } else if (item->type == VAL_LIST) {
+                        /* Deep copy nested arrays to avoid double-free */
+                        Value list_copy;
+                        int j;
+                        list_copy.type = VAL_LIST;
+                        list_copy.as.list_val.count = item->as.list_val.count;
+                        list_copy.as.list_val.capacity = item->as.list_val.count;
+                        list_copy.as.list_val.items = malloc((item->as.list_val.count > 0 ? item->as.list_val.count : 1) * sizeof(Value));
+                        for (j = 0; j < item->as.list_val.count; j++) {
+                            if (item->as.list_val.items[j].type == VAL_STRING) {
+                                list_copy.as.list_val.items[j] = make_string(item->as.list_val.items[j].as.str_val);
+                            } else {
+                                list_copy.as.list_val.items[j] = item->as.list_val.items[j];
+                                value_retain(&list_copy.as.list_val.items[j]);
+                            }
+                        }
+                        result = list_copy;
+                    } else {
+                        result = *item;
+                        /* Retain dict/set values when accessing from tuple */
+                        value_retain(&result);
+                    }
                 }
             } else if (obj.type == VAL_STRING && idx.type == VAL_INT) {
                 long long i = idx.as.int_val;
@@ -2376,6 +2549,13 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             if (obj.type == VAL_DICT) {
                 const char *method_name = node->data.member_access.member;
                 
+                // Add null check for dict_val
+                if (!obj.as.dict_val) {
+                    fprintf(stderr, "Error: Attempting to access method on freed dict\n");
+                    value_free(&obj);
+                    return make_null();
+                }
+                
                 // Handle .size property
                 if (strcmp(method_name, "size") == 0) {
                     result = make_int(obj.as.dict_val->count);
@@ -2416,6 +2596,13 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             // Handle set methods
             if (obj.type == VAL_SET) {
                 const char *method_name = node->data.member_access.member;
+                
+                // Add null check for set_val
+                if (!obj.as.set_val) {
+                    fprintf(stderr, "Error: Attempting to access method on freed set\n");
+                    value_free(&obj);
+                    return make_null();
+                }
                 
                 // Handle .size property
                 if (strcmp(method_name, "size") == 0) {

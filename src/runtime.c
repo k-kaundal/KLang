@@ -9,6 +9,45 @@
 extern Value eval_block(Interpreter *interp, ASTNode *block, Env *env);
 extern char *value_to_string(Value *v);
 
+/* Helper function to deep copy a value for storage in containers */
+static Value value_deep_copy(Value v) {
+    int i;
+    if (v.type == VAL_STRING) {
+        return make_string(v.as.str_val);
+    } else if (v.type == VAL_TUPLE) {
+        /* Deep copy tuple */
+        Value tuple_copy;
+        tuple_copy.type = VAL_TUPLE;
+        tuple_copy.as.tuple_val.count = v.as.tuple_val.count;
+        tuple_copy.as.tuple_val.elements = malloc(v.as.tuple_val.count * sizeof(Value));
+        for (i = 0; i < v.as.tuple_val.count; i++) {
+            tuple_copy.as.tuple_val.elements[i] = value_deep_copy(v.as.tuple_val.elements[i]);
+        }
+        return tuple_copy;
+    } else if (v.type == VAL_LIST) {
+        /* Deep copy list */
+        Value list_copy;
+        list_copy.type = VAL_LIST;
+        list_copy.as.list_val.count = v.as.list_val.count;
+        list_copy.as.list_val.capacity = v.as.list_val.capacity;
+        list_copy.as.list_val.items = malloc(v.as.list_val.capacity * sizeof(Value));
+        for (i = 0; i < v.as.list_val.count; i++) {
+            list_copy.as.list_val.items[i] = value_deep_copy(v.as.list_val.items[i]);
+        }
+        return list_copy;
+    } else if (v.type == VAL_DICT && v.as.dict_val) {
+        /* Increment ref count for shared dict */
+        v.as.dict_val->ref_count++;
+        return v;
+    } else if (v.type == VAL_SET && v.as.set_val) {
+        /* Increment ref count for shared set */
+        v.as.set_val->ref_count++;
+        return v;
+    }
+    /* For other types, shallow copy is fine */
+    return v;
+}
+
 static Value builtin_print(Interpreter *interp, Value *args, int argc) {
     int i;
     (void)interp;
@@ -2138,11 +2177,7 @@ static Value builtin_dict_set(Interpreter *interp, Value *args, int argc) {
     if (idx >= 0) {
         /* Update existing value */
         value_free(&dict->as.dict_val->values[idx]);
-        if (value.type == VAL_STRING) {
-            dict->as.dict_val->values[idx] = make_string(value.as.str_val);
-        } else {
-            dict->as.dict_val->values[idx] = value;
-        }
+        dict->as.dict_val->values[idx] = value_deep_copy(value);
     } else {
         /* Add new key-value pair */
         if (dict->as.dict_val->count >= dict->as.dict_val->capacity) {
@@ -2153,17 +2188,8 @@ static Value builtin_dict_set(Interpreter *interp, Value *args, int argc) {
         }
         
         /* Copy key and value */
-        if (key.type == VAL_STRING) {
-            dict->as.dict_val->keys[dict->as.dict_val->count] = make_string(key.as.str_val);
-        } else {
-            dict->as.dict_val->keys[dict->as.dict_val->count] = key;
-        }
-        
-        if (value.type == VAL_STRING) {
-            dict->as.dict_val->values[dict->as.dict_val->count] = make_string(value.as.str_val);
-        } else {
-            dict->as.dict_val->values[dict->as.dict_val->count] = value;
-        }
+        dict->as.dict_val->keys[dict->as.dict_val->count] = value_deep_copy(key);
+        dict->as.dict_val->values[dict->as.dict_val->count] = value_deep_copy(value);
         
         dict->as.dict_val->count++;
     }
@@ -2184,15 +2210,14 @@ static Value builtin_dict_get(Interpreter *interp, Value *args, int argc) {
     
     if (idx >= 0) {
         Value result = dict->as.dict_val->values[idx];
-        if (result.type == VAL_STRING) {
-            return make_string(result.as.str_val);
-        }
-        return result;
+        /* Return deep copy to maintain proper ownership */
+        return value_deep_copy(result);
     }
     
     /* Return default value if provided */
     if (argc >= 3) {
-        return args[2];
+        /* Return deep copy of default value */
+        return value_deep_copy(args[2]);
     }
     
     return make_null();
@@ -2344,11 +2369,7 @@ static Value builtin_set_add(Interpreter *interp, Value *args, int argc) {
     }
     
     /* Copy value */
-    if (value.type == VAL_STRING) {
-        set->as.set_val->items[set->as.set_val->count] = make_string(value.as.str_val);
-    } else {
-        set->as.set_val->items[set->as.set_val->count] = value;
-    }
+    set->as.set_val->items[set->as.set_val->count] = value_deep_copy(value);
     
     set->as.set_val->count++;
     
@@ -2410,15 +2431,19 @@ static Value builtin_set_clear(Interpreter *interp, Value *args, int argc) {
         return make_null();
     }
     
-    Value *set = &args[0];
+    SetVal *set_val = args[0].as.set_val;
     int i;
     
     /* Free all items */
-    for (i = 0; i < set->as.set_val->count; i++) {
-        value_free(&set->as.set_val->items[i]);
+    for (i = 0; i < set_val->count; i++) {
+        value_free(&set_val->items[i]);
     }
     
-    set->as.set_val->count = 0;
+    /* Free the items array and allocate a new one */
+    free(set_val->items);
+    set_val->count = 0;
+    set_val->capacity = 8;
+    set_val->items = malloc(8 * sizeof(Value));
     
     return make_null();
 }
