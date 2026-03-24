@@ -38,6 +38,7 @@ typedef enum {
     VALUE_TYPE_ARRAY,       // Array/List
     VALUE_TYPE_FUNCTION,    // Function reference
     VALUE_TYPE_CLOSURE,     // Closure with upvalues
+    VALUE_TYPE_EXCEPTION,   // Exception object
 } ValueType;
 
 /**
@@ -193,6 +194,33 @@ typedef enum {
     OP_STR_TO_FLOAT     = 0xB5,  // R[d] = float(R[s1])
     OP_BOOL_TO_INT      = 0xB6,  // R[d] = int(R[s1])
     
+    /* Advanced String Operations (0xC0-0xCF) */
+    OP_STR_SLICE        = 0xC0,  // R[d] = R[s1][start:end]
+    OP_STR_SPLIT        = 0xC1,  // R[d] = R[s1].split(R[s2])
+    OP_STR_JOIN         = 0xC2,  // R[d] = R[s1].join(R[s2])
+    OP_STR_FIND         = 0xC3,  // R[d] = R[s1].find(R[s2])
+    OP_STR_REPLACE      = 0xC4,  // R[d] = R[s1].replace(R[s2], ...)
+    OP_STR_LOWER        = 0xC5,  // R[d] = R[s1].lower()
+    OP_STR_UPPER        = 0xC6,  // R[d] = R[s1].upper()
+    OP_STR_TRIM         = 0xC7,  // R[d] = R[s1].trim()
+    
+    /* Exception Handling (0xD0-0xDF) */
+    OP_TRY              = 0xD0,  // Begin try block
+    OP_CATCH            = 0xD1,  // Begin catch block
+    OP_THROW            = 0xD2,  // Throw exception
+    OP_FINALLY          = 0xD3,  // Begin finally block
+    OP_END_TRY          = 0xD4,  // End try-catch-finally
+    
+    /* Advanced Control Flow (0xE0-0xEF) */
+    OP_SWITCH           = 0xE0,  // Switch statement
+    OP_CASE             = 0xE1,  // Case label
+    OP_DEFAULT          = 0xE2,  // Default case
+    OP_BREAK            = 0xE3,  // Break from loop/switch
+    OP_CONTINUE         = 0xE4,  // Continue loop
+    OP_FOR_INIT         = 0xE5,  // For loop initialization
+    OP_FOR_COND         = 0xE6,  // For loop condition
+    OP_FOR_UPDATE       = 0xE7,  // For loop update
+    
     /* Debugging & Profiling (0xF0-0xFF) */
     OP_PRINT_REG        = 0xF0,  // Print register (debug)
     OP_BREAKPOINT       = 0xF1,  // Debugger breakpoint
@@ -203,17 +231,83 @@ typedef enum {
 } Opcode;
 
 /* ============================================================================
+ * OBJECT AND ARRAY TYPES
+ * ============================================================================ */
+
+/* Forward declarations */
+typedef struct ConstantPool ConstantPool;
+
+/**
+ * @brief Object field (key-value pair)
+ */
+typedef struct {
+    char *key;          // Field name
+    Value value;        // Field value
+} ObjectField;
+
+/**
+ * @brief Object/Map structure
+ */
+typedef struct {
+    ObjectField *fields; // Array of fields
+    int count;          // Number of fields
+    int capacity;       // Allocated capacity
+} Object;
+
+/**
+ * @brief Dynamic array structure
+ */
+typedef struct {
+    Value *elements;    // Array elements
+    int count;          // Number of elements
+    int capacity;       // Allocated capacity
+} Array;
+
+/**
+ * @brief Function structure
+ */
+typedef struct {
+    const char *name;      // Function name
+    Instruction *bytecode; // Function bytecode
+    int bytecode_len;      // Bytecode length
+    int param_count;       // Number of parameters
+    int local_count;       // Number of local variables
+    ConstantPool *constants; // Function constants
+} Function;
+
+/**
+ * @brief Closure structure (function + captured variables)
+ */
+typedef struct {
+    Function *function;    // Base function
+    Value **upvalues;      // Captured variables
+    int upvalue_count;     // Number of upvalues
+} Closure;
+
+/**
+ * @brief Exception handler (try-catch-finally)
+ */
+typedef struct {
+    uint32_t try_ip;       // IP at start of try block
+    uint32_t catch_ip;     // IP of catch handler (0 if no catch)
+    uint32_t finally_ip;   // IP of finally block (0 if no finally)
+    uint32_t end_ip;       // IP after try-catch-finally
+    int frame_index;       // Frame this handler belongs to
+    bool active;           // Is this handler active?
+} ExceptionHandler;
+
+/* ============================================================================
  * CONSTANT POOL
  * ============================================================================ */
 
 /**
  * @brief Constant pool for storing frequently used values
  */
-typedef struct {
+struct ConstantPool {
     Value *values;       // Array of constant values
     int count;          // Number of constants
     int capacity;       // Allocated capacity
-} ConstantPool;
+};
 
 /* ============================================================================
  * CALL FRAME
@@ -280,6 +374,12 @@ typedef struct {
     bool running;                  // Is VM running?
     Value return_value;            // Return value from last call
     
+    // Exception handling
+    ExceptionHandler exception_handlers[MAX_FRAMES]; // Exception handler stack
+    int handler_count;             // Number of active handlers
+    Value current_exception;       // Current exception being handled
+    bool has_exception;           // Is an exception active?
+    
     // Profiling and optimization
     uint32_t instruction_count;    // Total instructions executed
     bool profiling_enabled;        // Enable profiling?
@@ -314,10 +414,42 @@ Value value_make_float(double val);
 Value value_make_string(const char *str);
 Value value_make_bool(bool val);
 Value value_make_null(void);
+Value value_make_object(Object *obj);
+Value value_make_array(Array *arr);
+Value value_make_function(Function *func);
+Value value_make_closure(Closure *closure);
 void value_free(Value *val);
 bool value_equals(Value *a, Value *b);
 bool value_is_truthy(Value *val);
 void value_print(Value *val);
+
+/* Object Operations */
+Object *object_new(void);
+void object_free(Object *obj);
+void object_set(Object *obj, const char *key, Value value);
+Value object_get(Object *obj, const char *key, bool *found);
+bool object_has(Object *obj, const char *key);
+bool object_delete(Object *obj, const char *key);
+int object_size(Object *obj);
+
+/* Array Operations */
+Array *array_new(void);
+Array *array_new_with_capacity(int capacity);
+void array_free(Array *arr);
+void array_push(Array *arr, Value value);
+Value array_pop(Array *arr, bool *ok);
+Value array_get(Array *arr, int index, bool *ok);
+void array_set(Array *arr, int index, Value value);
+int array_length(Array *arr);
+
+/* Function Operations */
+Function *function_new(const char *name, Instruction *bytecode, int bytecode_len);
+void function_free(Function *func);
+
+/* Closure Operations */
+Closure *closure_new(Function *func);
+void closure_free(Closure *closure);
+void closure_set_upvalue(Closure *closure, int index, Value *value);
 
 /* Global Variables */
 void global_table_init(GlobalTable *table);

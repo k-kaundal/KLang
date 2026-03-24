@@ -80,11 +80,42 @@ Value value_make_null(void) {
  * @brief Free value memory (for heap-allocated data)
  */
 static void vm_value_free(Value *val) {
-    if (val->type == VALUE_TYPE_STRING && val->data.as_string) {
-        free(val->data.as_string);
-        val->data.as_string = NULL;
+    if (!val) return;
+    
+    switch (val->type) {
+        case VALUE_TYPE_STRING:
+            if (val->data.as_string) {
+                free(val->data.as_string);
+                val->data.as_string = NULL;
+            }
+            break;
+        case VALUE_TYPE_OBJECT:
+            if (val->data.as_object) {
+                object_free((Object*)val->data.as_object);
+                val->data.as_object = NULL;
+            }
+            break;
+        case VALUE_TYPE_ARRAY:
+            if (val->data.as_array) {
+                array_free((Array*)val->data.as_array);
+                val->data.as_array = NULL;
+            }
+            break;
+        case VALUE_TYPE_FUNCTION:
+            if (val->data.as_function) {
+                function_free((Function*)val->data.as_function);
+                val->data.as_function = NULL;
+            }
+            break;
+        case VALUE_TYPE_CLOSURE:
+            if (val->data.as_function) {
+                closure_free((Closure*)val->data.as_function);
+                val->data.as_function = NULL;
+            }
+            break;
+        default:
+            break;
     }
-    // TODO: Free objects, arrays, closures when implemented
 }
 
 /**
@@ -342,6 +373,11 @@ VM *vm_v3_new(void) {
     vm->has_error = false;
     vm->error_message = NULL;
     
+    // Initialize exception handling
+    vm->handler_count = 0;
+    vm->has_exception = false;
+    vm->current_exception = value_make_null();
+    
     return vm;
 }
 
@@ -371,6 +407,13 @@ void vm_v3_reset(VM *vm) {
     vm_value_free(&vm->return_value);
     vm->return_value = value_make_null();
     vm->instruction_count = 0;
+    
+    // Reset exception handling
+    vm->handler_count = 0;
+    vm->has_exception = false;
+    vm_value_free(&vm->current_exception);
+    vm->current_exception = value_make_null();
+    
     vm_v3_clear_error(vm);
 }
 
@@ -880,32 +923,360 @@ static void execute_instruction(VM *vm, CallFrame *frame, Instruction *instr) {
             // TODO: Hook into debugger
             break;
         
-        /* ===== UNIMPLEMENTED/PLACEHOLDER ===== */
+        /* ===== OBJECT OPERATIONS ===== */
         case OP_NEW_OBJECT:
+            regs[instr->dest] = value_make_object(object_new());
+            break;
+            
+        case OP_GET_FIELD: {
+            if (regs[instr->src1].type == VALUE_TYPE_OBJECT) {
+                Object *obj = (Object*)regs[instr->src1].data.as_object;
+                const char *key = NULL;
+                // Key comes from constant pool
+                if (frame->constants && instr->immediate < frame->constants->count) {
+                    Value key_val = frame->constants->values[instr->immediate];
+                    if (key_val.type == VALUE_TYPE_STRING) {
+                        key = key_val.data.as_string;
+                    }
+                }
+                if (key) {
+                    bool found;
+                    regs[instr->dest] = object_get(obj, key, &found);
+                    if (!found) {
+                        regs[instr->dest] = value_make_null();
+                    }
+                } else {
+                    regs[instr->dest] = value_make_null();
+                }
+            } else {
+                regs[instr->dest] = value_make_null();
+            }
+            break;
+        }
+            
+        case OP_SET_FIELD: {
+            if (regs[instr->dest].type == VALUE_TYPE_OBJECT) {
+                Object *obj = (Object*)regs[instr->dest].data.as_object;
+                const char *key = NULL;
+                // Key comes from constant pool
+                if (frame->constants && instr->immediate < frame->constants->count) {
+                    Value key_val = frame->constants->values[instr->immediate];
+                    if (key_val.type == VALUE_TYPE_STRING) {
+                        key = key_val.data.as_string;
+                    }
+                }
+                if (key) {
+                    object_set(obj, key, regs[instr->src1]);
+                }
+            }
+            break;
+        }
+            
+        case OP_HAS_FIELD: {
+            if (regs[instr->src1].type == VALUE_TYPE_OBJECT) {
+                Object *obj = (Object*)regs[instr->src1].data.as_object;
+                const char *key = NULL;
+                if (frame->constants && instr->immediate < frame->constants->count) {
+                    Value key_val = frame->constants->values[instr->immediate];
+                    if (key_val.type == VALUE_TYPE_STRING) {
+                        key = key_val.data.as_string;
+                    }
+                }
+                regs[instr->dest] = value_make_bool(key && object_has(obj, key));
+            } else {
+                regs[instr->dest] = value_make_bool(false);
+            }
+            break;
+        }
+            
+        case OP_DELETE_FIELD: {
+            if (regs[instr->src1].type == VALUE_TYPE_OBJECT) {
+                Object *obj = (Object*)regs[instr->src1].data.as_object;
+                const char *key = NULL;
+                if (frame->constants && instr->immediate < frame->constants->count) {
+                    Value key_val = frame->constants->values[instr->immediate];
+                    if (key_val.type == VALUE_TYPE_STRING) {
+                        key = key_val.data.as_string;
+                    }
+                }
+                regs[instr->dest] = value_make_bool(key && object_delete(obj, key));
+            } else {
+                regs[instr->dest] = value_make_bool(false);
+            }
+            break;
+        }
+            
+        case OP_TYPEOF: {
+            const char *type_name = NULL;
+            switch (regs[instr->src1].type) {
+                case VALUE_TYPE_INT: type_name = "int"; break;
+                case VALUE_TYPE_FLOAT: type_name = "float"; break;
+                case VALUE_TYPE_STRING: type_name = "string"; break;
+                case VALUE_TYPE_BOOL: type_name = "bool"; break;
+                case VALUE_TYPE_NULL: type_name = "null"; break;
+                case VALUE_TYPE_OBJECT: type_name = "object"; break;
+                case VALUE_TYPE_ARRAY: type_name = "array"; break;
+                case VALUE_TYPE_FUNCTION: type_name = "function"; break;
+                case VALUE_TYPE_CLOSURE: type_name = "closure"; break;
+                case VALUE_TYPE_EXCEPTION: type_name = "exception"; break;
+                default: type_name = "unknown"; break;
+            }
+            regs[instr->dest] = value_make_string(type_name);
+            break;
+        }
+        
+        /* ===== ARRAY OPERATIONS ===== */
         case OP_NEW_ARRAY:
-        case OP_NEW_ARRAY_SIZE:
-        case OP_GET_FIELD:
-        case OP_SET_FIELD:
-        case OP_HAS_FIELD:
-        case OP_DELETE_FIELD:
-        case OP_TYPEOF:
-        case OP_ARRAY_GET:
-        case OP_ARRAY_SET:
-        case OP_ARRAY_LEN:
-        case OP_ARRAY_PUSH:
-        case OP_ARRAY_POP:
-        case OP_STR_GET:
-        case OP_STR_TO_INT:
-        case OP_STR_TO_FLOAT:
+            regs[instr->dest] = value_make_array(array_new());
+            break;
+            
+        case OP_NEW_ARRAY_SIZE: {
+            int size = 0;
+            if (regs[instr->src1].type == VALUE_TYPE_INT) {
+                size = (int)regs[instr->src1].data.as_int;
+            }
+            if (size < 0) size = 0;
+            regs[instr->dest] = value_make_array(array_new_with_capacity(size));
+            break;
+        }
+            
+        case OP_ARRAY_GET: {
+            if (regs[instr->src1].type == VALUE_TYPE_ARRAY &&
+                regs[instr->src2].type == VALUE_TYPE_INT) {
+                Array *arr = (Array*)regs[instr->src1].data.as_array;
+                int index = (int)regs[instr->src2].data.as_int;
+                bool ok;
+                regs[instr->dest] = array_get(arr, index, &ok);
+                if (!ok) {
+                    regs[instr->dest] = value_make_null();
+                }
+            } else {
+                regs[instr->dest] = value_make_null();
+            }
+            break;
+        }
+            
+        case OP_ARRAY_SET: {
+            if (regs[instr->dest].type == VALUE_TYPE_ARRAY &&
+                regs[instr->src1].type == VALUE_TYPE_INT) {
+                Array *arr = (Array*)regs[instr->dest].data.as_array;
+                int index = (int)regs[instr->src1].data.as_int;
+                array_set(arr, index, regs[instr->src2]);
+            }
+            break;
+        }
+            
+        case OP_ARRAY_LEN: {
+            if (regs[instr->src1].type == VALUE_TYPE_ARRAY) {
+                Array *arr = (Array*)regs[instr->src1].data.as_array;
+                regs[instr->dest] = value_make_int(array_length(arr));
+            } else {
+                regs[instr->dest] = value_make_int(0);
+            }
+            break;
+        }
+            
+        case OP_ARRAY_PUSH: {
+            if (regs[instr->src1].type == VALUE_TYPE_ARRAY) {
+                Array *arr = (Array*)regs[instr->src1].data.as_array;
+                array_push(arr, regs[instr->src2]);
+            }
+            break;
+        }
+            
+        case OP_ARRAY_POP: {
+            if (regs[instr->src1].type == VALUE_TYPE_ARRAY) {
+                Array *arr = (Array*)regs[instr->src1].data.as_array;
+                bool ok;
+                regs[instr->dest] = array_pop(arr, &ok);
+                if (!ok) {
+                    regs[instr->dest] = value_make_null();
+                }
+            } else {
+                regs[instr->dest] = value_make_null();
+            }
+            break;
+        }
+        
+        /* ===== ADVANCED STRING OPERATIONS ===== */
+        case OP_STR_GET: {
+            if (regs[instr->src1].type == VALUE_TYPE_STRING &&
+                regs[instr->src2].type == VALUE_TYPE_INT) {
+                const char *str = regs[instr->src1].data.as_string;
+                int index = (int)regs[instr->src2].data.as_int;
+                int len = strlen(str);
+                if (index >= 0 && index < len) {
+                    char buf[2] = {str[index], '\0'};
+                    regs[instr->dest] = value_make_string(buf);
+                } else {
+                    regs[instr->dest] = value_make_null();
+                }
+            } else {
+                regs[instr->dest] = value_make_null();
+            }
+            break;
+        }
+            
+        case OP_STR_TO_INT: {
+            if (regs[instr->src1].type == VALUE_TYPE_STRING) {
+                int64_t val = atoll(regs[instr->src1].data.as_string);
+                regs[instr->dest] = value_make_int(val);
+            } else {
+                regs[instr->dest] = value_make_int(0);
+            }
+            break;
+        }
+            
+        case OP_STR_TO_FLOAT: {
+            if (regs[instr->src1].type == VALUE_TYPE_STRING) {
+                double val = atof(regs[instr->src1].data.as_string);
+                regs[instr->dest] = value_make_float(val);
+            } else {
+                regs[instr->dest] = value_make_float(0.0);
+            }
+            break;
+        }
+        
+        /* ===== FUNCTION CALLS ===== */
         case OP_CALL:
         case OP_CALL_BUILTIN:
         case OP_CALL_METHOD:
-        case OP_LOAD_UPVALUE:
-        case OP_STORE_UPVALUE:
+            // TODO: Implement full function call mechanism
+            vm_v3_error(vm, "Function calls not yet fully implemented");
+            break;
+        
+        /* ===== UPVALUES/CLOSURES ===== */
+        case OP_LOAD_UPVALUE: {
+            if (frame->upvalues && instr->immediate < frame->upvalue_count) {
+                Value *upval = frame->upvalues[instr->immediate];
+                if (upval) {
+                    regs[instr->dest] = *upval;
+                } else {
+                    regs[instr->dest] = value_make_null();
+                }
+            } else {
+                regs[instr->dest] = value_make_null();
+            }
+            break;
+        }
+            
+        case OP_STORE_UPVALUE: {
+            if (frame->upvalues && instr->immediate < frame->upvalue_count) {
+                Value *upval = frame->upvalues[instr->immediate];
+                if (upval) {
+                    *upval = regs[instr->src1];
+                }
+            }
+            break;
+        }
+        
+        /* ===== EXCEPTION HANDLING ===== */
+        case OP_TRY:
+            // Set up exception handler
+            if (vm->handler_count < MAX_FRAMES) {
+                ExceptionHandler *handler = &vm->exception_handlers[vm->handler_count++];
+                handler->try_ip = frame->ip;
+                handler->catch_ip = instr->immediate;  // Jump target for catch
+                handler->finally_ip = 0;  // Set by OP_FINALLY if present
+                handler->end_ip = 0;  // Set by OP_END_TRY
+                handler->frame_index = vm->frame_count - 1;
+                handler->active = true;
+            }
+            break;
+            
+        case OP_CATCH:
+            // Exception is in vm->current_exception
+            // Store it in the catch register
+            if (vm->has_exception) {
+                regs[instr->dest] = vm->current_exception;
+                vm->has_exception = false;
+            }
+            break;
+            
+        case OP_THROW:
+            // Throw an exception
+            vm->current_exception = regs[instr->src1];
+            vm->has_exception = true;
+            
+            // Find active exception handler
+            for (int i = vm->handler_count - 1; i >= 0; i--) {
+                ExceptionHandler *handler = &vm->exception_handlers[i];
+                if (handler->active && handler->frame_index == vm->frame_count - 1) {
+                    // Jump to catch or finally
+                    if (handler->catch_ip > 0) {
+                        frame->ip = handler->catch_ip;
+                    } else if (handler->finally_ip > 0) {
+                        frame->ip = handler->finally_ip;
+                    }
+                    return;
+                }
+            }
+            
+            // No handler found, propagate error
+            vm_v3_error(vm, "Uncaught exception");
+            break;
+            
+        case OP_FINALLY:
+            // Set finally IP in current handler
+            if (vm->handler_count > 0) {
+                vm->exception_handlers[vm->handler_count - 1].finally_ip = frame->ip;
+            }
+            break;
+            
+        case OP_END_TRY:
+            // Pop exception handler
+            if (vm->handler_count > 0) {
+                vm->handler_count--;
+            }
+            break;
+        
+        /* ===== ADVANCED CONTROL FLOW ===== */
+        case OP_BREAK:
+        case OP_CONTINUE:
+            // These are typically handled at compile-time with jumps
+            // But we can support them for interpreted switch statements
+            frame->ip = instr->immediate;
+            break;
+            
+        case OP_SWITCH:
+        case OP_CASE:
+        case OP_DEFAULT:
+        case OP_FOR_INIT:
+        case OP_FOR_COND:
+        case OP_FOR_UPDATE:
+            // These are typically lowered to simpler opcodes by the compiler
+            // Placeholder for now
+            break;
+        
+        /* ===== PROFILING ===== */
         case OP_PROFILE_ENTER:
+            if (vm->profiling_enabled && frame->hotness_counters) {
+                frame->hotness_counters[frame->ip - 1]++;
+            }
+            break;
+            
         case OP_PROFILE_EXIT:
-        case OP_ASSERT:
-            vm_v3_error(vm, "Opcode not yet implemented: 0x%02X", instr->opcode);
+            // Could collect timing information here
+            break;
+            
+        case OP_ASSERT: {
+            bool condition = value_is_truthy(&regs[instr->src1]);
+            if (!condition) {
+                vm_v3_error(vm, "Assertion failed at ip=%d", frame->ip - 1);
+            }
+            break;
+        }
+        
+        /* ===== ADVANCED STRING OPERATIONS (UNIMPLEMENTED) ===== */
+        case OP_STR_SLICE:
+        case OP_STR_SPLIT:
+        case OP_STR_JOIN:
+        case OP_STR_FIND:
+        case OP_STR_REPLACE:
+        case OP_STR_LOWER:
+        case OP_STR_UPPER:
+        case OP_STR_TRIM:
+            vm_v3_error(vm, "String operation not yet implemented: 0x%02X", instr->opcode);
             break;
         
         default:
@@ -1069,24 +1440,68 @@ const char *opcode_name(uint8_t opcode) {
         case OP_LOAD_GLOBAL: return "LOAD_GLOBAL";
         case OP_STORE_GLOBAL: return "STORE_GLOBAL";
         case OP_SWAP: return "SWAP";
+        case OP_LOAD_UPVALUE: return "LOAD_UPVALUE";
+        case OP_STORE_UPVALUE: return "STORE_UPVALUE";
         case OP_JUMP: return "JUMP";
         case OP_JUMP_IF_TRUE: return "JUMP_IF_TRUE";
         case OP_JUMP_IF_FALSE: return "JUMP_IF_FALSE";
         case OP_JUMP_IF_NULL: return "JUMP_IF_NULL";
         case OP_JUMP_IF_NOT_NULL: return "JUMP_IF_NOT_NULL";
         case OP_CALL: return "CALL";
+        case OP_CALL_BUILTIN: return "CALL_BUILTIN";
+        case OP_CALL_METHOD: return "CALL_METHOD";
         case OP_RETURN: return "RETURN";
         case OP_RETURN_VALUE: return "RETURN_VALUE";
+        case OP_NEW_OBJECT: return "NEW_OBJECT";
+        case OP_NEW_ARRAY: return "NEW_ARRAY";
+        case OP_NEW_ARRAY_SIZE: return "NEW_ARRAY_SIZE";
+        case OP_GET_FIELD: return "GET_FIELD";
+        case OP_SET_FIELD: return "SET_FIELD";
+        case OP_HAS_FIELD: return "HAS_FIELD";
+        case OP_DELETE_FIELD: return "DELETE_FIELD";
+        case OP_TYPEOF: return "TYPEOF";
+        case OP_ARRAY_GET: return "ARRAY_GET";
+        case OP_ARRAY_SET: return "ARRAY_SET";
+        case OP_ARRAY_LEN: return "ARRAY_LEN";
+        case OP_ARRAY_PUSH: return "ARRAY_PUSH";
+        case OP_ARRAY_POP: return "ARRAY_POP";
         case OP_INT_TO_FLOAT: return "INT_TO_FLOAT";
         case OP_FLOAT_TO_INT: return "FLOAT_TO_INT";
         case OP_INT_TO_STR: return "INT_TO_STR";
         case OP_FLOAT_TO_STR: return "FLOAT_TO_STR";
+        case OP_STR_TO_INT: return "STR_TO_INT";
+        case OP_STR_TO_FLOAT: return "STR_TO_FLOAT";
         case OP_BOOL_TO_INT: return "BOOL_TO_INT";
         case OP_STR_CONCAT: return "STR_CONCAT";
         case OP_STR_LEN: return "STR_LEN";
+        case OP_STR_GET: return "STR_GET";
         case OP_STR_EQ: return "STR_EQ";
+        case OP_STR_SLICE: return "STR_SLICE";
+        case OP_STR_SPLIT: return "STR_SPLIT";
+        case OP_STR_JOIN: return "STR_JOIN";
+        case OP_STR_FIND: return "STR_FIND";
+        case OP_STR_REPLACE: return "STR_REPLACE";
+        case OP_STR_LOWER: return "STR_LOWER";
+        case OP_STR_UPPER: return "STR_UPPER";
+        case OP_STR_TRIM: return "STR_TRIM";
+        case OP_TRY: return "TRY";
+        case OP_CATCH: return "CATCH";
+        case OP_THROW: return "THROW";
+        case OP_FINALLY: return "FINALLY";
+        case OP_END_TRY: return "END_TRY";
+        case OP_SWITCH: return "SWITCH";
+        case OP_CASE: return "CASE";
+        case OP_DEFAULT: return "DEFAULT";
+        case OP_BREAK: return "BREAK";
+        case OP_CONTINUE: return "CONTINUE";
+        case OP_FOR_INIT: return "FOR_INIT";
+        case OP_FOR_COND: return "FOR_COND";
+        case OP_FOR_UPDATE: return "FOR_UPDATE";
         case OP_PRINT_REG: return "PRINT_REG";
         case OP_BREAKPOINT: return "BREAKPOINT";
+        case OP_PROFILE_ENTER: return "PROFILE_ENTER";
+        case OP_PROFILE_EXIT: return "PROFILE_EXIT";
+        case OP_ASSERT: return "ASSERT";
         default: return "UNKNOWN";
     }
 }
@@ -1150,4 +1565,361 @@ void vm_v3_dump_frame(VM *vm, int frame_index) {
     printf("Line: %d\n", frame->line_number);
     printf("Locals: %d\n", frame->local_count);
     printf("Upvalues: %d\n", frame->upvalue_count);
+}
+
+/* ============================================================================
+ * OBJECT OPERATIONS
+ * ============================================================================ */
+
+/**
+ * @brief Create a new empty object
+ */
+Object *object_new(void) {
+    Object *obj = malloc(sizeof(Object));
+    obj->fields = NULL;
+    obj->count = 0;
+    obj->capacity = 0;
+    return obj;
+}
+
+/**
+ * @brief Free an object and its fields
+ */
+void object_free(Object *obj) {
+    if (!obj) return;
+    
+    for (int i = 0; i < obj->count; i++) {
+        free(obj->fields[i].key);
+        vm_value_free(&obj->fields[i].value);
+    }
+    free(obj->fields);
+    free(obj);
+}
+
+/**
+ * @brief Set a field in an object
+ */
+void object_set(Object *obj, const char *key, Value value) {
+    if (!obj || !key) return;
+    
+    // Check if key already exists
+    for (int i = 0; i < obj->count; i++) {
+        if (strcmp(obj->fields[i].key, key) == 0) {
+            vm_value_free(&obj->fields[i].value);
+            obj->fields[i].value = value;
+            return;
+        }
+    }
+    
+    // Add new field
+    if (obj->count >= obj->capacity) {
+        obj->capacity = obj->capacity == 0 ? 8 : obj->capacity * 2;
+        obj->fields = realloc(obj->fields, obj->capacity * sizeof(ObjectField));
+    }
+    
+    obj->fields[obj->count].key = strdup(key);
+    obj->fields[obj->count].value = value;
+    obj->count++;
+}
+
+/**
+ * @brief Get a field from an object
+ */
+Value object_get(Object *obj, const char *key, bool *found) {
+    if (found) *found = false;
+    
+    if (!obj || !key) {
+        return value_make_null();
+    }
+    
+    for (int i = 0; i < obj->count; i++) {
+        if (strcmp(obj->fields[i].key, key) == 0) {
+            if (found) *found = true;
+            return obj->fields[i].value;
+        }
+    }
+    
+    return value_make_null();
+}
+
+/**
+ * @brief Check if object has a field
+ */
+bool object_has(Object *obj, const char *key) {
+    if (!obj || !key) return false;
+    
+    for (int i = 0; i < obj->count; i++) {
+        if (strcmp(obj->fields[i].key, key) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Delete a field from an object
+ */
+bool object_delete(Object *obj, const char *key) {
+    if (!obj || !key) return false;
+    
+    for (int i = 0; i < obj->count; i++) {
+        if (strcmp(obj->fields[i].key, key) == 0) {
+            free(obj->fields[i].key);
+            vm_value_free(&obj->fields[i].value);
+            
+            // Shift remaining fields
+            for (int j = i; j < obj->count - 1; j++) {
+                obj->fields[j] = obj->fields[j + 1];
+            }
+            obj->count--;
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Get the number of fields in an object
+ */
+int object_size(Object *obj) {
+    return obj ? obj->count : 0;
+}
+
+/* ============================================================================
+ * ARRAY OPERATIONS
+ * ============================================================================ */
+
+/**
+ * @brief Create a new empty array
+ */
+Array *array_new(void) {
+    Array *arr = malloc(sizeof(Array));
+    arr->elements = NULL;
+    arr->count = 0;
+    arr->capacity = 0;
+    return arr;
+}
+
+/**
+ * @brief Create a new array with specified capacity
+ */
+Array *array_new_with_capacity(int capacity) {
+    Array *arr = malloc(sizeof(Array));
+    arr->elements = malloc(capacity * sizeof(Value));
+    arr->count = 0;
+    arr->capacity = capacity;
+    return arr;
+}
+
+/**
+ * @brief Free an array and its elements
+ */
+void array_free(Array *arr) {
+    if (!arr) return;
+    
+    for (int i = 0; i < arr->count; i++) {
+        vm_value_free(&arr->elements[i]);
+    }
+    free(arr->elements);
+    free(arr);
+}
+
+/**
+ * @brief Push a value onto the end of an array
+ */
+void array_push(Array *arr, Value value) {
+    if (!arr) return;
+    
+    if (arr->count >= arr->capacity) {
+        arr->capacity = arr->capacity == 0 ? 8 : arr->capacity * 2;
+        arr->elements = realloc(arr->elements, arr->capacity * sizeof(Value));
+    }
+    
+    arr->elements[arr->count++] = value;
+}
+
+/**
+ * @brief Pop a value from the end of an array
+ */
+Value array_pop(Array *arr, bool *ok) {
+    if (ok) *ok = false;
+    
+    if (!arr || arr->count == 0) {
+        return value_make_null();
+    }
+    
+    if (ok) *ok = true;
+    return arr->elements[--arr->count];
+}
+
+/**
+ * @brief Get an element from an array by index
+ */
+Value array_get(Array *arr, int index, bool *ok) {
+    if (ok) *ok = false;
+    
+    if (!arr || index < 0 || index >= arr->count) {
+        return value_make_null();
+    }
+    
+    if (ok) *ok = true;
+    return arr->elements[index];
+}
+
+/**
+ * @brief Set an element in an array by index
+ */
+void array_set(Array *arr, int index, Value value) {
+    if (!arr || index < 0) return;
+    
+    // Expand array if necessary
+    if (index >= arr->capacity) {
+        int new_capacity = index + 1;
+        if (new_capacity < arr->capacity * 2) {
+            new_capacity = arr->capacity * 2;
+        }
+        arr->elements = realloc(arr->elements, new_capacity * sizeof(Value));
+        arr->capacity = new_capacity;
+    }
+    
+    // Fill gaps with null if necessary
+    for (int i = arr->count; i < index; i++) {
+        arr->elements[i] = value_make_null();
+    }
+    
+    // Free old value if overwriting
+    if (index < arr->count) {
+        vm_value_free(&arr->elements[index]);
+    }
+    
+    arr->elements[index] = value;
+    if (index >= arr->count) {
+        arr->count = index + 1;
+    }
+}
+
+/**
+ * @brief Get the length of an array
+ */
+int array_length(Array *arr) {
+    return arr ? arr->count : 0;
+}
+
+/* ============================================================================
+ * FUNCTION OPERATIONS
+ * ============================================================================ */
+
+/**
+ * @brief Create a new function
+ */
+Function *function_new(const char *name, Instruction *bytecode, int bytecode_len) {
+    Function *func = malloc(sizeof(Function));
+    func->name = name ? strdup(name) : NULL;
+    func->bytecode = bytecode;
+    func->bytecode_len = bytecode_len;
+    func->param_count = 0;
+    func->local_count = 0;
+    func->constants = constant_pool_new();
+    return func;
+}
+
+/**
+ * @brief Free a function
+ */
+void function_free(Function *func) {
+    if (!func) return;
+    
+    if (func->name) {
+        free((void*)func->name);
+    }
+    if (func->constants) {
+        constant_pool_free(func->constants);
+    }
+    free(func);
+}
+
+/* ============================================================================
+ * CLOSURE OPERATIONS
+ * ============================================================================ */
+
+/**
+ * @brief Create a new closure
+ */
+Closure *closure_new(Function *func) {
+    Closure *closure = malloc(sizeof(Closure));
+    closure->function = func;
+    closure->upvalues = NULL;
+    closure->upvalue_count = 0;
+    return closure;
+}
+
+/**
+ * @brief Free a closure
+ */
+void closure_free(Closure *closure) {
+    if (!closure) return;
+    
+    if (closure->upvalues) {
+        free(closure->upvalues);
+    }
+    free(closure);
+}
+
+/**
+ * @brief Set an upvalue in a closure
+ */
+void closure_set_upvalue(Closure *closure, int index, Value *value) {
+    if (!closure || index < 0) return;
+    
+    if (index >= closure->upvalue_count) {
+        int new_count = index + 1;
+        closure->upvalues = realloc(closure->upvalues, new_count * sizeof(Value*));
+        closure->upvalue_count = new_count;
+    }
+    
+    closure->upvalues[index] = value;
+}
+
+/* ============================================================================
+ * VALUE CONSTRUCTORS (EXTENSIONS)
+ * ============================================================================ */
+
+/**
+ * @brief Create an object value
+ */
+Value value_make_object(Object *obj) {
+    Value v;
+    v.type = VALUE_TYPE_OBJECT;
+    v.data.as_object = obj;
+    return v;
+}
+
+/**
+ * @brief Create an array value
+ */
+Value value_make_array(Array *arr) {
+    Value v;
+    v.type = VALUE_TYPE_ARRAY;
+    v.data.as_array = arr;
+    return v;
+}
+
+/**
+ * @brief Create a function value
+ */
+Value value_make_function(Function *func) {
+    Value v;
+    v.type = VALUE_TYPE_FUNCTION;
+    v.data.as_function = func;
+    return v;
+}
+
+/**
+ * @brief Create a closure value
+ */
+Value value_make_closure(Closure *closure) {
+    Value v;
+    v.type = VALUE_TYPE_CLOSURE;
+    v.data.as_function = closure;
+    return v;
 }
