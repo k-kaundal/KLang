@@ -1,0 +1,254 @@
+# KLang Date and Time Module
+# Comprehensive date and time utilities
+
+import core
+import math
+
+# Get current timestamp
+fn now() {
+    return time()
+}
+
+# Get current date/time as object
+fn DateTime() {
+    let timestamp = now()
+    return fromTimestamp(timestamp)
+}
+
+# Create DateTime from timestamp
+fn fromTimestamp(timestamp) {
+    let dt = localtime(timestamp)
+    return {
+        year: dt.year,
+        month: dt.month,
+        day: dt.day,
+        hour: dt.hour,
+        minute: dt.minute,
+        second: dt.second,
+        weekday: dt.weekday,
+        yearday: dt.yearday,
+        timestamp: timestamp,
+        
+        # Methods
+        format: fn(fmt) {
+            return formatDateTime(this, fmt)
+        },
+        
+        toISO: fn() {
+            return formatISO(this)
+        },
+        
+        toString: fn() {
+            return this.format("%Y-%m-%d %H:%M:%S")
+        },
+        
+        addDays: fn(days) {
+            let newTimestamp = this.timestamp + (days * 86400)
+            return fromTimestamp(newTimestamp)
+        },
+        
+        addHours: fn(hours) {
+            let newTimestamp = this.timestamp + (hours * 3600)
+            return fromTimestamp(newTimestamp)
+        },
+        
+        addMinutes: fn(minutes) {
+            let newTimestamp = this.timestamp + (minutes * 60)
+            return fromTimestamp(newTimestamp)
+        },
+        
+        addSeconds: fn(seconds) {
+            let newTimestamp = this.timestamp + seconds
+            return fromTimestamp(newTimestamp)
+        },
+        
+        diff: fn(other) {
+            return this.timestamp - other.timestamp
+        },
+        
+        isBefore: fn(other) {
+            return this.timestamp < other.timestamp
+        },
+        
+        isAfter: fn(other) {
+            return this.timestamp > other.timestamp
+        },
+        
+        equals: fn(other) {
+            return this.timestamp == other.timestamp
+        }
+    }
+}
+
+# Parse date string
+fn parse(dateStr, format) {
+    # Simple ISO format parsing
+    if format == "ISO" || !format {
+        # Format: YYYY-MM-DD HH:MM:SS
+        let parts = dateStr.split(" ")
+        if len(parts) >= 1 {
+            let dateParts = parts[0].split("-")
+            let year = int(dateParts[0])
+            let month = int(dateParts[1])
+            let day = int(dateParts[2])
+            
+            let hour = 0
+            let minute = 0
+            let second = 0
+            
+            if len(parts) >= 2 {
+                let timeParts = parts[1].split(":")
+                hour = int(timeParts[0])
+                minute = int(timeParts[1])
+                second = int(timeParts[2])
+            }
+            
+            return {
+                year: year,
+                month: month,
+                day: day,
+                hour: hour,
+                minute: minute,
+                second: second
+            }
+        }
+    }
+    
+    return null
+}
+
+# Format datetime object
+fn formatDateTime(dt, fmt) {
+    let result = fmt
+    
+    # Year
+    result = result.replace("%Y", str(dt.year))
+    result = result.replace("%y", str(dt.year % 100))
+    
+    # Month
+    result = result.replace("%m", padZero(dt.month, 2))
+    result = result.replace("%B", getMonthName(dt.month))
+    result = result.replace("%b", getMonthName(dt.month).substring(0, 3))
+    
+    # Day
+    result = result.replace("%d", padZero(dt.day, 2))
+    result = result.replace("%A", getDayName(dt.weekday))
+    result = result.replace("%a", getDayName(dt.weekday).substring(0, 3))
+    
+    # Hour
+    result = result.replace("%H", padZero(dt.hour, 2))
+    result = result.replace("%I", padZero(dt.hour % 12 || 12, 2))
+    result = result.replace("%p", dt.hour < 12 ? "AM" : "PM")
+    
+    # Minute
+    result = result.replace("%M", padZero(dt.minute, 2))
+    
+    # Second
+    result = result.replace("%S", padZero(dt.second, 2))
+    
+    return result
+}
+
+# Format as ISO 8601
+fn formatISO(dt) {
+    return formatDateTime(dt, "%Y-%m-%dT%H:%M:%S")
+}
+
+# Helper: Pad number with zeros
+fn padZero(num, width) {
+    let s = str(num)
+    while len(s) < width {
+        s = "0" + s
+    }
+    return s
+}
+
+# Helper: Get month name
+fn getMonthName(month) {
+    let months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+    if month >= 1 && month <= 12 {
+        return months[month - 1]
+    }
+    return "Unknown"
+}
+
+# Helper: Get day name
+fn getDayName(weekday) {
+    let days = [
+        "Sunday", "Monday", "Tuesday", "Wednesday",
+        "Thursday", "Friday", "Saturday"
+    ]
+    if weekday >= 0 && weekday < 7 {
+        return days[weekday]
+    }
+    return "Unknown"
+}
+
+# Duration utilities
+fn duration(seconds) {
+    return {
+        seconds: seconds,
+        minutes: seconds / 60,
+        hours: seconds / 3600,
+        days: seconds / 86400,
+        
+        toString: fn() {
+            if this.seconds < 60 {
+                return str(this.seconds) + "s"
+            } else if this.minutes < 60 {
+                return str(math.floor(this.minutes)) + "m " + str(this.seconds % 60) + "s"
+            } else if this.hours < 24 {
+                return str(math.floor(this.hours)) + "h " + str(math.floor(this.minutes % 60)) + "m"
+            } else {
+                return str(math.floor(this.days)) + "d " + str(math.floor(this.hours % 24)) + "h"
+            }
+        }
+    }
+}
+
+# Timer utility
+fn Timer() {
+    let startTime = now()
+    
+    return {
+        start: startTime,
+        
+        elapsed: fn() {
+            return now() - this.start
+        },
+        
+        reset: fn() {
+            this.start = now()
+        },
+        
+        toString: fn() {
+            return duration(this.elapsed()).toString()
+        }
+    }
+}
+
+# Sleep function
+fn sleep(seconds) {
+    let start = now()
+    while now() - start < seconds {
+        # Busy wait (in real impl, would use proper sleep)
+    }
+}
+
+# Export all functions
+export {
+    now,
+    DateTime,
+    fromTimestamp,
+    parse,
+    formatDateTime,
+    formatISO,
+    duration,
+    Timer,
+    sleep,
+    getMonthName,
+    getDayName
+}

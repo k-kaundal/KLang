@@ -10,7 +10,7 @@ LLVM_LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags --libs core executionengine mcji
 CFLAGS = -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200809L -Isrc -Iinclude -g $(LLVM_CFLAGS)
 LDFLAGS = $(LLVM_LDFLAGS) -lm -lreadline
 
-SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/vm.c src/compiler.c src/gc.c src/runtime.c src/repl.c src/cli.c src/cli_colors.c src/cli_help.c src/cli_commands.c src/formatter.c src/error_reporter.c src/config.c src/test_runner.c src/project_init.c src/llvm_backend.c src/type_checker.c
+SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/vm.c src/compiler.c src/gc.c src/runtime.c src/repl.c src/cli.c src/cli_colors.c src/cli_help.c src/cli_commands.c src/formatter.c src/error_reporter.c src/config.c src/test_runner.c src/project_init.c src/llvm_backend.c src/type_checker.c src/package_manager.c src/lsp_server.c src/debugger.c
 OBJ = $(SRC:.c=.o)
 TARGET = klang
 

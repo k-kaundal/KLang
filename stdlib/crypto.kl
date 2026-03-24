@@ -1,0 +1,221 @@
+# KLang Cryptography and Hashing Module
+# Provides cryptographic functions and hashing utilities
+
+import core
+import string
+
+# Simple hash function (for demonstration - in production would use real crypto)
+fn hash(data, algorithm) {
+    let algo = algorithm || "sha256"
+    
+    # This is a placeholder - real implementation would use proper crypto libraries
+    # For now, return a simple hash simulation
+    
+    if algo == "md5" {
+        return md5Hash(data)
+    } else if algo == "sha1" {
+        return sha1Hash(data)
+    } else if algo == "sha256" {
+        return sha256Hash(data)
+    } else if algo == "sha512" {
+        return sha512Hash(data)
+    }
+    
+    return sha256Hash(data)
+}
+
+# Simple checksum function
+fn checksum(data) {
+    let sum = 0
+    for i in range(len(data)) {
+        sum = sum + ord(data[i])
+    }
+    return sum
+}
+
+# Base64 encoding
+fn base64Encode(data) {
+    let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    let result = ""
+    let i = 0
+    
+    while i < len(data) {
+        let b1 = ord(data[i])
+        let b2 = i + 1 < len(data) ? ord(data[i + 1]) : 0
+        let b3 = i + 2 < len(data) ? ord(data[i + 2]) : 0
+        
+        let n = (b1 << 16) | (b2 << 8) | b3
+        
+        result = result + chars[(n >> 18) & 63]
+        result = result + chars[(n >> 12) & 63]
+        result = result + (i + 1 < len(data) ? chars[(n >> 6) & 63] : "=")
+        result = result + (i + 2 < len(data) ? chars[n & 63] : "=")
+        
+        i = i + 3
+    }
+    
+    return result
+}
+
+# Base64 decoding
+fn base64Decode(encoded) {
+    let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    let result = ""
+    let i = 0
+    
+    while i < len(encoded) {
+        let c1 = chars.indexOf(encoded[i])
+        let c2 = chars.indexOf(encoded[i + 1])
+        let c3 = encoded[i + 2] != "=" ? chars.indexOf(encoded[i + 2]) : 0
+        let c4 = encoded[i + 3] != "=" ? chars.indexOf(encoded[i + 3]) : 0
+        
+        let n = (c1 << 18) | (c2 << 12) | (c3 << 6) | c4
+        
+        result = result + chr((n >> 16) & 255)
+        if encoded[i + 2] != "=" {
+            result = result + chr((n >> 8) & 255)
+        }
+        if encoded[i + 3] != "=" {
+            result = result + chr(n & 255)
+        }
+        
+        i = i + 4
+    }
+    
+    return result
+}
+
+# Hex encoding
+fn hexEncode(data) {
+    let result = ""
+    for i in range(len(data)) {
+        let byte = ord(data[i])
+        let hex = byte.toString(16)
+        if len(hex) == 1 {
+            hex = "0" + hex
+        }
+        result = result + hex
+    }
+    return result
+}
+
+# Hex decoding
+fn hexDecode(hex) {
+    let result = ""
+    let i = 0
+    
+    while i < len(hex) {
+        let byte = parseInt(hex.substring(i, i + 2), 16)
+        result = result + chr(byte)
+        i = i + 2
+    }
+    
+    return result
+}
+
+# Simple XOR cipher (for demonstration)
+fn xorCipher(data, key) {
+    let result = ""
+    let keyLen = len(key)
+    
+    for i in range(len(data)) {
+        let dataChar = ord(data[i])
+        let keyChar = ord(key[i % keyLen])
+        result = result + chr(dataChar ^ keyChar)
+    }
+    
+    return result
+}
+
+# Generate random bytes (placeholder - would use secure random in production)
+fn randomBytes(length) {
+    let result = ""
+    for i in range(length) {
+        result = result + chr(random(0, 255))
+    }
+    return result
+}
+
+# UUID v4 generator
+fn uuid() {
+    let hex = "0123456789abcdef"
+    let result = ""
+    
+    for i in range(36) {
+        if i == 8 || i == 13 || i == 18 || i == 23 {
+            result = result + "-"
+        } else if i == 14 {
+            result = result + "4"  # Version 4
+        } else if i == 19 {
+            result = result + hex[random(8, 11)]  # Variant bits
+        } else {
+            result = result + hex[random(0, 15)]
+        }
+    }
+    
+    return result
+}
+
+# HMAC (simplified version)
+fn hmac(data, key, algorithm) {
+    let algo = algorithm || "sha256"
+    
+    # Simple HMAC implementation (placeholder)
+    # Real implementation would follow RFC 2104
+    let innerHash = hash(key + data, algo)
+    let outerHash = hash(key + innerHash, algo)
+    
+    return outerHash
+}
+
+# Password hashing (simplified)
+fn hashPassword(password, salt) {
+    let s = salt || randomBytes(16)
+    let hashed = hash(password + hexEncode(s), "sha256")
+    
+    return {
+        hash: hashed,
+        salt: hexEncode(s)
+    }
+}
+
+# Password verification
+fn verifyPassword(password, hashedData) {
+    let salt = hexDecode(hashedData.salt)
+    let computed = hash(password + hashedData.salt, "sha256")
+    return computed == hashedData.hash
+}
+
+# Placeholder implementations for actual hash functions
+# In production, these would call native C crypto libraries
+fn md5Hash(data) {
+    return "md5_" + str(checksum(data))
+}
+
+fn sha1Hash(data) {
+    return "sha1_" + str(checksum(data))
+}
+
+fn sha256Hash(data) {
+    return "sha256_" + str(checksum(data))
+}
+
+fn sha512Hash(data) {
+    return "sha512_" + str(checksum(data))
+}
+
+# Export all functions
+export {
+    hash,
+    checksum,
+    base64Encode,
+    base64Decode,
+    hexEncode,
+    hexDecode,
+    xorCipher,
+    randomBytes,
+    uuid,
+    hmac,
+    hashPassword,
+    verifyPassword
+}

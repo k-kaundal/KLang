@@ -1,0 +1,86 @@
+{
+  "name": "klang",
+  "displayName": "KLang Language Support",
+  "description": "Language support for KLang - The AI-Native Programming Language",
+  "version": "1.0.0",
+  "publisher": "klang-team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/k-kaundal/KLang"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Debuggers",
+    "Formatters",
+    "Linters"
+  ],
+  "keywords": [
+    "klang",
+    "programming language",
+    "ai-native",
+    "syntax highlighting"
+  ],
+  "activationEvents": [
+    "onLanguage:klang"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "klang",
+        "aliases": [
+          "KLang",
+          "klang"
+        ],
+        "extensions": [
+          ".kl",
+          ".k",
+          ".klang"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "klang",
+        "scopeName": "source.klang",
+        "path": "./syntaxes/klang.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "klang",
+        "path": "./snippets/klang.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "KLang",
+      "properties": {
+        "klang.languageServer.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable KLang Language Server"
+        },
+        "klang.languageServer.path": {
+          "type": "string",
+          "default": "klang",
+          "description": "Path to the KLang executable"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "klang.run",
+        "title": "KLang: Run Current File"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "echo 'Extension ready'",
+    "package": "echo 'Run: vsce package'"
+  }
+}
