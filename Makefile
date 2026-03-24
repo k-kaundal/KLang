@@ -30,7 +30,57 @@ test: $(TEST_SRC)
 run: $(TARGET)
 	./klang repl
 
+# Installation directories
+PREFIX ?= /usr/local
+INSTALL_BIN = $(PREFIX)/bin
+INSTALL_SHARE = $(PREFIX)/share/klang
+
+# Install to system (requires sudo)
+install: $(TARGET)
+	@echo "Installing KLang to $(PREFIX)..."
+	@mkdir -p $(INSTALL_BIN)
+	@mkdir -p $(INSTALL_SHARE)
+	@cp $(TARGET) $(INSTALL_BIN)/
+	@chmod +x $(INSTALL_BIN)/$(TARGET)
+	@[ -d examples ] && cp -r examples $(INSTALL_SHARE)/ || true
+	@[ -d docs ] && cp -r docs $(INSTALL_SHARE)/ || true
+	@[ -d stdlib ] && cp -r stdlib $(INSTALL_SHARE)/ || true
+	@echo "✓ KLang installed to $(INSTALL_BIN)/$(TARGET)"
+	@echo "Run 'klang --version' to verify installation"
+
+# Install to user directory (no sudo required)
+install-user: $(TARGET)
+	@echo "Installing KLang to $(HOME)/.local..."
+	@mkdir -p $(HOME)/.local/bin
+	@mkdir -p $(HOME)/.local/share/klang
+	@cp $(TARGET) $(HOME)/.local/bin/
+	@chmod +x $(HOME)/.local/bin/$(TARGET)
+	@[ -d examples ] && cp -r examples $(HOME)/.local/share/klang/ || true
+	@[ -d docs ] && cp -r docs $(HOME)/.local/share/klang/ || true
+	@[ -d stdlib ] && cp -r stdlib $(HOME)/.local/share/klang/ || true
+	@echo "✓ KLang installed to $(HOME)/.local/bin/$(TARGET)"
+	@echo ""
+	@echo "Add to PATH if not already there:"
+	@echo "  export PATH=\"\$$PATH:$(HOME)/.local/bin\""
+	@echo ""
+	@echo "For bash: echo 'export PATH=\"\$$PATH:$(HOME)/.local/bin\"' >> ~/.bashrc"
+	@echo "For zsh:  echo 'export PATH=\"\$$PATH:$(HOME)/.local/bin\"' >> ~/.zshrc"
+
+# Uninstall from system
+uninstall:
+	@echo "Uninstalling KLang from $(PREFIX)..."
+	@rm -f $(INSTALL_BIN)/$(TARGET)
+	@rm -rf $(INSTALL_SHARE)
+	@echo "✓ KLang uninstalled"
+
+# Uninstall from user directory
+uninstall-user:
+	@echo "Uninstalling KLang from $(HOME)/.local..."
+	@rm -f $(HOME)/.local/bin/$(TARGET)
+	@rm -rf $(HOME)/.local/share/klang
+	@echo "✓ KLang uninstalled"
+
 clean:
 	rm -f src/*.o $(TARGET) test_runner
 
-.PHONY: all test run clean
+.PHONY: all test run clean install install-user uninstall uninstall-user
