@@ -12,7 +12,7 @@
 [![Version](https://img.shields.io/badge/version-1.0.0--rc-blue)](CHANGELOG.md)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples) • [Contributing](#-contributing) • **[🎮 Try Playground](playground.html)**
+[Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples) • [Contributing](#-contributing)
 
 </div>
 
@@ -94,10 +94,6 @@ println(analysis)
 ---
 
 ## 🚀 Quick Start
-
-### 🎮 Try Online First!
-
-No installation needed! Try KLang instantly in our **[interactive playground](playground.html)**.
 
 ### Installation
 
