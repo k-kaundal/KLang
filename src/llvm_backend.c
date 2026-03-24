@@ -6,6 +6,8 @@
 
 // Try to detect LLVM version by checking for legacy pass headers
 // Legacy pass manager was removed in LLVM 17
+// Note: LLVM_VERSION_MAJOR is not available in LLVM C API headers,
+// so we use __has_include to detect which API is available
 #if __has_include(<llvm-c/Transforms/Scalar.h>)
     #include <llvm-c/Transforms/Scalar.h>
     #include <llvm-c/Transforms/Utils.h>
@@ -1058,10 +1060,10 @@ void llvm_apply_optimizations(LLVMCompilerContext *ctx) {
     char *features = LLVMGetHostCPUFeatures();
     
     LLVMTargetRef target;
-    char *error = NULL;
-    if (LLVMGetTargetFromTriple(triple, &target, &error) != 0) {
-        fprintf(stderr, "Failed to get target: %s\n", error);
-        LLVMDisposeMessage(error);
+    char *target_error = NULL;
+    if (LLVMGetTargetFromTriple(triple, &target, &target_error) != 0) {
+        fprintf(stderr, "Failed to get target: %s\n", target_error);
+        LLVMDisposeMessage(target_error);
         LLVMDisposeMessage(triple);
         LLVMDisposeMessage(cpu);
         LLVMDisposeMessage(features);
@@ -1083,6 +1085,8 @@ void llvm_apply_optimizations(LLVMCompilerContext *ctx) {
     // This includes mem2reg, instcombine, reassociate, gvn, simplifycfg, dse, adce, and more
     const char *passes = "default<O2>";
     
+    // LLVMRunPasses returns NULL on success, non-NULL LLVMErrorRef on failure
+    // LLVMGetErrorMessage consumes the error, so no explicit cleanup needed
     LLVMErrorRef err = LLVMRunPasses(ctx->module, passes, tm, options);
     if (err) {
         char *err_msg = LLVMGetErrorMessage(err);
