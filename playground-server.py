@@ -225,10 +225,18 @@ if __name__ == '__main__':
         print("   The server will start but code execution will fail.")
         print()
     
+    # Check if running in development mode
+    debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
+    
     print("🚀 KLang Playground Server")
     print(f"   KLang Binary: {KLANG_BINARY}")
     print(f"   Max Execution Time: {MAX_EXECUTION_TIME}s")
+    print(f"   Debug Mode: {'ON (development)' if debug_mode else 'OFF (production)'}")
     print(f"   Starting server on http://localhost:5000")
     print()
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    if not debug_mode:
+        print("ℹ️  Set FLASK_DEBUG=1 environment variable to enable debug mode")
+        print()
+    
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode)

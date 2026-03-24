@@ -81,8 +81,14 @@ make
 
 3. **Start the backend server**
 ```bash
+# Production mode (recommended)
 python3 playground-server.py
+
+# Development mode with debug enabled
+FLASK_DEBUG=1 python3 playground-server.py
 ```
+
+**Security Note**: Debug mode is disabled by default for security. Only enable it during development.
 
 The server will start on `http://localhost:5000`
 
