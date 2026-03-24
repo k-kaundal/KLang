@@ -1,7 +1,11 @@
 CC = gcc
-LLVM_CONFIG = llvm-config-16
-LLVM_CFLAGS = $(shell $(LLVM_CONFIG) --cflags)
-LLVM_LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags --libs core executionengine mcjit native passes)
+
+# Try to find llvm-config in order of preference
+# Check standard PATH first, then Homebrew paths (macOS), then fallback
+LLVM_CONFIG := $(shell which llvm-config-16 2>/dev/null || which llvm-config-18 2>/dev/null || which llvm-config-17 2>/dev/null || which llvm-config 2>/dev/null || (test -x /opt/homebrew/opt/llvm@16/bin/llvm-config && echo "/opt/homebrew/opt/llvm@16/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@17/bin/llvm-config && echo "/opt/homebrew/opt/llvm@17/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@18/bin/llvm-config && echo "/opt/homebrew/opt/llvm@18/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm/bin/llvm-config && echo "/opt/homebrew/opt/llvm/bin/llvm-config") || (test -x /usr/local/opt/llvm@16/bin/llvm-config && echo "/usr/local/opt/llvm@16/bin/llvm-config") || (test -x /usr/local/opt/llvm@17/bin/llvm-config && echo "/usr/local/opt/llvm@17/bin/llvm-config") || (test -x /usr/local/opt/llvm@18/bin/llvm-config && echo "/usr/local/opt/llvm@18/bin/llvm-config") || (test -x /usr/local/opt/llvm/bin/llvm-config && echo "/usr/local/opt/llvm/bin/llvm-config") || echo "llvm-config-16")
+
+LLVM_CFLAGS = $(shell $(LLVM_CONFIG) --cflags 2>/dev/null)
+LLVM_LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags --libs core executionengine mcjit native passes 2>/dev/null)
 
 CFLAGS = -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200809L -Isrc -Iinclude -g $(LLVM_CFLAGS)
 LDFLAGS = $(LLVM_LDFLAGS) -lm -lreadline

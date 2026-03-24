@@ -42,13 +42,17 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential
+          sudo apt-get install -y build-essential libreadline-dev llvm-16-dev
 
       - name: Setup build tools (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           # Xcode command line tools should be pre-installed
           gcc --version || xcode-select --install
+          brew install llvm@16 readline || true
+          # Add LLVM to PATH for macOS builds
+          echo "$(brew --prefix llvm@16)/bin" >> $GITHUB_PATH
+          echo "LLVM_CONFIG=$(brew --prefix llvm@16)/bin/llvm-config" >> $GITHUB_ENV
 
       - name: Setup build tools (Windows)
         if: matrix.os == 'windows-latest'
@@ -58,6 +62,8 @@ jobs:
           update: true
           install: >-
             mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-llvm
+            mingw-w64-x86_64-readline
             make
 
       - name: Build KLang (Unix)
@@ -118,7 +124,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential
+          sudo apt-get install -y build-essential libreadline-dev llvm-16-dev
           if [ "${{ matrix.arch }}" = "arm64" ]; then
             sudo apt-get install -y gcc-aarch64-linux-gnu
           fi
@@ -127,6 +133,10 @@ jobs:
         if: matrix.platform == 'macos'
         run: |
           gcc --version || xcode-select --install
+          brew install llvm@16 readline || true
+          # Add LLVM to PATH for macOS builds
+          echo "$(brew --prefix llvm@16)/bin" >> $GITHUB_PATH
+          echo "LLVM_CONFIG=$(brew --prefix llvm@16)/bin/llvm-config" >> $GITHUB_ENV
 
       - name: Setup build tools (Windows)
         if: matrix.platform == 'windows'
@@ -136,6 +146,8 @@ jobs:
           update: true
           install: >-
             mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-llvm
+            mingw-w64-x86_64-readline
             make
             tar
 
