@@ -14,8 +14,8 @@
  * - Profile-guided execution for JIT optimization
  */
 
-#ifndef VM_V3_H
-#define VM_V3_H
+#ifndef VM_REGISTER_H
+#define VM_REGISTER_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -346,4 +346,4 @@ void vm_v3_clear_error(VM *vm);
 #define REG_SCRATCH_2   6   // Scratch register 2
 #define REG_SCRATCH_3   7   // Scratch register 3
 
-#endif /* VM_V3_H */
+#endif /* VM_REGISTER_H */

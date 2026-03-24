@@ -3,7 +3,7 @@
  * @brief Test suite for VM V3 register-based VM
  */
 
-#include "../src/vm_v3.h"
+#include "../src/vm_register.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>

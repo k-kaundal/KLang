@@ -3,7 +3,7 @@
  * @brief Realistic demonstration of VM V3 capabilities
  */
 
-#include "../src/vm_v3.h"
+#include "../src/vm_register.h"
 #include <stdio.h>
 
 /**

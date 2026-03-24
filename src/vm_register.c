@@ -8,7 +8,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#include "vm_v3.h"
+#include "vm_register.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -79,7 +79,7 @@ Value value_make_null(void) {
 /**
  * @brief Free value memory (for heap-allocated data)
  */
-void value_free(Value *val) {
+static void vm_value_free(Value *val) {
     if (val->type == VALUE_TYPE_STRING && val->data.as_string) {
         free(val->data.as_string);
         val->data.as_string = NULL;
@@ -138,7 +138,7 @@ bool value_is_truthy(Value *val) {
 /**
  * @brief Print value for debugging
  */
-void value_print(Value *val) {
+static void vm_value_print(Value *val) {
     switch (val->type) {
         case VALUE_TYPE_INT:
             printf("%lld", (long long)val->data.as_int);
@@ -197,7 +197,7 @@ void constant_pool_free(ConstantPool *pool) {
     
     // Free all string values
     for (int i = 0; i < pool->count; i++) {
-        value_free(&pool->values[i]);
+        vm_value_free(&pool->values[i]);
     }
     
     free(pool->values);
@@ -267,7 +267,7 @@ void global_table_init(GlobalTable *table) {
 void global_table_free(GlobalTable *table) {
     for (int i = 0; i < table->count; i++) {
         free(table->names[i]);
-        value_free(&table->values[i]);
+        vm_value_free(&table->values[i]);
     }
     free(table->names);
     free(table->values);
@@ -281,7 +281,7 @@ int global_table_set(GlobalTable *table, const char *name, Value value) {
     // Check if variable already exists
     for (int i = 0; i < table->count; i++) {
         if (strcmp(table->names[i], name) == 0) {
-            value_free(&table->values[i]);
+            vm_value_free(&table->values[i]);
             table->values[i] = value;
             return i;
         }
@@ -354,7 +354,7 @@ void vm_v3_free(VM *vm) {
     }
     
     global_table_free(&vm->globals);
-    value_free(&vm->return_value);
+    vm_value_free(&vm->return_value);
     free(vm);
 }
 
@@ -368,7 +368,7 @@ void vm_v3_reset(VM *vm) {
     
     vm->frame_count = 0;
     vm->running = false;
-    value_free(&vm->return_value);
+    vm_value_free(&vm->return_value);
     vm->return_value = value_make_null();
     vm->instruction_count = 0;
     vm_v3_clear_error(vm);
@@ -871,7 +871,7 @@ static void execute_instruction(VM *vm, CallFrame *frame, Instruction *instr) {
         /* ===== DEBUGGING ===== */
         case OP_PRINT_REG:
             printf("R%d = ", instr->dest);
-            value_print(&regs[instr->dest]);
+            vm_value_print(&regs[instr->dest]);
             printf("\n");
             break;
             
@@ -1124,7 +1124,7 @@ void vm_v3_dump_registers(VM *vm) {
         }
         
         printf("R%-3d: ", i);
-        value_print(val);
+        vm_value_print(val);
         printf("\n");
         
         // Only print first few registers by default

@@ -6,7 +6,7 @@
 #include "parser.h"
 #include "interpreter.h"
 #include "compiler.h"
-#include "vm.h"
+#include "vm_stack.h"
 #include "runtime.h"
 #include "cli_colors.h"
 #include "cli_help.h"

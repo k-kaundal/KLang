@@ -3,7 +3,7 @@
  * @brief Example programs demonstrating VM V3 usage
  */
 
-#include "../src/vm_v3.h"
+#include "../src/vm_register.h"
 #include <stdio.h>
 
 /**

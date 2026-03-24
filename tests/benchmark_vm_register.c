@@ -3,7 +3,7 @@
  * @brief Performance benchmark comparing VM operations
  */
 
-#include "../src/vm_v3.h"
+#include "../src/vm_register.h"
 #include <stdio.h>
 #include <time.h>
 

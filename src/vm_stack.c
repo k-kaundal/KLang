@@ -1,4 +1,4 @@
-#include "vm.h"
+#include "vm_stack.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
