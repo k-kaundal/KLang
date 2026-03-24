@@ -13,12 +13,18 @@ KLang is a modern, AI-native programming language that combines the best feature
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
 
+# Install dependencies (Ubuntu/Debian)
+sudo apt-get update
+sudo apt-get install -y build-essential libreadline-dev llvm-16 llvm-16-dev
+
 # Build KLang
 make
 
 # Run the REPL
 ./klang repl
 ```
+
+> **Troubleshooting:** If you encounter build errors, see [BUILD.md](../BUILD.md) for detailed troubleshooting steps.
 
 ### Your First Program
 
