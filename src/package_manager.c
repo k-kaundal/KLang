@@ -377,6 +377,7 @@ int pkg_uninstall(PackageManager *pm, const char *package_name) {
 
 /* Update a package */
 int pkg_update(PackageManager *pm, const char *package_name) {
+    (void)pm;  /* Reserved for future use */
     print_info("Updating package:");
     printf(" %s\n", package_name);
     

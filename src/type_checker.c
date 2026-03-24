@@ -283,7 +283,7 @@ static Type *infer_type(TypeChecker *checker, ASTNode *node, Scope *scope) {
         }
         
         case NODE_TERNARY: {
-            Type *cond_type = infer_type(checker, node->data.ternary.cond, scope);
+            (void)infer_type(checker, node->data.ternary.cond, scope);  /* Check condition */
             Type *true_type = infer_type(checker, node->data.ternary.true_expr, scope);
             Type *false_type = infer_type(checker, node->data.ternary.false_expr, scope);
             
@@ -457,7 +457,7 @@ int type_check_ast(TypeChecker *checker, ASTNode *node) {
     scope_add_symbol(global_scope, "print", print_type);
     scope_add_symbol(global_scope, "println", print_type);
     
-    int result = check_statement(checker, node, global_scope);
+    (void)check_statement(checker, node, global_scope);  /* Check for errors */
     
     scope_destroy(global_scope);
     
