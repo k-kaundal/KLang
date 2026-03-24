@@ -845,12 +845,22 @@ static void execute_instruction(VM *vm, CallFrame *frame, Instruction *instr) {
             break;
             
         case OP_RETURN:
-            // Pop frame (handled in main execution loop)
+            // Return from function with null value
             vm->return_value = value_make_null();
+            // Frame popping is handled in main execution loop
             break;
             
         case OP_RETURN_VALUE:
+            // Return from function with value in R[dest]
             vm->return_value = regs[instr->dest];
+            // Copy return value to caller's return register if there's a caller
+            if (vm->frame_count > 1) {
+                CallFrame *caller = &vm->frames[vm->frame_count - 2];
+                // The caller should have stored which register to use for the return value
+                // For now, store in R3 (REG_RETURN) of caller
+                caller->registers[REG_RETURN] = vm->return_value;
+            }
+            // Frame popping is handled in main execution loop
             break;
         
         /* ===== TYPE CONVERSION ===== */
@@ -1149,12 +1159,240 @@ static void execute_instruction(VM *vm, CallFrame *frame, Instruction *instr) {
         }
         
         /* ===== FUNCTION CALLS ===== */
-        case OP_CALL:
-        case OP_CALL_BUILTIN:
-        case OP_CALL_METHOD:
-            // TODO: Implement full function call mechanism
-            vm_v3_error(vm, "Function calls not yet fully implemented");
+        case OP_CALL: {
+            // OP_CALL: dest=return_reg, src1=function_reg, src2=arg_count, immediate=first_arg_reg
+            // Call a function or closure
+            // R[src1] = function/closure to call
+            // R[immediate..immediate+src2-1] = arguments
+            // R[dest] = return value after call
+            
+            Value func_val = regs[instr->src1];
+            int arg_count = instr->src2;
+            int first_arg_reg = instr->immediate;
+            
+            // Check if we have room for another frame
+            if (vm->frame_count >= MAX_FRAMES) {
+                vm_v3_error(vm, "Stack overflow: too many nested function calls");
+                break;
+            }
+            
+            Function *func = NULL;
+            Value **upvalues = NULL;
+            int upvalue_count = 0;
+            
+            // Extract function from value
+            if (func_val.type == VALUE_TYPE_FUNCTION) {
+                func = (Function*)func_val.data.as_function;
+            } else if (func_val.type == VALUE_TYPE_CLOSURE) {
+                Closure *closure = (Closure*)func_val.data.as_function;
+                func = closure->function;
+                upvalues = closure->upvalues;
+                upvalue_count = closure->upvalue_count;
+            } else {
+                vm_v3_error(vm, "Cannot call non-function value");
+                break;
+            }
+            
+            if (!func || !func->bytecode) {
+                vm_v3_error(vm, "Invalid function object");
+                break;
+            }
+            
+            // Create new call frame
+            CallFrame *new_frame = &vm->frames[vm->frame_count++];
+            memset(new_frame, 0, sizeof(CallFrame));
+            
+            // Set up new frame
+            new_frame->bytecode = func->bytecode;
+            new_frame->ip = 0;
+            new_frame->base_ip = 0;
+            new_frame->constants = func->constants;
+            new_frame->function_name = func->name;
+            new_frame->line_number = 0;
+            new_frame->upvalues = upvalues;
+            new_frame->upvalue_count = upvalue_count;
+            
+            // Initialize special registers in new frame
+            init_special_registers(new_frame);
+            
+            // Copy arguments to new frame's registers (starting at R4, after special regs)
+            // R0 = zero, R1 = one, R2 = this, R3 = return value
+            int param_start = 4;
+            for (int i = 0; i < arg_count && i < func->param_count; i++) {
+                if (first_arg_reg + i < MAX_REGISTERS) {
+                    new_frame->registers[param_start + i] = regs[first_arg_reg + i];
+                }
+            }
+            
+            // Store return information in current frame
+            // The return address (IP) is already at frame->ip
+            // The return register is in instr->dest
+            
+            // Note: The actual execution will happen in the main loop
+            // When OP_RETURN is hit, it will pop the frame and continue
             break;
+        }
+        
+        case OP_CALL_BUILTIN: {
+            // OP_CALL_BUILTIN: dest=return_reg, src1=builtin_id, src2=arg_count, immediate=first_arg_reg
+            // Call a builtin function (native C function)
+            
+            int builtin_id = instr->src1;
+            int arg_count = instr->src2;
+            int first_arg_reg = instr->immediate;
+            
+            // TODO: Define builtin function table
+            // For now, implement a few basic builtins
+            switch (builtin_id) {
+                case 0: { // print
+                    for (int i = 0; i < arg_count; i++) {
+                        if (first_arg_reg + i < MAX_REGISTERS) {
+                            vm_value_print(&regs[first_arg_reg + i]);
+                            if (i < arg_count - 1) printf(" ");
+                        }
+                    }
+                    printf("\n");
+                    regs[instr->dest] = value_make_null();
+                    break;
+                }
+                case 1: { // len (length of string/array/object)
+                    if (arg_count > 0 && first_arg_reg < MAX_REGISTERS) {
+                        Value arg = regs[first_arg_reg];
+                        if (arg.type == VALUE_TYPE_STRING) {
+                            regs[instr->dest] = value_make_int(strlen(arg.data.as_string));
+                        } else if (arg.type == VALUE_TYPE_ARRAY) {
+                            Array *arr = (Array*)arg.data.as_array;
+                            regs[instr->dest] = value_make_int(array_length(arr));
+                        } else if (arg.type == VALUE_TYPE_OBJECT) {
+                            Object *obj = (Object*)arg.data.as_object;
+                            regs[instr->dest] = value_make_int(object_size(obj));
+                        } else {
+                            regs[instr->dest] = value_make_int(0);
+                        }
+                    } else {
+                        regs[instr->dest] = value_make_int(0);
+                    }
+                    break;
+                }
+                case 2: { // type (typeof)
+                    if (arg_count > 0 && first_arg_reg < MAX_REGISTERS) {
+                        Value arg = regs[first_arg_reg];
+                        const char *type_name = NULL;
+                        switch (arg.type) {
+                            case VALUE_TYPE_INT: type_name = "int"; break;
+                            case VALUE_TYPE_FLOAT: type_name = "float"; break;
+                            case VALUE_TYPE_STRING: type_name = "string"; break;
+                            case VALUE_TYPE_BOOL: type_name = "bool"; break;
+                            case VALUE_TYPE_NULL: type_name = "null"; break;
+                            case VALUE_TYPE_OBJECT: type_name = "object"; break;
+                            case VALUE_TYPE_ARRAY: type_name = "array"; break;
+                            case VALUE_TYPE_FUNCTION: type_name = "function"; break;
+                            case VALUE_TYPE_CLOSURE: type_name = "closure"; break;
+                            case VALUE_TYPE_EXCEPTION: type_name = "exception"; break;
+                            default: type_name = "unknown"; break;
+                        }
+                        regs[instr->dest] = value_make_string(type_name);
+                    } else {
+                        regs[instr->dest] = value_make_string("undefined");
+                    }
+                    break;
+                }
+                default:
+                    vm_v3_error(vm, "Unknown builtin function: %d", builtin_id);
+                    regs[instr->dest] = value_make_null();
+                    break;
+            }
+            break;
+        }
+        
+        case OP_CALL_METHOD: {
+            // OP_CALL_METHOD: dest=return_reg, src1=object_reg, src2=method_name_idx, immediate=arg_count
+            // Call a method on an object
+            // R[src1] = object (this)
+            // constant_pool[src2] = method name
+            // R[4..4+immediate-1] = arguments (after setting up frame)
+            
+            Value obj_val = regs[instr->src1];
+            int method_idx = instr->src2;
+            int arg_count = instr->immediate;
+            
+            if (obj_val.type != VALUE_TYPE_OBJECT) {
+                vm_v3_error(vm, "Cannot call method on non-object");
+                break;
+            }
+            
+            Object *obj = (Object*)obj_val.data.as_object;
+            
+            // Get method name from constant pool
+            if (!frame->constants || method_idx >= frame->constants->count) {
+                vm_v3_error(vm, "Invalid method name index");
+                break;
+            }
+            
+            Value method_name = frame->constants->values[method_idx];
+            if (method_name.type != VALUE_TYPE_STRING) {
+                vm_v3_error(vm, "Method name must be a string");
+                break;
+            }
+            
+            // Get method from object
+            bool found;
+            Value method_val = object_get(obj, method_name.data.as_string, &found);
+            
+            if (!found || (method_val.type != VALUE_TYPE_FUNCTION && 
+                          method_val.type != VALUE_TYPE_CLOSURE)) {
+                vm_v3_error(vm, "Method '%s' not found or not callable", 
+                           method_name.data.as_string);
+                break;
+            }
+            
+            // Similar to OP_CALL, but set R2 (this) to the object
+            if (vm->frame_count >= MAX_FRAMES) {
+                vm_v3_error(vm, "Stack overflow: too many nested function calls");
+                break;
+            }
+            
+            Function *func = NULL;
+            Value **upvalues = NULL;
+            int upvalue_count = 0;
+            
+            if (method_val.type == VALUE_TYPE_FUNCTION) {
+                func = (Function*)method_val.data.as_function;
+            } else {
+                Closure *closure = (Closure*)method_val.data.as_function;
+                func = closure->function;
+                upvalues = closure->upvalues;
+                upvalue_count = closure->upvalue_count;
+            }
+            
+            // Create new call frame
+            CallFrame *new_frame = &vm->frames[vm->frame_count++];
+            memset(new_frame, 0, sizeof(CallFrame));
+            
+            new_frame->bytecode = func->bytecode;
+            new_frame->ip = 0;
+            new_frame->base_ip = 0;
+            new_frame->constants = func->constants;
+            new_frame->function_name = func->name;
+            new_frame->line_number = 0;
+            new_frame->upvalues = upvalues;
+            new_frame->upvalue_count = upvalue_count;
+            
+            init_special_registers(new_frame);
+            
+            // Set 'this' in R2
+            new_frame->registers[REG_THIS] = obj_val;
+            
+            // Copy arguments starting at R4
+            int param_start = 4;
+            for (int i = 0; i < arg_count && i < func->param_count; i++) {
+                if (param_start + i < MAX_REGISTERS) {
+                    new_frame->registers[param_start + i] = regs[param_start + i];
+                }
+            }
+            
+            break;
+        }
         
         /* ===== UPVALUES/CLOSURES ===== */
         case OP_LOAD_UPVALUE: {
@@ -1470,14 +1708,95 @@ int vm_v3_execute(VM *vm, Instruction *bytecode, int bytecode_len) {
 /**
  * @brief Call a function (placeholder - to be fully implemented)
  */
+/**
+ * @brief Call a function from external code
+ */
 int vm_v3_call(VM *vm, Value *function, Value *args, int arg_count) {
-    (void)vm;
-    (void)function;
-    (void)args;
-    (void)arg_count;
+    if (!vm || !function) {
+        return -1;
+    }
     
-    // TODO: Implement function calls with new call frames
-    return -1;
+    // Check if we have room for another frame
+    if (vm->frame_count >= MAX_FRAMES) {
+        vm_v3_error(vm, "Stack overflow: too many nested function calls");
+        return -1;
+    }
+    
+    Function *func = NULL;
+    Value **upvalues = NULL;
+    int upvalue_count = 0;
+    
+    // Extract function from value
+    if (function->type == VALUE_TYPE_FUNCTION) {
+        func = (Function*)function->data.as_function;
+    } else if (function->type == VALUE_TYPE_CLOSURE) {
+        Closure *closure = (Closure*)function->data.as_function;
+        func = closure->function;
+        upvalues = closure->upvalues;
+        upvalue_count = closure->upvalue_count;
+    } else {
+        vm_v3_error(vm, "Cannot call non-function value");
+        return -1;
+    }
+    
+    if (!func || !func->bytecode) {
+        vm_v3_error(vm, "Invalid function object");
+        return -1;
+    }
+    
+    // Create new call frame
+    CallFrame *new_frame = &vm->frames[vm->frame_count++];
+    memset(new_frame, 0, sizeof(CallFrame));
+    
+    // Set up new frame
+    new_frame->bytecode = func->bytecode;
+    new_frame->ip = 0;
+    new_frame->base_ip = 0;
+    new_frame->constants = func->constants;
+    new_frame->function_name = func->name;
+    new_frame->line_number = 0;
+    new_frame->upvalues = upvalues;
+    new_frame->upvalue_count = upvalue_count;
+    
+    // Initialize special registers
+    init_special_registers(new_frame);
+    
+    // Copy arguments to frame's registers (starting at R4, after special regs)
+    int param_start = 4;
+    for (int i = 0; i < arg_count && i < func->param_count; i++) {
+        if (args) {
+            new_frame->registers[param_start + i] = args[i];
+        }
+    }
+    
+    // Execute function
+    vm->running = true;
+    while (vm->running && new_frame->ip < (uint32_t)func->bytecode_len) {
+        Instruction *instr = &func->bytecode[new_frame->ip];
+        
+        // Update profiling
+        if (vm->profiling_enabled && new_frame->hotness_counters) {
+            new_frame->hotness_counters[new_frame->ip]++;
+        }
+        
+        new_frame->ip++;
+        vm->instruction_count++;
+        
+        execute_instruction(vm, new_frame, instr);
+        
+        if (vm->has_error) {
+            vm->frame_count--;
+            return -1;
+        }
+        
+        // Handle return
+        if (instr->opcode == OP_RETURN || instr->opcode == OP_RETURN_VALUE) {
+            vm->frame_count--;
+            break;
+        }
+    }
+    
+    return 0;
 }
 
 /* ============================================================================
