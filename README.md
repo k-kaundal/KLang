@@ -97,23 +97,37 @@ println(analysis)
 
 ### Installation
 
+**One-Line Install (Easiest):**
+
+```bash
+# Using curl
+curl -fsSL https://raw.githubusercontent.com/k-kaundal/KLang/main/install.sh | bash
+
+# Or using wget
+wget -qO- https://raw.githubusercontent.com/k-kaundal/KLang/main/install.sh | bash
+```
+
+**Or build from source:**
+
 ```bash
 # Clone the repository
 git clone https://github.com/k-kaundal/KLang.git
 cd KLang
 
-# Install dependencies (Ubuntu/Debian)
-sudo apt-get update
-sudo apt-get install -y build-essential libreadline-dev llvm-16 llvm-16-dev
-
 # Build KLang
 make
 
+# Install system-wide (requires sudo)
+sudo make install
+
+# Or install to user directory (no sudo)
+make install-user
+
 # Verify installation
-./klang --version
+klang --version
 ```
 
-For other platforms, see [Installation Guide](docs/USER_GUIDE.md#installation).
+For more installation methods, see [INSTALL.md](INSTALL.md).
 
 ### Hello World
 
@@ -127,7 +141,7 @@ println(greet("World"))
 
 Run it:
 ```bash
-./klang run hello.kl
+klang run hello.kl
 ```
 
 ### Interactive REPL
