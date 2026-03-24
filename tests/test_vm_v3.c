@@ -206,7 +206,7 @@ void test_mul_sub() {
     TEST("Multiplication and Subtraction") {
         VM *vm = vm_v3_new();
         
-        // Test: (10 * 5) - 3 = 47
+        // Test: (10 * 5) - 3 = 50 - 3 = 47
         Instruction program[] = {
             {OP_LOAD_I, 10, 0, 0, 10},      // R10 = 10
             {OP_LOAD_I, 11, 0, 0, 5},       // R11 = 5
