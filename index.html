@@ -63,10 +63,18 @@
             gap: 1rem;
             font-size: 1.5rem;
             font-weight: bold;
+            color: var(--primary);
             background: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+        
+        /* Fallback for browsers that don't support background-clip */
+        @supports not (background-clip: text) or not (-webkit-background-clip: text) {
+            .logo {
+                color: var(--primary);
+            }
         }
         
         .logo-icon {
@@ -197,10 +205,16 @@
             margin-bottom: 1rem;
             border-bottom: 2px solid var(--border);
             padding-bottom: 1rem;
-            background: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        }
+        
+        /* Gradient text with fallback for accessibility */
+        @supports (background-clip: text) or (-webkit-background-clip: text) {
+            .doc-content h1 {
+                background: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
         }
         
         .doc-content h2 {
@@ -418,7 +432,9 @@
         }
         
         /* Better focus states for accessibility */
-        *:focus {
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible {
             outline: 2px solid var(--primary);
             outline-offset: 2px;
         }
