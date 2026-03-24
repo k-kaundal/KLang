@@ -4,6 +4,18 @@
 
 This guide will get you writing and running KLang code in just a few minutes. If you haven't installed KLang yet, check the [Installation Guide](01-installation.md) first.
 
+## Try Online Playground 🎮
+
+Want to try KLang immediately without installation? Use our **[interactive playground](../playground.html)**!
+
+The playground lets you:
+- ✏️ Write KLang code with syntax highlighting
+- ▶️ Run examples instantly
+- 📚 Browse 10+ code examples
+- 🎯 Learn by doing
+
+**[Launch Playground →](../playground.html)**
+
 ## Your First Line of Code
 
 The simplest KLang program:

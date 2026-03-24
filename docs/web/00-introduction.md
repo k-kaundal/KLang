@@ -93,6 +93,7 @@ If you know Python or JavaScript, you already know KLang!
 ## What's Next?
 
 Ready to get started? Continue with:
+- 🎮 **[Try the Playground](../playground.html)** - Write and run code instantly in your browser!
 - [Installation Guide](docs/web/01-installation.md) - Set up KLang on your system
 - [Quick Start](docs/web/02-quick-start.md) - Write your first program in 5 minutes
 - [Language Basics](docs/web/10-variables-types.md) - Learn the fundamentals
