@@ -52,6 +52,10 @@ void print_help(void) {
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %sinit%s <name>      Initialize a new KLang project\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("  %spkg%s <command>    Package manager (install, list, update, etc.)\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("  %slsp%s              Start Language Server Protocol server\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %sconfig%s           Show current configuration\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("  %sversion%s          Show version information\n",
@@ -75,6 +79,8 @@ void print_help(void) {
     printf("  klang fmt script.k             # Format code\n");
     printf("  klang test tests/              # Run all tests\n");
     printf("  klang init my-project --git    # Create new project\n");
+    printf("  klang pkg install lodash@1.0   # Install a package\n");
+    printf("  klang pkg list                 # List installed packages\n");
     printf("  klang info myfile.klang        # Show file info\n");
     printf("  klang help run                 # Help for 'run' command\n\n");
 

@@ -15,6 +15,8 @@
 #include "test_runner.h"
 #include "project_init.h"
 #include "llvm_backend.h"
+#include "../include/package_manager.h"
+#include "../include/lsp_server.h"
 
 void run_repl(void);
 
@@ -371,6 +373,104 @@ int main(int argc, char **argv) {
         } else {
             print_help();
         }
+    }
+    else if (strcmp(argv[1], "pkg") == 0 || strcmp(argv[1], "package") == 0) {
+        if (argc < 3) {
+            print_error("Missing package command");
+            fprintf(stderr, "Usage: klang pkg <install|uninstall|update|list|init>\n");
+            fprintf(stderr, "Try 'klang help pkg' for more information.\n");
+            config_free();
+            return 1;
+        }
+        
+        PackageManager *pm = pkg_manager_init(".");
+        if (!pm) {
+            print_error("Failed to initialize package manager");
+            config_free();
+            return 1;
+        }
+        
+        if (strcmp(argv[2], "install") == 0 || strcmp(argv[2], "add") == 0) {
+            if (argc < 4) {
+                print_error("Missing package name");
+                fprintf(stderr, "Usage: klang pkg install <package[@version]>\n");
+                pkg_manager_free(pm);
+                config_free();
+                return 1;
+            }
+            
+            /* Parse package@version */
+            char *package = strdup(argv[3]);
+            char *version = strchr(package, '@');
+            if (version) {
+                *version = '\0';
+                version++;
+            }
+            
+            pkg_install(pm, package, version);
+            free(package);
+        }
+        else if (strcmp(argv[2], "uninstall") == 0 || strcmp(argv[2], "remove") == 0) {
+            if (argc < 4) {
+                print_error("Missing package name");
+                fprintf(stderr, "Usage: klang pkg uninstall <package>\n");
+                pkg_manager_free(pm);
+                config_free();
+                return 1;
+            }
+            
+            pkg_uninstall(pm, argv[3]);
+        }
+        else if (strcmp(argv[2], "update") == 0) {
+            if (argc >= 4) {
+                pkg_update(pm, argv[3]);
+            } else {
+                pkg_update_all(pm);
+            }
+        }
+        else if (strcmp(argv[2], "list") == 0 || strcmp(argv[2], "ls") == 0) {
+            pkg_list_installed(pm);
+        }
+        else if (strcmp(argv[2], "init") == 0) {
+            if (argc < 4) {
+                print_error("Missing package name");
+                fprintf(stderr, "Usage: klang pkg init <name>\n");
+                pkg_manager_free(pm);
+                config_free();
+                return 1;
+            }
+            
+            PackageManifest *manifest = pkg_manifest_init(argv[3], "1.0.0");
+            if (manifest) {
+                pkg_manifest_save(manifest, "package.kl.json");
+                print_success("Package manifest created: package.kl.json");
+                pkg_manifest_free(manifest);
+            } else {
+                print_error("Failed to create package manifest");
+            }
+        }
+        else {
+            print_error("Unknown package command");
+            fprintf(stderr, "Command: %s\n", argv[2]);
+            fprintf(stderr, "Try 'klang help pkg' for more information.\n");
+        }
+        
+        pkg_manager_free(pm);
+    }
+    else if (strcmp(argv[1], "lsp") == 0) {
+        /* Start LSP server */
+        LSPServer *lsp = lsp_server_init();
+        if (!lsp) {
+            print_error("Failed to initialize LSP server");
+            config_free();
+            return 1;
+        }
+        
+        int result = lsp_server_run(lsp);
+        lsp_server_free(lsp);
+        
+        config_free();
+        return result;
     }
     else {
         print_error("Unknown command");

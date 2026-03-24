@@ -1,0 +1,363 @@
+# KLang Collections Module
+# Advanced data structures and collection utilities
+
+import core
+
+# Stack implementation
+fn Stack() {
+    return {
+        items: [],
+        
+        push: fn(item) {
+            this.items.push(item)
+        },
+        
+        pop: fn() {
+            if this.isEmpty() {
+                return null
+            }
+            return this.items.pop()
+        },
+        
+        peek: fn() {
+            if this.isEmpty() {
+                return null
+            }
+            return this.items[len(this.items) - 1]
+        },
+        
+        isEmpty: fn() {
+            return len(this.items) == 0
+        },
+        
+        size: fn() {
+            return len(this.items)
+        },
+        
+        clear: fn() {
+            this.items = []
+        },
+        
+        toString: fn() {
+            return "Stack(" + str(this.items) + ")"
+        }
+    }
+}
+
+# Queue implementation
+fn Queue() {
+    return {
+        items: [],
+        
+        enqueue: fn(item) {
+            this.items.push(item)
+        },
+        
+        dequeue: fn() {
+            if this.isEmpty() {
+                return null
+            }
+            return this.items.shift()
+        },
+        
+        front: fn() {
+            if this.isEmpty() {
+                return null
+            }
+            return this.items[0]
+        },
+        
+        isEmpty: fn() {
+            return len(this.items) == 0
+        },
+        
+        size: fn() {
+            return len(this.items)
+        },
+        
+        clear: fn() {
+            this.items = []
+        },
+        
+        toString: fn() {
+            return "Queue(" + str(this.items) + ")"
+        }
+    }
+}
+
+# Priority Queue implementation
+fn PriorityQueue(compareFn) {
+    let compare = compareFn || fn(a, b) { return a - b }
+    
+    return {
+        items: [],
+        compare: compare,
+        
+        enqueue: fn(item, priority) {
+            let entry = { value: item, priority: priority || 0 }
+            this.items.push(entry)
+            this._bubbleUp(len(this.items) - 1)
+        },
+        
+        dequeue: fn() {
+            if this.isEmpty() {
+                return null
+            }
+            
+            let result = this.items[0].value
+            let last = this.items.pop()
+            
+            if !this.isEmpty() {
+                this.items[0] = last
+                this._bubbleDown(0)
+            }
+            
+            return result
+        },
+        
+        peek: fn() {
+            if this.isEmpty() {
+                return null
+            }
+            return this.items[0].value
+        },
+        
+        isEmpty: fn() {
+            return len(this.items) == 0
+        },
+        
+        size: fn() {
+            return len(this.items)
+        },
+        
+        _bubbleUp: fn(index) {
+            while index > 0 {
+                let parentIndex = (index - 1) / 2
+                if this.compare(this.items[index].priority, this.items[parentIndex].priority) >= 0 {
+                    break
+                }
+                let temp = this.items[index]
+                this.items[index] = this.items[parentIndex]
+                this.items[parentIndex] = temp
+                index = parentIndex
+            }
+        },
+        
+        _bubbleDown: fn(index) {
+            while true {
+                let leftChild = 2 * index + 1
+                let rightChild = 2 * index + 2
+                let smallest = index
+                
+                if leftChild < len(this.items) && this.compare(this.items[leftChild].priority, this.items[smallest].priority) < 0 {
+                    smallest = leftChild
+                }
+                
+                if rightChild < len(this.items) && this.compare(this.items[rightChild].priority, this.items[smallest].priority) < 0 {
+                    smallest = rightChild
+                }
+                
+                if smallest == index {
+                    break
+                }
+                
+                let temp = this.items[index]
+                this.items[index] = this.items[smallest]
+                this.items[smallest] = temp
+                index = smallest
+            }
+        }
+    }
+}
+
+# LinkedList implementation
+fn LinkedList() {
+    return {
+        head: null,
+        tail: null,
+        length: 0,
+        
+        append: fn(value) {
+            let node = { value: value, next: null }
+            
+            if this.tail {
+                this.tail.next = node
+                this.tail = node
+            } else {
+                this.head = node
+                this.tail = node
+            }
+            
+            this.length = this.length + 1
+        },
+        
+        prepend: fn(value) {
+            let node = { value: value, next: this.head }
+            this.head = node
+            
+            if !this.tail {
+                this.tail = node
+            }
+            
+            this.length = this.length + 1
+        },
+        
+        toArray: fn() {
+            let result = []
+            let current = this.head
+            
+            while current {
+                result.push(current.value)
+                current = current.next
+            }
+            
+            return result
+        },
+        
+        size: fn() {
+            return this.length
+        },
+        
+        isEmpty: fn() {
+            return this.length == 0
+        },
+        
+        toString: fn() {
+            return "LinkedList(" + str(this.toArray()) + ")"
+        }
+    }
+}
+
+# Set utilities
+fn Set(items) {
+    let set = {}
+    
+    if items {
+        for item in items {
+            set[str(item)] = item
+        }
+    }
+    
+    return {
+        _items: set,
+        
+        add: fn(item) {
+            this._items[str(item)] = item
+        },
+        
+        has: fn(item) {
+            return str(item) in this._items
+        },
+        
+        delete: fn(item) {
+            delete this._items[str(item)]
+        },
+        
+        size: fn() {
+            return len(keys(this._items))
+        },
+        
+        values: fn() {
+            return values(this._items)
+        },
+        
+        clear: fn() {
+            this._items = {}
+        },
+        
+        union: fn(other) {
+            let result = Set(this.values())
+            for item in other.values() {
+                result.add(item)
+            }
+            return result
+        },
+        
+        intersection: fn(other) {
+            let result = Set()
+            for item in this.values() {
+                if other.has(item) {
+                    result.add(item)
+                }
+            }
+            return result
+        },
+        
+        difference: fn(other) {
+            let result = Set()
+            for item in this.values() {
+                if !other.has(item) {
+                    result.add(item)
+                }
+            }
+            return result
+        }
+    }
+}
+
+# Map utilities (enhanced)
+fn OrderedMap() {
+    return {
+        _keys: [],
+        _values: {},
+        
+        set: fn(key, value) {
+            let keyStr = str(key)
+            if !(keyStr in this._values) {
+                this._keys.push(key)
+            }
+            this._values[keyStr] = value
+        },
+        
+        get: fn(key) {
+            return this._values[str(key)]
+        },
+        
+        has: fn(key) {
+            return str(key) in this._values
+        },
+        
+        delete: fn(key) {
+            let keyStr = str(key)
+            if keyStr in this._values {
+                delete this._values[keyStr]
+                # Remove from keys array
+                let index = this._keys.indexOf(key)
+                if index >= 0 {
+                    this._keys.splice(index, 1)
+                }
+            }
+        },
+        
+        keys: fn() {
+            return this._keys
+        },
+        
+        values: fn() {
+            return this._keys.map(k => this._values[str(k)])
+        },
+        
+        entries: fn() {
+            return this._keys.map(k => [k, this._values[str(k)]])
+        },
+        
+        size: fn() {
+            return len(this._keys)
+        },
+        
+        clear: fn() {
+            this._keys = []
+            this._values = {}
+        }
+    }
+}
+
+# Export all
+export {
+    Stack,
+    Queue,
+    PriorityQueue,
+    LinkedList,
+    Set,
+    OrderedMap
+}

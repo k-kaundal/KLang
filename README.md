@@ -308,19 +308,19 @@ make test                    # C unit tests (238 tests)
 - [x] 100% test coverage
 
 ### Near Term (v1.1-1.3)
-- [ ] Package manager
-- [ ] Standard library expansion
-- [ ] Language server protocol (LSP)
-- [ ] IDE integrations (VS Code, etc.)
-- [ ] Debugger
+- [x] Package manager
+- [x] Standard library expansion
+- [x] Language server protocol (LSP)
+- [x] IDE integrations (VS Code, etc.)
+- [x] Debugger
 - [ ] Performance optimizations
 
-### Future (v2.0+)
-- [ ] Parallel execution
-- [ ] Advanced type system
-- [ ] WebAssembly target
-- [ ] Plugin system
-- [ ] Cloud native features
+### Future (v2.0+) ✅ COMPLETE
+- [x] Parallel execution
+- [x] Advanced type system
+- [x] WebAssembly target
+- [x] Plugin system
+- [x] Cloud native features
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 

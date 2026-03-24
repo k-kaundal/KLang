@@ -1,0 +1,271 @@
+# KLang Testing Framework
+# Comprehensive testing utilities
+
+import core
+import string
+
+# Test suite state
+let testSuites = []
+let currentSuite = null
+
+# Colors for output (simple ANSI codes)
+let GREEN = "\x1b[32m"
+let RED = "\x1b[31m"
+let YELLOW = "\x1b[33m"
+let CYAN = "\x1b[36m"
+let RESET = "\x1b[0m"
+
+# Test Suite
+fn describe(name, fn_body) {
+    let suite = {
+        name: name,
+        tests: [],
+        beforeEach: null,
+        afterEach: null,
+        beforeAll: null,
+        afterAll: null
+    }
+    
+    testSuites.push(suite)
+    currentSuite = suite
+    
+    # Execute the suite definition
+    fn_body()
+    
+    currentSuite = null
+}
+
+# Individual test
+fn it(description, fn_test) {
+    if !currentSuite {
+        println(RED + "Error: 'it' must be called within a 'describe' block" + RESET)
+        return
+    }
+    
+    currentSuite.tests.push({
+        description: description,
+        fn: fn_test,
+        passed: null,
+        error: null
+    })
+}
+
+# Setup hooks
+fn beforeEach(fn_hook) {
+    if currentSuite {
+        currentSuite.beforeEach = fn_hook
+    }
+}
+
+fn afterEach(fn_hook) {
+    if currentSuite {
+        currentSuite.afterEach = fn_hook
+    }
+}
+
+fn beforeAll(fn_hook) {
+    if currentSuite {
+        currentSuite.beforeAll = fn_hook
+    }
+}
+
+fn afterAll(fn_hook) {
+    if currentSuite {
+        currentSuite.afterAll = fn_hook
+    }
+}
+
+# Assertions
+fn expect(actual) {
+    return {
+        actual: actual,
+        
+        toBe: fn(expected) {
+            if this.actual != expected {
+                throw "Expected " + str(this.actual) + " to be " + str(expected)
+            }
+        },
+        
+        toEqual: fn(expected) {
+            if this.actual != expected {
+                throw "Expected " + str(this.actual) + " to equal " + str(expected)
+            }
+        },
+        
+        toBeTruthy: fn() {
+            if !this.actual {
+                throw "Expected " + str(this.actual) + " to be truthy"
+            }
+        },
+        
+        toBeFalsy: fn() {
+            if this.actual {
+                throw "Expected " + str(this.actual) + " to be falsy"
+            }
+        },
+        
+        toBeNull: fn() {
+            if this.actual != null {
+                throw "Expected " + str(this.actual) + " to be null"
+            }
+        },
+        
+        toBeGreaterThan: fn(expected) {
+            if !(this.actual > expected) {
+                throw "Expected " + str(this.actual) + " to be greater than " + str(expected)
+            }
+        },
+        
+        toBeLessThan: fn(expected) {
+            if !(this.actual < expected) {
+                throw "Expected " + str(this.actual) + " to be less than " + str(expected)
+            }
+        },
+        
+        toContain: fn(expected) {
+            if typeof(this.actual) == "string" {
+                if !this.actual.includes(expected) {
+                    throw "Expected string '" + this.actual + "' to contain '" + expected + "'"
+                }
+            } else if typeof(this.actual) == "array" {
+                if !this.actual.includes(expected) {
+                    throw "Expected array to contain " + str(expected)
+                }
+            } else {
+                throw "toContain expects a string or array"
+            }
+        },
+        
+        toHaveLength: fn(expected) {
+            let actualLen = len(this.actual)
+            if actualLen != expected {
+                throw "Expected length " + str(actualLen) + " to be " + str(expected)
+            }
+        },
+        
+        toThrow: fn() {
+            let threw = false
+            try {
+                this.actual()
+            } catch (e) {
+                threw = true
+            }
+            
+            if !threw {
+                throw "Expected function to throw an error"
+            }
+        },
+        
+        not: {
+            toBe: fn(expected) {
+                if this.actual == expected {
+                    throw "Expected " + str(this.actual) + " not to be " + str(expected)
+                }
+            },
+            
+            toEqual: fn(expected) {
+                if this.actual == expected {
+                    throw "Expected " + str(this.actual) + " not to equal " + str(expected)
+                }
+            },
+            
+            toBeNull: fn() {
+                if this.actual == null {
+                    throw "Expected value not to be null"
+                }
+            },
+            
+            toContain: fn(expected) {
+                if typeof(this.actual) == "string" {
+                    if this.actual.includes(expected) {
+                        throw "Expected string '" + this.actual + "' not to contain '" + expected + "'"
+                    }
+                } else if typeof(this.actual) == "array" {
+                    if this.actual.includes(expected) {
+                        throw "Expected array not to contain " + str(expected)
+                    }
+                }
+            }
+        }
+    }
+}
+
+# Run all tests
+fn run() {
+    println("\n" + CYAN + "Running Tests..." + RESET + "\n")
+    
+    let totalTests = 0
+    let passedTests = 0
+    let failedTests = 0
+    
+    for suite in testSuites {
+        println(CYAN + "● " + suite.name + RESET)
+        
+        # Run beforeAll hook
+        if suite.beforeAll {
+            suite.beforeAll()
+        }
+        
+        for test in suite.tests {
+            totalTests = totalTests + 1
+            
+            try {
+                # Run beforeEach hook
+                if suite.beforeEach {
+                    suite.beforeEach()
+                }
+                
+                # Run the test
+                test.fn()
+                
+                # Run afterEach hook
+                if suite.afterEach {
+                    suite.afterEach()
+                }
+                
+                test.passed = true
+                passedTests = passedTests + 1
+                println("  " + GREEN + "✓" + RESET + " " + test.description)
+            } catch (error) {
+                test.passed = false
+                test.error = error
+                failedTests = failedTests + 1
+                println("  " + RED + "✗" + RESET + " " + test.description)
+                println("    " + RED + str(error) + RESET)
+            }
+        }
+        
+        # Run afterAll hook
+        if suite.afterAll {
+            suite.afterAll()
+        }
+        
+        println("")
+    }
+    
+    # Summary
+    println("─────────────────────────────────────")
+    println("Tests:    " + str(totalTests))
+    println(GREEN + "Passed:   " + str(passedTests) + RESET)
+    
+    if failedTests > 0 {
+        println(RED + "Failed:   " + str(failedTests) + RESET)
+    }
+    
+    let coverage = totalTests > 0 ? (passedTests * 100 / totalTests) : 0
+    println("Coverage: " + str(coverage) + "%\n")
+    
+    return failedTests == 0
+}
+
+# Export API
+export {
+    describe,
+    it,
+    expect,
+    beforeEach,
+    afterEach,
+    beforeAll,
+    afterAll,
+    run
+}

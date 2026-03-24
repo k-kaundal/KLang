@@ -1,0 +1,213 @@
+# KLang File System Module
+# Provides comprehensive file system operations
+
+import core
+
+# File operations
+fn readFile(path) {
+    # Read entire file content
+    let handle = open(path, "r")
+    if !handle {
+        return null
+    }
+    let content = handle.read()
+    handle.close()
+    return content
+}
+
+fn writeFile(path, content) {
+    # Write content to file
+    let handle = open(path, "w")
+    if !handle {
+        return false
+    }
+    handle.write(content)
+    handle.close()
+    return true
+}
+
+fn appendFile(path, content) {
+    # Append content to file
+    let handle = open(path, "a")
+    if !handle {
+        return false
+    }
+    handle.write(content)
+    handle.close()
+    return true
+}
+
+fn deleteFile(path) {
+    # Delete a file
+    return remove(path)
+}
+
+fn fileExists(path) {
+    # Check if file exists
+    let handle = open(path, "r")
+    if handle {
+        handle.close()
+        return true
+    }
+    return false
+}
+
+fn fileSize(path) {
+    # Get file size in bytes
+    let handle = open(path, "r")
+    if !handle {
+        return -1
+    }
+    handle.seek(0, 2)  # SEEK_END
+    let size = handle.tell()
+    handle.close()
+    return size
+}
+
+# Directory operations
+fn createDir(path) {
+    # Create a directory
+    return mkdir(path)
+}
+
+fn removeDir(path) {
+    # Remove a directory
+    return rmdir(path)
+}
+
+fn listDir(path) {
+    # List directory contents
+    return scandir(path)
+}
+
+fn dirExists(path) {
+    # Check if directory exists
+    return isdir(path)
+}
+
+# Path operations
+fn joinPath(...paths) {
+    # Join path components
+    let result = ""
+    let sep = "/"
+    
+    for path in paths {
+        if result == "" {
+            result = str(path)
+        } else {
+            if !result.endsWith(sep) {
+                result = result + sep
+            }
+            result = result + str(path)
+        }
+    }
+    
+    return result
+}
+
+fn baseName(path) {
+    # Get base name from path
+    let parts = path.split("/")
+    if len(parts) > 0 {
+        return parts[len(parts) - 1]
+    }
+    return path
+}
+
+fn dirName(path) {
+    # Get directory name from path
+    let lastSlash = path.lastIndexOf("/")
+    if lastSlash >= 0 {
+        return path.substring(0, lastSlash)
+    }
+    return "."
+}
+
+fn ext(path) {
+    # Get file extension
+    let base = baseName(path)
+    let lastDot = base.lastIndexOf(".")
+    if lastDot >= 0 {
+        return base.substring(lastDot)
+    }
+    return ""
+}
+
+fn withoutExt(path) {
+    # Remove file extension
+    let lastDot = path.lastIndexOf(".")
+    if lastDot >= 0 {
+        return path.substring(0, lastDot)
+    }
+    return path
+}
+
+# File info
+fn getFileInfo(path) {
+    # Get file statistics
+    return stat(path)
+}
+
+fn isFile(path) {
+    # Check if path is a file
+    let info = getFileInfo(path)
+    return info && info.isFile
+}
+
+fn isDirectory(path) {
+    # Check if path is a directory
+    let info = getFileInfo(path)
+    return info && info.isDirectory
+}
+
+# File copying
+fn copyFile(src, dest) {
+    # Copy a file
+    let content = readFile(src)
+    if content == null {
+        return false
+    }
+    return writeFile(dest, content)
+}
+
+fn moveFile(src, dest) {
+    # Move/rename a file
+    return rename(src, dest)
+}
+
+# Working directory
+fn cwd() {
+    # Get current working directory
+    return getcwd()
+}
+
+fn chdir(path) {
+    # Change working directory
+    return changedir(path)
+}
+
+# Export all functions
+export {
+    readFile,
+    writeFile,
+    appendFile,
+    deleteFile,
+    fileExists,
+    fileSize,
+    createDir,
+    removeDir,
+    listDir,
+    dirExists,
+    joinPath,
+    baseName,
+    dirName,
+    ext,
+    withoutExt,
+    getFileInfo,
+    isFile,
+    isDirectory,
+    copyFile,
+    moveFile,
+    cwd,
+    chdir
+}
