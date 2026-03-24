@@ -63,11 +63,15 @@
             gap: 1rem;
             font-size: 1.5rem;
             font-weight: bold;
-            color: var(--primary);
+            background: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .logo-icon {
             font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.5));
         }
         
         .search-box {
@@ -84,11 +88,17 @@
             border-radius: 8px;
             color: var(--text);
             font-size: 0.95rem;
+            transition: all 0.3s ease;
         }
         
         .search-box input:focus {
             outline: none;
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .search-box input::placeholder {
+            color: var(--text-secondary);
         }
         
         .github-link {
@@ -98,11 +108,14 @@
             text-decoration: none;
             border-radius: 6px;
             font-weight: 500;
-            transition: background 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         
         .github-link:hover {
             background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(99, 102, 241, 0.4);
         }
         
         /* Main Layout */
@@ -184,6 +197,10 @@
             margin-bottom: 1rem;
             border-bottom: 2px solid var(--border);
             padding-bottom: 1rem;
+            background: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .doc-content h2 {
@@ -191,6 +208,19 @@
             font-size: 2rem;
             margin-top: 2.5rem;
             margin-bottom: 1rem;
+            position: relative;
+            padding-left: 1rem;
+        }
+        
+        .doc-content h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--accent) 0%, var(--primary) 100%);
+            border-radius: 2px;
         }
         
         .doc-content h3 {
@@ -368,6 +398,60 @@
         
         .badge.beta {
             background: #f59e0b;
+        }
+        
+        /* Enhanced Professional Styling */
+        .doc-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .doc-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Better focus states for accessibility */
+        *:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+        
+        /* Enhanced code blocks */
+        .doc-content pre {
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Professional animations */
+        .sidebar a,
+        .github-link {
+            transition: all 0.2s ease;
+        }
+        
+        /* Loading animation enhancement */
+        .loading {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Table enhancements */
+        .doc-content table {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .doc-content table tr:hover {
+            background: rgba(99, 102, 241, 0.1);
         }
     </style>
 </head>
