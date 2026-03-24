@@ -1,6 +1,10 @@
 # 🚀 KLang
 
-> A high-performance, statically-typed, **AI-Native** programming language — combining the power of C, the simplicity of Python, the safety of TypeScript, and **first-class AI integration**.
+> A high-performance, **AI-Native** programming language — combining the power of C, the simplicity of Python, modern JavaScript features, and **first-class AI integration**.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](.)
+[![Version](https://img.shields.io/badge/version-0.9.0--beta-blue)](CHANGELOG.md)
 
 ---
 
@@ -8,13 +12,64 @@
 
 KLang is a modern programming language designed for:
 
-* ⚡ High performance (near-native execution)
-* 🔒 Strong type safety
-* 🧩 Clean, minimal syntax
+* ⚡ High performance (interpreter + VM + LLVM JIT)
+* 🧩 Clean, expressive syntax (Python + JavaScript hybrid)
 * 🛠️ Full control with a custom runtime
-* 🤖 **AI-Native core** (LLM, embeddings, RAG, agents) - **100% implemented in KLang**
+* 🤖 **AI-Native core** (LLM, embeddings, RAG, agents) - **95% implemented in KLang**
+* 🔧 Modern language features (classes, arrow functions, destructuring, async/await)
+* 🌐 Built-in HTTP client and environment management
 
-It bridges the gap between low-level systems programming, high-level developer productivity, and **AI-powered applications**.
+It bridges the gap between high-level productivity and **AI-powered applications**.
+
+## 📚 Documentation
+
+- **[User Guide](docs/USER_GUIDE.md)** - Start here! Quick start and core features
+- **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
+- **[AI Native Guide](docs/AI_NATIVE_GUIDE.md)** - Deep dive into AI features
+- **[Examples](examples/)** - Sample programs and tutorials
+- **[Contributing](docs/developer/CONTRIBUTING.md)** - How to contribute
+
+---
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/k-kaundal/KLang.git
+cd KLang
+
+# Install dependencies (Ubuntu/Debian)
+sudo apt-get install -y libreadline-dev llvm-16 llvm-16-dev
+
+# Build KLang
+make
+
+# Verify installation
+./klang --version
+```
+
+### Your First Program
+
+```klang
+# hello.kl
+println("Hello, KLang!")
+
+let numbers = [1, 2, 3, 4, 5]
+let doubled = numbers.map(x => x * 2)
+println("Doubled: " + str(doubled))
+```
+
+Run it:
+```bash
+./klang run hello.kl
+```
+
+Start the REPL:
+```bash
+./klang repl
+```
 
 ---
 

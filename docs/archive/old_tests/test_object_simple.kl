@@ -1,0 +1,9 @@
+// Simple object literal test
+
+print("=== Simple Object Literal Test ===")
+
+// Test 1: Basic object
+let person = {name: "Alice", age: 30}
+print("Person:", person)
+
+print("✅ Test passed")

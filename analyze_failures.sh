@@ -1,0 +1,41 @@
+#!/bin/bash
+
+echo "=== Analyzing Test Failures ==="
+echo ""
+
+echo "1. Double-free issues detected in:"
+echo "   - test_comprehensive_types.k (dict/set/tuple iteration)"
+echo "   - test_dict.k (complex dict operations)" 
+echo "   - for_of_demo.k (for-of loops)"
+echo "   - abstract_classes_demo.kl"
+echo "   - access_modifiers_demo.kl"
+echo "   - advanced_oop_complete.kl"
+echo "   - object_literals_demo.kl"
+echo "   - object_literals_working.kl"
+echo "   - point_class.kl"
+echo "   - stdlib_demo.kl"
+echo "   - oop_comprehensive.klang"
+echo "   - oop_no_comments.klang"
+echo ""
+
+echo "2. Segmentation faults in:"
+echo "   - calculator_class.kl"
+echo "   - design_patterns.kl"
+echo ""
+
+echo "3. Parse errors in:"
+echo "   - algorithms.kl (module syntax not supported)"
+echo ""
+
+echo "4. Missing features:"
+echo "   - sqrt() function undefined in some examples"
+echo "   - Multi-line object literals (parser limitation)"
+echo ""
+
+echo "=== Memory Issue Pattern ==="
+echo "The double-free errors suggest a garbage collection issue"
+echo "particularly with:"
+echo "  - Dictionary/Set/Tuple operations"
+echo "  - For-of loop iteration over collections"
+echo "  - Object literal cleanup"
+echo "  - Class instance destruction"
