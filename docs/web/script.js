@@ -6,6 +6,7 @@ const html = document.documentElement;
 const savedTheme = localStorage.getItem('theme') || 'dark';
 html.setAttribute('data-theme', savedTheme);
 updateThemeIcon(savedTheme);
+updateHighlightTheme(savedTheme);
 
 themeToggle.addEventListener('click', () => {
     const currentTheme = html.getAttribute('data-theme');
@@ -14,6 +15,7 @@ themeToggle.addEventListener('click', () => {
     html.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     updateThemeIcon(newTheme);
+    updateHighlightTheme(newTheme);
 });
 
 function updateThemeIcon(theme) {
@@ -29,20 +31,38 @@ function updateThemeIcon(theme) {
     }
 }
 
+function updateHighlightTheme(theme) {
+    const darkTheme = document.getElementById('highlight-theme-dark');
+    const lightTheme = document.getElementById('highlight-theme-light');
+    
+    if (darkTheme && lightTheme) {
+        if (theme === 'dark') {
+            darkTheme.disabled = false;
+            lightTheme.disabled = true;
+        } else {
+            darkTheme.disabled = true;
+            lightTheme.disabled = false;
+        }
+    }
+}
+
 // ===== Mobile Menu =====
 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
 const navLinks = document.querySelector('.nav-links');
 
 mobileMenuToggle.addEventListener('click', () => {
-    navLinks.classList.toggle('active');
+    const isActive = navLinks.classList.toggle('active');
+    
+    // Update aria-expanded for accessibility
+    mobileMenuToggle.setAttribute('aria-expanded', isActive);
     
     // Animate hamburger icon
     const spans = mobileMenuToggle.querySelectorAll('span');
-    spans[0].style.transform = navLinks.classList.contains('active') 
+    spans[0].style.transform = isActive 
         ? 'rotate(45deg) translateY(8px)' 
         : '';
-    spans[1].style.opacity = navLinks.classList.contains('active') ? '0' : '1';
-    spans[2].style.transform = navLinks.classList.contains('active') 
+    spans[1].style.opacity = isActive ? '0' : '1';
+    spans[2].style.transform = isActive 
         ? 'rotate(-45deg) translateY(-8px)' 
         : '';
 });
@@ -51,6 +71,7 @@ mobileMenuToggle.addEventListener('click', () => {
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.nav-links') && !e.target.closest('.mobile-menu-toggle')) {
         navLinks.classList.remove('active');
+        mobileMenuToggle.setAttribute('aria-expanded', 'false');
         const spans = mobileMenuToggle.querySelectorAll('span');
         spans[0].style.transform = '';
         spans[1].style.opacity = '1';
@@ -62,7 +83,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     // Highlight all code blocks
     document.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightBlock(block);
+        hljs.highlightElement(block);
     });
 });
 
@@ -443,7 +464,7 @@ function updateCodeExample(language, code) {
     const codeBlock = document.querySelector(`[data-language="${language}"] code`);
     if (codeBlock) {
         codeBlock.textContent = code;
-        hljs.highlightBlock(codeBlock);
+        hljs.highlightElement(codeBlock);
     }
 }
 
