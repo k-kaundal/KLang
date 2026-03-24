@@ -1,0 +1,171 @@
+# ============================================
+# Prompt Engineering Examples
+# ============================================
+# Demonstrates advanced prompt engineering in KLang
+
+println("=== KLang Prompt Engineering Demo ===\n")
+
+# Example 1: Simple Template
+println("--- Example 1: Prompt Template ---")
+
+let template = new PromptTemplate("Write a {language} function that {task}")
+
+let values = dict()
+values.set("language", "KLang")
+values.set("task", "calculates fibonacci numbers")
+
+let prompt = template.fill(values)
+println("Generated prompt:")
+println(prompt)
+println()
+
+# Example 2: Few-Shot Learning
+println("--- Example 2: Few-Shot Learning ---")
+
+let fewShot = new FewShotPrompt("Translate English to KLang code syntax:")
+
+fewShot.addExample(
+    "print hello world",
+    'println("Hello, World!")'
+)
+
+fewShot.addExample(
+    "define a function that adds two numbers",
+    "fn add(a: int, b: int) -> int {\n    return a + b\n}"
+)
+
+fewShot.addExample(
+    "create a loop from 0 to 10",
+    "for i in range(11) {\n    println(i)\n}"
+)
+
+let query = "create a list of numbers from 1 to 5"
+let fewShotPrompt = fewShot.build(query)
+
+println("Few-shot prompt with " + str(fewShot.getExampleCount()) + " examples:")
+println(fewShotPrompt)
+println()
+
+# Example 3: Chain-of-Thought
+println("--- Example 3: Chain-of-Thought Reasoning ---")
+
+let cot = new ChainOfThoughtPrompt("Calculate 15% tip on a $80 meal")
+cot.addStep("Calculate 15% of 80")
+cot.addStep("Convert percentage to decimal: 15% = 0.15")
+cot.addStep("Multiply: 80 * 0.15 = 12")
+cot.addStep("The tip is $12")
+
+let cotPrompt = cot.build()
+println(cotPrompt)
+println()
+
+# Example 4: System Prompts
+println("--- Example 4: System Prompt Templates ---")
+
+println("Helpful Assistant:")
+println(SystemPrompts.helpful())
+println()
+
+println("Code Assistant:")
+println(SystemPrompts.codeAssistant())
+println()
+
+println("Custom Role:")
+println(SystemPrompts.custom("KLang expert", "You help developers learn and master KLang programming."))
+println()
+
+# Example 5: RAG Prompt Builder
+println("--- Example 5: RAG Prompt ---")
+
+let ragPrompt = new RAGPrompt(
+    "What are KLang's main features?",
+    "Answer based on the provided context."
+)
+
+ragPrompt.addContext(
+    "KLang is a statically-typed language with Python-like syntax",
+    "README.md"
+)
+
+ragPrompt.addContext(
+    "KLang supports OOP, async/await, and has a rich standard library",
+    "FEATURES.md"
+)
+
+println("RAG prompt with " + str(ragPrompt.getContextCount()) + " context sources:")
+println(ragPrompt.build())
+println()
+
+# Example 6: Reasoning Prompt
+println("--- Example 6: Structured Reasoning ---")
+
+let reasoning = new ReasoningPrompt(
+    "Design a cache system for an AI application",
+    4
+)
+
+let reasoningPrompt = reasoning.build()
+println(reasoningPrompt)
+println()
+
+# Example 7: Prompt Optimization
+println("--- Example 7: Prompt Optimization ---")
+
+let verbosePrompt = "Please     tell   me    about    KLang.\n\n\n\n\nI want to   know   everything."
+println("Original: '" + verbosePrompt + "'")
+
+let optimized = optimizePrompt(verbosePrompt)
+println("Optimized: '" + optimized + "'")
+
+let originalTokens = estimateTokens(verbosePrompt)
+let optimizedTokens = estimateTokens(optimized)
+println("Token reduction: " + str(originalTokens) + " → " + str(optimizedTokens))
+println()
+
+# Example 8: Prompt Truncation
+println("--- Example 8: Token Limit Management ---")
+
+let longPrompt = "This is a very long prompt that might exceed token limits. " + repeat("Lorem ipsum dolor sit amet. ", 20)
+
+println("Original length: " + str(len(longPrompt)) + " chars")
+println("Estimated tokens: " + str(estimateTokens(longPrompt)))
+
+let truncated = truncateToTokenLimit(longPrompt, 50)
+println("Truncated length: " + str(len(truncated)) + " chars")
+println("Truncated tokens: " + str(estimateTokens(truncated)))
+println()
+
+# Example 9: Prompt Combination
+println("--- Example 9: Combining Multiple Prompts ---")
+
+let prompts = [
+    "Context: KLang is AI-native",
+    "Task: Explain AI features",
+    "Format: Bullet points"
+]
+
+let combined = combinePrompts(prompts, "\n")
+println("Combined prompt:")
+println(combined)
+println()
+
+# Example 10: Constrained Prompt
+println("--- Example 10: Constrained Generation ---")
+
+let constraints = [
+    "Response must be under 100 words",
+    "Use simple language",
+    "Include code examples",
+    "Focus on practical usage"
+]
+
+let constrainedPrompt = createConstrainedPrompt(
+    "Explain KLang's AI features",
+    constraints
+)
+
+println(constrainedPrompt)
+println()
+
+println("=== Demo Complete ===")
+println("Prompt engineering tools are ready in KLang!")

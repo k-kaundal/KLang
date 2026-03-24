@@ -1,0 +1,289 @@
+# ============================================
+# KLang Embedding Library
+# ============================================
+# Vector embeddings and similarity search
+# 100% Pure KLang implementation
+
+/// Embedding Module - Vector embeddings and similarity utilities
+
+# Embedding Store for managing multiple embeddings
+class EmbeddingStore {
+    private let embeddings = []
+    private let metadata = []
+    
+    fn init() {
+        this.embeddings = []
+        this.metadata = []
+    }
+    
+    public fn add(embedding, metadata = null) {
+        this.embeddings.push(embedding)
+        this.metadata.push(metadata)
+    }
+    
+    public fn addText(text: string, embedding, metadata = null) {
+        let meta = metadata
+        if meta == null {
+            meta = dict()
+        }
+        meta.set("text", text)
+        
+        this.add(embedding, meta)
+    }
+    
+    public fn search(queryEmbedding, topK: int = 5) {
+        # Calculate similarities for all embeddings
+        let similarities = []
+        
+        let i = 0
+        while i < len(this.embeddings) {
+            let similarity = queryEmbedding.cosineSimilarity(this.embeddings[i])
+            let entry = dict()
+            entry.set("index", i)
+            entry.set("similarity", similarity)
+            entry.set("embedding", this.embeddings[i])
+            entry.set("metadata", this.metadata[i])
+            similarities.push(entry)
+            i = i + 1
+        }
+        
+        # Sort by similarity (descending)
+        similarities = this.sortBySimilarity(similarities)
+        
+        # Return top K results
+        let results = []
+        let count = topK
+        if count > len(similarities) {
+            count = len(similarities)
+        }
+        
+        i = 0
+        while i < count {
+            results.push(similarities[i])
+            i = i + 1
+        }
+        
+        return results
+    }
+    
+    # Simple bubble sort by similarity (descending)
+    private fn sortBySimilarity(items) {
+        let n = len(items)
+        let i = 0
+        
+        while i < n - 1 {
+            let j = 0
+            while j < n - i - 1 {
+                if items[j].similarity < items[j + 1].similarity {
+                    # Swap
+                    let temp = items[j]
+                    items[j] = items[j + 1]
+                    items[j + 1] = temp
+                }
+                j = j + 1
+            }
+            i = i + 1
+        }
+        
+        return items
+    }
+    
+    public fn size() -> int {
+        return len(this.embeddings)
+    }
+    
+    public fn clear() {
+        this.embeddings = []
+        this.metadata = []
+    }
+    
+    public fn getEmbedding(index: int) {
+        if index >= 0 && index < len(this.embeddings) {
+            return this.embeddings[index]
+        }
+        return null
+    }
+    
+    public fn getMetadata(index: int) {
+        if index >= 0 && index < len(this.metadata) {
+            return this.metadata[index]
+        }
+        return null
+    }
+}
+
+# Chunking utilities for large documents
+class TextChunker {
+    private let chunkSize: int = 500
+    private let overlap: int = 50
+    
+    fn init(chunkSize: int = 500, overlap: int = 50) {
+        this.chunkSize = chunkSize
+        this.overlap = overlap
+    }
+    
+    public fn chunk(text: string) {
+        let chunks = []
+        let words = split(text, " ")
+        let currentChunk = ""
+        let wordCount = 0
+        
+        let i = 0
+        while i < len(words) {
+            currentChunk = currentChunk + words[i]
+            wordCount = wordCount + 1
+            
+            if wordCount >= this.chunkSize || i == len(words) - 1 {
+                chunks.push(trim(currentChunk))
+                
+                # Create overlap for next chunk
+                if i < len(words) - 1 {
+                    let overlapWords = ""
+                    let j = i - this.overlap
+                    if j < 0 {
+                        j = 0
+                    }
+                    
+                    while j <= i {
+                        overlapWords = overlapWords + words[j] + " "
+                        j = j + 1
+                    }
+                    
+                    currentChunk = overlapWords
+                    wordCount = this.overlap
+                } else {
+                    currentChunk = ""
+                    wordCount = 0
+                }
+            } else {
+                currentChunk = currentChunk + " "
+            }
+            
+            i = i + 1
+        }
+        
+        return chunks
+    }
+    
+    public fn chunkByLines(text: string, linesPerChunk: int = 50) {
+        let lines = split(text, "\n")
+        let chunks = []
+        let currentChunk = ""
+        let lineCount = 0
+        
+        let i = 0
+        while i < len(lines) {
+            currentChunk = currentChunk + lines[i] + "\n"
+            lineCount = lineCount + 1
+            
+            if lineCount >= linesPerChunk || i == len(lines) - 1 {
+                chunks.push(trim(currentChunk))
+                currentChunk = ""
+                lineCount = 0
+            }
+            
+            i = i + 1
+        }
+        
+        return chunks
+    }
+}
+
+# Vector operations utility functions
+fn vectorAdd(vec1, vec2) {
+    if len(vec1) != len(vec2) {
+        return null
+    }
+    
+    let result = []
+    let i = 0
+    while i < len(vec1) {
+        result.push(vec1[i] + vec2[i])
+        i = i + 1
+    }
+    
+    return result
+}
+
+fn vectorSubtract(vec1, vec2) {
+    if len(vec1) != len(vec2) {
+        return null
+    }
+    
+    let result = []
+    let i = 0
+    while i < len(vec1) {
+        result.push(vec1[i] - vec2[i])
+        i = i + 1
+    }
+    
+    return result
+}
+
+fn vectorScale(vec, scalar: float) {
+    let result = []
+    let i = 0
+    while i < len(vec) {
+        result.push(vec[i] * scalar)
+        i = i + 1
+    }
+    
+    return result
+}
+
+fn vectorAverage(vectors) {
+    if len(vectors) == 0 {
+        return null
+    }
+    
+    let dimension = len(vectors[0])
+    let sum = []
+    
+    # Initialize sum vector
+    let i = 0
+    while i < dimension {
+        sum.push(0.0)
+        i = i + 1
+    }
+    
+    # Sum all vectors
+    let j = 0
+    while j < len(vectors) {
+        i = 0
+        while i < dimension {
+            sum[i] = sum[i] + vectors[j][i]
+            i = i + 1
+        }
+        j = j + 1
+    }
+    
+    # Divide by count
+    let count = float(len(vectors))
+    i = 0
+    while i < dimension {
+        sum[i] = sum[i] / count
+        i = i + 1
+    }
+    
+    return sum
+}
+
+# Semantic search helper
+fn semanticSearch(query: string, documents, llmClient, topK: int = 3) {
+    # Create embeddings for query and documents
+    let queryEmbedding = llmClient.embed(query)
+    
+    let store = new EmbeddingStore()
+    
+    let i = 0
+    while i < len(documents) {
+        let docEmbedding = llmClient.embed(documents[i])
+        store.addText(documents[i], docEmbedding)
+        i = i + 1
+    }
+    
+    # Search for most similar documents
+    let results = store.search(queryEmbedding, topK)
+    
+    return results
+}

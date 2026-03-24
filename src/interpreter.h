@@ -110,12 +110,14 @@ typedef struct {
     Value *values;             // Array of values (any type)
     int count;                 // Number of key-value pairs
     int capacity;              // Capacity of arrays
+    int ref_count;             // Reference count for shared ownership
 } DictVal;
 
 typedef struct {
     Value *items;              // Array of values (any type)
     int count;                 // Number of items
     int capacity;              // Capacity of array
+    int ref_count;             // Reference count for shared ownership
 } SetVal;
 
 struct Value {

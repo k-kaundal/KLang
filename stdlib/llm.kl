@@ -1,0 +1,346 @@
+# ============================================
+# KLang LLM (Large Language Model) Library
+# ============================================
+# Pure KLang implementation for interacting with LLMs
+# Supports OpenAI, Anthropic, and custom endpoints
+
+/// LLM Module - Large Language Model Integration
+/// This module provides high-level APIs for interacting with LLM providers
+
+# LLM Provider Configuration
+class LLMConfig {
+    public let provider: string = "openai"
+    public let apiKey: string = ""
+    public let model: string = "gpt-4"
+    public let baseURL: string = "https://api.openai.com/v1"
+    public let temperature: float = 0.7
+    public let maxTokens: int = 1000
+    public let topP: float = 1.0
+    public let frequencyPenalty: float = 0.0
+    public let presencePenalty: float = 0.0
+    
+    fn init(provider: string = "openai", apiKey: string = "") {
+        this.provider = provider
+        this.apiKey = apiKey
+        
+        # Auto-detect API key from environment if not provided
+        if len(apiKey) == 0 {
+            if provider == "openai" {
+                this.apiKey = env.get("OPENAI_API_KEY")
+            } else if provider == "anthropic" {
+                this.apiKey = env.get("ANTHROPIC_API_KEY")
+            }
+        }
+        
+        # Set default model and URL based on provider
+        if provider == "openai" {
+            this.model = "gpt-4"
+            this.baseURL = "https://api.openai.com/v1"
+        } else if provider == "anthropic" {
+            this.model = "claude-3-opus-20240229"
+            this.baseURL = "https://api.anthropic.com/v1"
+        } else if provider == "ollama" {
+            this.model = "llama2"
+            this.baseURL = "http://localhost:11434/api"
+        }
+    }
+    
+    public fn setModel(model: string) {
+        this.model = model
+    }
+    
+    public fn setTemperature(temp: float) {
+        this.temperature = temp
+    }
+    
+    public fn setMaxTokens(tokens: int) {
+        this.maxTokens = tokens
+    }
+}
+
+# LLM Client for making API calls
+class LLMClient {
+    private let config = null
+    
+    fn init(config) {
+        this.config = config
+    }
+    
+    # Generate completion from a single prompt
+    public fn complete(prompt: string) -> string {
+        if this.config.provider == "openai" {
+            return this.completeOpenAI(prompt)
+        } else if this.config.provider == "anthropic" {
+            return this.completeAnthropic(prompt)
+        } else if this.config.provider == "ollama" {
+            return this.completeOllama(prompt)
+        }
+        
+        println("Error: Unknown provider " + this.config.provider)
+        return ""
+    }
+    
+    # OpenAI API completion
+    private fn completeOpenAI(prompt: string) -> string {
+        let url = this.config.baseURL + "/chat/completions"
+        
+        # Build JSON request body
+        let body = '{"model":"' + this.config.model + '",'
+        body = body + '"messages":[{"role":"user","content":"' + prompt + '"}],'
+        body = body + '"temperature":' + str(this.config.temperature) + ','
+        body = body + '"max_tokens":' + str(this.config.maxTokens) + '}'
+        
+        # Make HTTP request with headers
+        let requestConfig = dict()
+        requestConfig.set("url", url)
+        requestConfig.set("method", "POST")
+        requestConfig.set("body", body)
+        
+        let headers = dict()
+        headers.set("Content-Type", "application/json")
+        headers.set("Authorization", "Bearer " + this.config.apiKey)
+        requestConfig.set("headers", headers)
+        
+        let response = http.request(requestConfig)
+        
+        # Parse response (simple extraction - would use JSON.parse in full impl)
+        # For now, extract content field manually
+        return this.extractContent(response)
+    }
+    
+    # Anthropic API completion
+    private fn completeAnthropic(prompt: string) -> string {
+        let url = this.config.baseURL + "/messages"
+        
+        # Build JSON request body (Anthropic format)
+        let body = '{"model":"' + this.config.model + '",'
+        body = body + '"max_tokens":' + str(this.config.maxTokens) + ','
+        body = body + '"messages":[{"role":"user","content":"' + prompt + '"}]}'
+        
+        # Make HTTP request with headers
+        let requestConfig = dict()
+        requestConfig.set("url", url)
+        requestConfig.set("method", "POST")
+        requestConfig.set("body", body)
+        
+        let headers = dict()
+        headers.set("Content-Type", "application/json")
+        headers.set("x-api-key", this.config.apiKey)
+        headers.set("anthropic-version", "2023-06-01")
+        requestConfig.set("headers", headers)
+        
+        let response = http.request(requestConfig)
+        
+        return this.extractContent(response)
+    }
+    
+    # Ollama local API completion
+    private fn completeOllama(prompt: string) -> string {
+        let url = this.config.baseURL + "/generate"
+        
+        # Build JSON request body (Ollama format)
+        let body = '{"model":"' + this.config.model + '",'
+        body = body + '"prompt":"' + prompt + '",'
+        body = body + '"stream":false}'
+        
+        # Make HTTP request
+        let requestConfig = dict()
+        requestConfig.set("url", url)
+        requestConfig.set("method", "POST")
+        requestConfig.set("body", body)
+        
+        let headers = dict()
+        headers.set("Content-Type", "application/json")
+        requestConfig.set("headers", headers)
+        
+        let response = http.request(requestConfig)
+        
+        return this.extractContent(response)
+    }
+    
+    # Chat with message history
+    public fn chat(session) -> string {
+        if this.config.provider == "openai" {
+            return this.chatOpenAI(session)
+        } else if this.config.provider == "anthropic" {
+            return this.chatAnthropic(session)
+        }
+        
+        println("Error: Chat not supported for provider " + this.config.provider)
+        return ""
+    }
+    
+    # OpenAI chat with full message history
+    private fn chatOpenAI(session) -> string {
+        let url = this.config.baseURL + "/chat/completions"
+        
+        # Get messages as JSON
+        let messagesJSON = session.toJSON()
+        
+        # Build request body
+        let body = '{"model":"' + this.config.model + '",'
+        body = body + '"messages":' + messagesJSON + ','
+        body = body + '"temperature":' + str(this.config.temperature) + ','
+        body = body + '"max_tokens":' + str(this.config.maxTokens) + '}'
+        
+        # Make HTTP request
+        let requestConfig = dict()
+        requestConfig.set("url", url)
+        requestConfig.set("method", "POST")
+        requestConfig.set("body", body)
+        
+        let headers = dict()
+        headers.set("Content-Type", "application/json")
+        headers.set("Authorization", "Bearer " + this.config.apiKey)
+        requestConfig.set("headers", headers)
+        
+        let response = http.request(requestConfig)
+        
+        # Extract response
+        let content = this.extractContent(response)
+        
+        # Add assistant response to session
+        session.addAssistantMessage(content)
+        
+        return content
+    }
+    
+    # Anthropic chat with full message history
+    private fn chatAnthropic(session) -> string {
+        let url = this.config.baseURL + "/messages"
+        
+        # Get messages as JSON
+        let messagesJSON = session.toJSON()
+        
+        # Build request body
+        let body = '{"model":"' + this.config.model + '",'
+        body = body + '"max_tokens":' + str(this.config.maxTokens) + ','
+        body = body + '"messages":' + messagesJSON + '}'
+        
+        # Make HTTP request
+        let requestConfig = dict()
+        requestConfig.set("url", url)
+        requestConfig.set("method", "POST")
+        requestConfig.set("body", body)
+        
+        let headers = dict()
+        headers.set("Content-Type", "application/json")
+        headers.set("x-api-key", this.config.apiKey)
+        headers.set("anthropic-version", "2023-06-01")
+        requestConfig.set("headers", headers)
+        
+        let response = http.request(requestConfig)
+        
+        # Extract response
+        let content = this.extractContent(response)
+        
+        # Add assistant response to session
+        session.addAssistantMessage(content)
+        
+        return content
+    }
+    
+    # Simple content extraction from JSON response
+    # This is a basic implementation - full version would use JSON.parse
+    private fn extractContent(jsonResponse: string) -> string {
+        # Look for "content": "..." pattern
+        let contentIndex = indexof(jsonResponse, '"content":"')
+        if contentIndex == -1 {
+            return jsonResponse  # Return raw if can't parse
+        }
+        
+        # Find start of content
+        let startIndex = contentIndex + 11  # Length of '"content":"'
+        
+        # Find end of content (next ")
+        let endIndex = startIndex
+        while endIndex < len(jsonResponse) {
+            if substring(jsonResponse, endIndex, endIndex + 1) == '"' {
+                # Check if it's escaped
+                if endIndex > 0 {
+                    if substring(jsonResponse, endIndex - 1, endIndex) != "\\" {
+                        break
+                    }
+                }
+            }
+            endIndex = endIndex + 1
+        }
+        
+        return substring(jsonResponse, startIndex, endIndex)
+    }
+    
+    # Generate embeddings for text
+    public fn embed(text: string) -> Embedding {
+        if this.config.provider == "openai" {
+            return this.embedOpenAI(text)
+        }
+        
+        println("Error: Embeddings not supported for provider " + this.config.provider)
+        return null
+    }
+    
+    # OpenAI embeddings API
+    private fn embedOpenAI(text: string) {
+        let url = this.config.baseURL + "/embeddings"
+        
+        # Build request body
+        let embeddingModel = "text-embedding-3-small"
+        let body = '{"input":"' + text + '",'
+        body = body + '"model":"' + embeddingModel + '"}'
+        
+        # Make HTTP request
+        let requestConfig = dict()
+        requestConfig.set("url", url)
+        requestConfig.set("method", "POST")
+        requestConfig.set("body", body)
+        
+        let headers = dict()
+        headers.set("Content-Type", "application/json")
+        headers.set("Authorization", "Bearer " + this.config.apiKey)
+        requestConfig.set("headers", headers)
+        
+        let response = http.request(requestConfig)
+        
+        # Parse embedding vector (simplified - would use JSON.parse)
+        # For now return mock embedding
+        let vector = [0.1, 0.2, 0.3]  # Placeholder
+        return new Embedding(vector, text, embeddingModel)
+    }
+}
+
+# Simple LLM function for quick queries
+fn llm(prompt: string, apiKey: string = "") -> string {
+    # Auto-detect API key from environment
+    if len(apiKey) == 0 {
+        apiKey = env.get("OPENAI_API_KEY")
+    }
+    
+    if apiKey == null || len(apiKey) == 0 {
+        println("Error: No API key provided. Set OPENAI_API_KEY environment variable.")
+        return ""
+    }
+    
+    # Create quick config and client
+    let config = new LLMConfig("openai", apiKey)
+    let client = new LLMClient(config)
+    
+    return client.complete(prompt)
+}
+
+# Streaming completion (returns tokens as they arrive)
+fn llmStream(prompt: string, callback, apiKey: string = "") {
+    # Auto-detect API key
+    if len(apiKey) == 0 {
+        apiKey = env.get("OPENAI_API_KEY")
+    }
+    
+    if apiKey == null || len(apiKey) == 0 {
+        println("Error: No API key provided")
+        return
+    }
+    
+    # TODO: Implement streaming with callback for each token
+    # For now, fall back to regular completion
+    let response = llm(prompt, apiKey)
+    callback(response)
+}

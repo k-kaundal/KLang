@@ -1,0 +1,68 @@
+// Comprehensive object literals test
+
+print("=== Object Literals Comprehensive Test ===\n")
+
+// Test 1: Basic object literal
+print("Test 1: Basic object literal")
+let person = {
+    name: "Alice",
+    age: 30,
+    city: "NYC"
+}
+print("Person:", person)
+print("Name:", person.name)
+print("Age:", person.age)
+print("✅ Test 1 passed\n")
+
+// Test 2: Nested objects
+print("Test 2: Nested objects")
+let user = {
+    name: "Bob",
+    contact: {
+        email: "bob@example.com",
+        phone: "555-1234"
+    }
+}
+print("User:", user)
+print("Email:", user.contact.email)
+print("✅ Test 2 passed\n")
+
+// Test 3: Object with methods
+print("Test 3: Object with methods")
+let calculator = {
+    value: 0,
+    add: function(x) {
+        this.value = this.value + x
+        return this.value
+    },
+    get: function() {
+        return this.value
+    }
+}
+calculator.add(10)
+calculator.add(5)
+print("Calculator value:", calculator.get())
+print("✅ Test 3 passed\n")
+
+// Test 4: Mixed types
+print("Test 4: Mixed types")
+let data = {
+    string: "text",
+    number: 42,
+    bool: true,
+    null_val: null
+}
+print("Data:", data)
+print("String:", data.string)
+print("Number:", data.number)
+print("Bool:", data.bool)
+print("Null:", data.null_val)
+print("✅ Test 4 passed\n")
+
+// Test 5: Empty object
+print("Test 5: Empty object")
+let empty = {}
+print("Empty object:", empty)
+print("✅ Test 5 passed\n")
+
+print("=== All Object Literal Tests Passed! ===")

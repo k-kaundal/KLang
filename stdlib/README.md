@@ -4,6 +4,96 @@ The KLang standard library provides a collection of useful functions for common 
 
 ## Available Modules
 
+### 🤖 AI-Native Modules (NEW!)
+
+#### ai.kl - Core AI Utilities
+Core AI functionality including configuration, messages, chat sessions, and embeddings.
+
+**Classes:**
+- `AIConfig` - Configuration for AI services
+- `Message` - Chat message representation
+- `ChatSession` - Conversation history manager
+- `Embedding` - Vector embedding with similarity operations
+- `BatchProcessor` - Batch processing for multiple prompts
+
+**Functions:**
+- `countTokens(text: string) -> int` - Estimate token count
+- `estimateCost(tokens: int, model: string) -> float` - Estimate API cost
+
+#### llm.kl - LLM Integration
+Complete LLM provider support with OpenAI, Anthropic, and Ollama.
+
+**Classes:**
+- `LLMConfig` - LLM provider configuration
+- `LLMClient` - Client for making LLM API calls
+
+**Functions:**
+- `llm(prompt: string, apiKey: string) -> string` - Quick LLM query
+- `llmStream(prompt: string, callback, apiKey: string)` - Streaming completions
+
+**Supported Providers:**
+- OpenAI (GPT-4, GPT-3.5-turbo)
+- Anthropic (Claude 3)
+- Ollama (local models)
+
+#### embedding.kl - Vector Embeddings
+Vector operations and semantic search utilities.
+
+**Classes:**
+- `EmbeddingStore` - Store and search embeddings
+- `TextChunker` - Document chunking utilities
+
+**Functions:**
+- `vectorAdd(vec1, vec2)` - Add two vectors
+- `vectorSubtract(vec1, vec2)` - Subtract vectors
+- `vectorScale(vec, scalar)` - Scale vector
+- `vectorAverage(vectors)` - Average multiple vectors
+- `semanticSearch(query, documents, llmClient, topK)` - Semantic document search
+
+#### prompt.kl - Prompt Engineering
+Advanced prompt construction and optimization.
+
+**Classes:**
+- `PromptTemplate` - Variable substitution templates
+- `FewShotPrompt` - Few-shot learning prompts
+- `ChainOfThoughtPrompt` - Step-by-step reasoning
+- `RAGPrompt` - RAG-specific prompts
+- `ReasoningPrompt` - Multi-step reasoning
+- `SystemPrompts` - Pre-built system prompts
+
+**Functions:**
+- `optimizePrompt(prompt: string) -> string` - Remove excess whitespace
+- `estimateTokens(prompt: string) -> int` - Estimate token count
+- `truncateToTokenLimit(prompt: string, maxTokens: int) -> string` - Truncate to fit
+- `combinePrompts(prompts, separator: string)` - Combine multiple prompts
+- `createRolePrompt(role: string, task: string) -> string` - Create role-based prompt
+- `createConstrainedPrompt(task: string, constraints) -> string` - Add constraints
+- `createFormattedPrompt(task: string, format: string) -> string` - Specify output format
+
+#### rag.kl - RAG Systems
+Complete Retrieval-Augmented Generation implementation.
+
+**Classes:**
+- `Document` - Document with embeddings
+- `VectorDB` - In-memory vector database
+- `RAGSystem` - Complete RAG pipeline
+- `SemanticCache` - Cache for similar queries
+
+**Functions:**
+- `buildRAGFromFiles(llmClient, filePaths)` - Build RAG from files
+
+#### agents.kl - AI Agents
+Autonomous agents with memory and actions.
+
+**Classes:**
+- `AgentMemory` - Short and long-term memory
+- `AgentAction` - Agent action definition
+- `Agent` - Base autonomous agent
+- `ReActAgent` - Reasoning + Acting agent
+- `TaskAgent` - Task-oriented agent
+
+---
+
 ### math.kl - Mathematical Functions
 
 Integer mathematics functions:

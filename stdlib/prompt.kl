@@ -1,0 +1,332 @@
+# ============================================
+# KLang Prompt Engineering Library
+# ============================================
+# Utilities for creating and managing AI prompts
+# 100% Pure KLang implementation
+
+/// Prompt Module - Prompt engineering utilities and templates
+
+# Prompt Template class
+class PromptTemplate {
+    private let template: string = ""
+    private let variables = []
+    
+    fn init(template: string) {
+        this.template = template
+        this.variables = this.extractVariables(template)
+    }
+    
+    # Extract variable names from template {variable}
+    private fn extractVariables(template: string) {
+        let vars = []
+        let i = 0
+        
+        while i < len(template) {
+            if substring(template, i, i + 1) == "{" {
+                let start = i + 1
+                let end = start
+                
+                while end < len(template) {
+                    if substring(template, end, end + 1) == "}" {
+                        let varName = substring(template, start, end)
+                        vars.push(varName)
+                        break
+                    }
+                    end = end + 1
+                }
+                
+                i = end
+            }
+            i = i + 1
+        }
+        
+        return vars
+    }
+    
+    # Fill template with values
+    public fn fill(values) {
+        let result = this.template
+        
+        let i = 0
+        while i < len(this.variables) {
+            let varName = this.variables[i]
+            let placeholder = "{" + varName + "}"
+            
+            # Get value from dict
+            let value = ""
+            if values.has(varName) {
+                value = str(values.get(varName))
+            }
+            
+            # Replace placeholder with value
+            result = replace(result, placeholder, value)
+            i = i + 1
+        }
+        
+        return result
+    }
+    
+    public fn getVariables() {
+        return this.variables
+    }
+}
+
+# Few-shot prompt builder
+class FewShotPrompt {
+    private let examples = []
+    private let instruction: string = ""
+    
+    fn init(instruction: string) {
+        this.instruction = instruction
+    }
+    
+    public fn addExample(input: string, output: string) {
+        let example = dict()
+        example.set("input", input)
+        example.set("output", output)
+        this.examples.push(example)
+    }
+    
+    public fn build(query: string) -> string {
+        let prompt = this.instruction + "\n\n"
+        
+        # Add examples
+        let i = 0
+        while i < len(this.examples) {
+            let example = this.examples[i]
+            prompt = prompt + "Input: " + example.get("input") + "\n"
+            prompt = prompt + "Output: " + example.get("output") + "\n\n"
+            i = i + 1
+        }
+        
+        # Add query
+        prompt = prompt + "Input: " + query + "\n"
+        prompt = prompt + "Output:"
+        
+        return prompt
+    }
+    
+    public fn getExampleCount() -> int {
+        return len(this.examples)
+    }
+}
+
+# Chain-of-Thought prompt builder
+class ChainOfThoughtPrompt {
+    private let problem: string = ""
+    private let steps = []
+    
+    fn init(problem: string) {
+        this.problem = problem
+    }
+    
+    public fn addStep(step: string) {
+        this.steps.push(step)
+    }
+    
+    public fn build() -> string {
+        let prompt = this.problem + "\n\n"
+        prompt = prompt + "Let's solve this step by step:\n\n"
+        
+        let i = 0
+        while i < len(this.steps) {
+            let stepNum = i + 1
+            prompt = prompt + "Step " + str(stepNum) + ": " + this.steps[i] + "\n"
+            i = i + 1
+        }
+        
+        prompt = prompt + "\nNow, let's work through each step:"
+        
+        return prompt
+    }
+}
+
+# System prompt templates
+class SystemPrompts {
+    # Helper assistant
+    public static fn helpful() -> string {
+        return "You are a helpful AI assistant. Provide clear, accurate, and concise responses."
+    }
+    
+    # Code assistant
+    public static fn codeAssistant() -> string {
+        return "You are an expert programmer. Help users write, debug, and optimize code. Provide clear explanations and working examples."
+    }
+    
+    # Data analyst
+    public static fn dataAnalyst() -> string {
+        return "You are a data analyst. Help users understand and analyze data. Provide insights, visualizations suggestions, and statistical analysis."
+    }
+    
+    # Creative writer
+    public static fn creativeWriter() -> string {
+        return "You are a creative writer. Help users craft engaging content, stories, and creative text with vivid descriptions."
+    }
+    
+    # Teacher
+    public static fn teacher() -> string {
+        return "You are a patient teacher. Explain concepts clearly, provide examples, and help users learn effectively."
+    }
+    
+    # Custom system prompt
+    public static fn custom(role: string, traits: string) -> string {
+        return "You are a " + role + ". " + traits
+    }
+}
+
+# RAG (Retrieval-Augmented Generation) prompt builder
+class RAGPrompt {
+    private let context = []
+    private let question: string = ""
+    private let instruction: string = "Answer the question based on the context provided."
+    
+    fn init(question: string, instruction: string = "") {
+        this.question = question
+        if len(instruction) > 0 {
+            this.instruction = instruction
+        }
+    }
+    
+    public fn addContext(text: string, source: string = "") {
+        let ctx = dict()
+        ctx.set("text", text)
+        ctx.set("source", source)
+        this.context.push(ctx)
+    }
+    
+    public fn build() -> string {
+        let prompt = this.instruction + "\n\n"
+        prompt = prompt + "Context:\n"
+        
+        # Add all context
+        let i = 0
+        while i < len(this.context) {
+            let ctx = this.context[i]
+            let text = ctx.get("text")
+            let source = ctx.get("source")
+            
+            if len(source) > 0 {
+                prompt = prompt + "[Source: " + source + "]\n"
+            }
+            
+            prompt = prompt + text + "\n\n"
+            i = i + 1
+        }
+        
+        # Add question
+        prompt = prompt + "Question: " + this.question + "\n"
+        prompt = prompt + "Answer:"
+        
+        return prompt
+    }
+    
+    public fn getContextCount() -> int {
+        return len(this.context)
+    }
+}
+
+# Multi-step reasoning prompt
+class ReasoningPrompt {
+    private let problem: string = ""
+    private let requireSteps: int = 3
+    
+    fn init(problem: string, steps: int = 3) {
+        this.problem = problem
+        this.requireSteps = steps
+    }
+    
+    public fn build() -> string {
+        let prompt = "Problem: " + this.problem + "\n\n"
+        prompt = prompt + "Solve this problem by breaking it down into " + str(this.requireSteps) + " clear steps.\n"
+        prompt = prompt + "For each step:\n"
+        prompt = prompt + "1. State what you're doing\n"
+        prompt = prompt + "2. Show your work\n"
+        prompt = prompt + "3. Verify the result\n\n"
+        prompt = prompt + "Begin:"
+        
+        return prompt
+    }
+}
+
+# Prompt optimization utilities
+fn optimizePrompt(prompt: string) -> string {
+    # Remove excessive whitespace
+    let optimized = trim(prompt)
+    
+    # Replace multiple spaces with single space
+    while contains(optimized, "  ") {
+        optimized = replace(optimized, "  ", " ")
+    }
+    
+    # Replace multiple newlines with double newline
+    while contains(optimized, "\n\n\n") {
+        optimized = replace(optimized, "\n\n\n", "\n\n")
+    }
+    
+    return optimized
+}
+
+# Token estimation for prompts
+fn estimateTokens(prompt: string) -> int {
+    # Simple estimation: words * 1.3 (accounts for subword tokenization)
+    let words = split(prompt, " ")
+    let wordCount = len(words)
+    
+    return int(float(wordCount) * 1.3)
+}
+
+# Prompt truncation to fit token limit
+fn truncateToTokenLimit(prompt: string, maxTokens: int) -> string {
+    let currentTokens = estimateTokens(prompt)
+    
+    if currentTokens <= maxTokens {
+        return prompt
+    }
+    
+    # Calculate how much to keep (rough approximation)
+    let ratio = float(maxTokens) / float(currentTokens)
+    let targetLength = int(float(len(prompt)) * ratio)
+    
+    # Truncate and add ellipsis
+    let truncated = substring(prompt, 0, targetLength - 3)
+    return truncated + "..."
+}
+
+# Prompt combination utilities
+fn combinePrompts(prompts, separator: string = "\n\n") {
+    let combined = ""
+    let i = 0
+    
+    while i < len(prompts) {
+        if i > 0 {
+            combined = combined + separator
+        }
+        combined = combined + prompts[i]
+        i = i + 1
+    }
+    
+    return combined
+}
+
+# Create prompt with role
+fn createRolePrompt(role: string, task: string) -> string {
+    return "You are a " + role + ". " + task
+}
+
+# Create prompt with constraints
+fn createConstrainedPrompt(task: string, constraints) -> string {
+    let prompt = task + "\n\nConstraints:\n"
+    
+    let i = 0
+    while i < len(constraints) {
+        prompt = prompt + "- " + constraints[i] + "\n"
+        i = i + 1
+    }
+    
+    return prompt
+}
+
+# Create prompt with format instructions
+fn createFormattedPrompt(task: string, format: string) -> string {
+    return task + "\n\nFormat your response as: " + format
+}

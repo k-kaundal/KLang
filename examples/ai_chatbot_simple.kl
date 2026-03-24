@@ -1,0 +1,86 @@
+# ============================================
+# Simple AI Chatbot Example
+# ============================================
+# Demonstrates basic LLM integration in KLang
+
+println("=== KLang AI-Native Chatbot Demo ===\n")
+
+# Import AI libraries (when module system is ready)
+# For now, these would need to be in same directory or use relative imports
+
+# Check if API key is set
+let apiKey = env.get("OPENAI_API_KEY")
+
+if apiKey == null || len(apiKey) == 0 {
+    println("Error: OPENAI_API_KEY environment variable not set")
+    println("Please set it using: export OPENAI_API_KEY='your-key-here'")
+    exit()
+}
+
+println("✓ API key loaded from environment\n")
+
+# Simple example using http.get to test connectivity
+println("Testing HTTP connectivity...")
+let testResponse = http.get("https://httpbin.org/get")
+println("✓ HTTP working!\n")
+
+# Example 1: Simple completion
+println("--- Example 1: Simple Completion ---")
+
+let prompt = "What is the capital of France?"
+println("Question: " + prompt)
+
+# Build OpenAI API request
+let url = "https://api.openai.com/v1/chat/completions"
+
+let requestBody = '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"' + prompt + '"}],"temperature":0.7,"max_tokens":100}'
+
+let config = dict()
+config.set("url", url)
+config.set("method", "POST")
+config.set("body", requestBody)
+
+let headers = dict()
+headers.set("Content-Type", "application/json")
+headers.set("Authorization", "Bearer " + apiKey)
+config.set("headers", headers)
+
+println("Making API call...")
+let response = http.request(config)
+
+println("Response received:")
+println(response)
+println()
+
+# Example 2: Chat with conversation history
+println("--- Example 2: Multi-turn Conversation ---")
+
+# Simulate a conversation
+let msg1 = dict()
+msg1.set("role", "system")
+msg1.set("content", "You are a helpful assistant.")
+
+let msg2 = dict()
+msg2.set("role", "user")
+msg2.set("content", "Hi! My name is Alice.")
+
+let msg3 = dict()
+msg3.set("role", "assistant")
+msg3.set("content", "Hello Alice! Nice to meet you.")
+
+let msg4 = dict()
+msg4.set("role", "user")
+msg4.set("content", "What's my name?")
+
+let conversation = [msg1, msg2, msg3, msg4]
+
+println("Multi-turn conversation test:")
+let i = 0
+while i < len(conversation) {
+    let msg = conversation[i]
+    println(msg.get("role") + ": " + msg.get("content"))
+    i = i + 1
+}
+
+println("\n=== Demo Complete ===")
+println("AI features are now available in KLang!")

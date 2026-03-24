@@ -1,0 +1,315 @@
+# ============================================
+# KLang AI-Native Standard Library
+# ============================================
+# Core AI utilities and base classes
+# Provides foundation for LLM, embeddings, and prompt engineering
+
+/// AI Module - Core AI functionality for KLang
+/// This module provides the foundation for AI-native programming in KLang
+
+# AI Configuration class
+class AIConfig {
+    private let apiKey: string = ""
+    private let model: string = "gpt-4"
+    private let temperature: float = 0.7
+    private let maxTokens: int = 1000
+    private let timeout: int = 30
+    
+    fn init(apiKey: string, model: string) {
+        this.apiKey = apiKey
+        this.model = model
+    }
+    
+    public fn setTemperature(temp: float) {
+        this.temperature = temp
+    }
+    
+    public fn setMaxTokens(tokens: int) {
+        this.maxTokens = tokens
+    }
+    
+    public fn setTimeout(seconds: int) {
+        this.timeout = seconds
+    }
+    
+    public fn getApiKey() -> string {
+        return this.apiKey
+    }
+    
+    public fn getModel() -> string {
+        return this.model
+    }
+    
+    public fn getTemperature() -> float {
+        return this.temperature
+    }
+    
+    public fn getMaxTokens() -> int {
+        return this.maxTokens
+    }
+    
+    public fn getTimeout() -> int {
+        return this.timeout
+    }
+}
+
+# Message class for chat conversations
+class Message {
+    public let role: string = ""
+    public let content: string = ""
+    public let timestamp: int = 0
+    
+    fn init(role: string, content: string) {
+        this.role = role
+        this.content = content
+        this.timestamp = 0
+    }
+    
+    public fn toDict() {
+        let d = dict()
+        d.set("role", this.role)
+        d.set("content", this.content)
+        return d
+    }
+    
+    public static fn fromDict(d) -> Message {
+        let role = d.get("role")
+        let content = d.get("content")
+        return new Message(role, content)
+    }
+    
+    public fn toString() -> string {
+        return this.role + ": " + this.content
+    }
+}
+
+# ChatSession class for managing conversation history
+class ChatSession {
+    private let messages = []
+    private let systemPrompt: string = ""
+    private let config = null
+    
+    fn init(systemPrompt: string, config) {
+        this.systemPrompt = systemPrompt
+        this.config = config
+        
+        # Add system message if provided
+        if len(systemPrompt) > 0 {
+            let sysMsg = new Message("system", systemPrompt)
+            this.messages.push(sysMsg)
+        }
+    }
+    
+    public fn addMessage(role: string, content: string) {
+        let msg = new Message(role, content)
+        this.messages.push(msg)
+        return msg
+    }
+    
+    public fn addUserMessage(content: string) {
+        return this.addMessage("user", content)
+    }
+    
+    public fn addAssistantMessage(content: string) {
+        return this.addMessage("assistant", content)
+    }
+    
+    public fn getMessages() {
+        return this.messages
+    }
+    
+    public fn getLastMessage() {
+        if len(this.messages) > 0 {
+            return this.messages[len(this.messages) - 1]
+        }
+        return null
+    }
+    
+    public fn clear() {
+        this.messages = []
+        
+        # Re-add system prompt if it exists
+        if len(this.systemPrompt) > 0 {
+            let sysMsg = new Message("system", this.systemPrompt)
+            this.messages.push(sysMsg)
+        }
+    }
+    
+    public fn toJSON() -> string {
+        let messagesJson = "["
+        let i = 0
+        while i < len(this.messages) {
+            if i > 0 {
+                messagesJson = messagesJson + ","
+            }
+            let msg = this.messages[i]
+            messagesJson = messagesJson + '{"role":"' + msg.role + '","content":"' + msg.content + '"}'
+            i = i + 1
+        }
+        messagesJson = messagesJson + "]"
+        return messagesJson
+    }
+    
+    public fn getMessageCount() -> int {
+        return len(this.messages)
+    }
+}
+
+# Embedding vector class
+class Embedding {
+    public let vector = []
+    public let text: string = ""
+    public let model: string = ""
+    
+    fn init(vector, text: string, model: string) {
+        this.vector = vector
+        this.text = text
+        this.model = model
+    }
+    
+    public fn getDimension() -> int {
+        return len(this.vector)
+    }
+    
+    public fn cosineSimilarity(other) -> float {
+        if len(this.vector) != len(other.vector) {
+            return 0.0
+        }
+        
+        let dotProduct = 0.0
+        let normA = 0.0
+        let normB = 0.0
+        
+        let i = 0
+        while i < len(this.vector) {
+            dotProduct = dotProduct + this.vector[i] * other.vector[i]
+            normA = normA + this.vector[i] * this.vector[i]
+            normB = normB + other.vector[i] * other.vector[i]
+            i = i + 1
+        }
+        
+        if normA == 0.0 || normB == 0.0 {
+            return 0.0
+        }
+        
+        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB))
+    }
+    
+    public fn euclideanDistance(other) -> float {
+        if len(this.vector) != len(other.vector) {
+            return -1.0
+        }
+        
+        let sum = 0.0
+        let i = 0
+        while i < len(this.vector) {
+            let diff = this.vector[i] - other.vector[i]
+            sum = sum + diff * diff
+            i = i + 1
+        }
+        
+        return Math.sqrt(sum)
+    }
+    
+    public fn dotProduct(other) -> float {
+        if len(this.vector) != len(other.vector) {
+            return 0.0
+        }
+        
+        let result = 0.0
+        let i = 0
+        while i < len(this.vector) {
+            result = result + this.vector[i] * other.vector[i]
+            i = i + 1
+        }
+        
+        return result
+    }
+    
+    public fn magnitude() -> float {
+        let sum = 0.0
+        let i = 0
+        while i < len(this.vector) {
+            sum = sum + this.vector[i] * this.vector[i]
+            i = i + 1
+        }
+        return Math.sqrt(sum)
+    }
+    
+    public fn normalize() {
+        let mag = this.magnitude()
+        if mag == 0.0 {
+            return this
+        }
+        
+        let normalized = []
+        let i = 0
+        while i < len(this.vector) {
+            normalized.push(this.vector[i] / mag)
+            i = i + 1
+        }
+        
+        return new Embedding(normalized, this.text, this.model)
+    }
+}
+
+# Token counter utility
+fn countTokens(text: string) -> int {
+    # Simple token estimation (rough approximation)
+    # Real implementation would use tiktoken or similar
+    let words = split(text, " ")
+    let tokens = len(words)
+    
+    # Rough multiplier for subword tokenization
+    return int(float(tokens) * 1.3)
+}
+
+# Helper function to estimate cost
+fn estimateCost(tokens: int, model: string) -> float {
+    # Pricing as of 2026 (approximate)
+    let pricePerToken = 0.00003
+    
+    if model == "gpt-4" {
+        pricePerToken = 0.00003
+    } else if model == "gpt-3.5-turbo" {
+        pricePerToken = 0.000001
+    } else if model == "claude-3" {
+        pricePerToken = 0.000015
+    }
+    
+    return float(tokens) * pricePerToken
+}
+
+# Batch processor for multiple prompts
+class BatchProcessor {
+    private let config = null
+    private let results = []
+    
+    fn init(config) {
+        this.config = config
+    }
+    
+    public fn addPrompt(prompt: string) {
+        let entry = dict()
+        entry.set("prompt", prompt)
+        entry.set("result", null)
+        entry.set("status", "pending")
+        this.results.push(entry)
+    }
+    
+    public fn getResults() {
+        return this.results
+    }
+    
+    public fn getPendingCount() -> int {
+        let count = 0
+        let i = 0
+        while i < len(this.results) {
+            if this.results[i].status == "pending" {
+                count = count + 1
+            }
+            i = i + 1
+        }
+        return count
+    }
+}

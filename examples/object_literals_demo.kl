@@ -1,0 +1,206 @@
+# ============================================
+# Object Literals in KLang - Complete Demo
+# ============================================
+# Demonstrates object literal syntax and usage
+
+println("=== KLang Object Literals Demo ===\n")
+
+# Example 1: Simple Object Literals
+println("--- Example 1: Simple Object Literals ---")
+
+let person = {name: "Alice", age: 30, city: "New York"}
+println("Person object:")
+println(person)
+println()
+
+# Example 2: Objects in Arrays
+println("--- Example 2: Objects in Arrays ---")
+
+let users = [
+    {id: 1, name: "Alice", role: "Admin"},
+    {id: 2, name: "Bob", role: "User"},
+    {id: 3, name: "Charlie", role: "Moderator"}
+]
+
+println("Users array:")
+let i = 0
+while i < len(users) {
+    println("User " + str(i + 1) + ": " + str(users[i]))
+    i = i + 1
+}
+println()
+
+# Example 3: Nested Objects
+println("--- Example 3: Nested Objects ---")
+
+let company = {
+    name: "TechCorp",
+    founded: 2020,
+    location: {
+        city: "San Francisco",
+        state: "CA",
+        country: "USA"
+    },
+    departments: ["Engineering", "Marketing", "Sales"]
+}
+
+println("Company object:")
+println(company)
+println()
+
+# Example 4: Array of Objects with Nested Data
+println("--- Example 4: Complex Nested Structures ---")
+
+let products = [
+    {
+        id: 1,
+        name: "Laptop",
+        price: 999.99,
+        specs: {
+            cpu: "Intel i7",
+            ram: 16,
+            storage: 512
+        },
+        tags: ["electronics", "computers"]
+    },
+    {
+        id: 2,
+        name: "Mouse",
+        price: 29.99,
+        specs: {
+            type: "wireless",
+            dpi: 1600,
+            buttons: 5
+        },
+        tags: ["electronics", "accessories"]
+    }
+]
+
+println("Products:")
+i = 0
+while i < len(products) {
+    println("Product " + str(i + 1) + ": " + str(products[i]))
+    i = i + 1
+}
+println()
+
+# Example 5: Mixed Arrays
+println("--- Example 5: Mixed Type Arrays ---")
+
+let mixed = [
+    42,
+    "hello",
+    {type: "object", value: 100},
+    [1, 2, 3],
+    true,
+    {nested: {deep: "value"}}
+]
+
+println("Mixed array:")
+i = 0
+while i < len(mixed) {
+    println("Item " + str(i) + ": " + str(mixed[i]))
+    i = i + 1
+}
+println()
+
+# Example 6: Object Literal for Configuration
+println("--- Example 6: Configuration Objects ---")
+
+let config = {
+    apiUrl: "https://api.example.com",
+    timeout: 5000,
+    retries: 3,
+    headers: {
+        contentType: "application/json",
+        authorization: "Bearer token123"
+    },
+    endpoints: {
+        users: "/api/users",
+        posts: "/api/posts",
+        comments: "/api/comments"
+    }
+}
+
+println("Configuration object:")
+println(config)
+println()
+
+# Example 7: Data Structures
+println("--- Example 7: Data Structures ---")
+
+let graph = {
+    nodes: [
+        {id: "A", label: "Start"},
+        {id: "B", label: "Middle"},
+        {id: "C", label: "End"}
+    ],
+    edges: [
+        {source: "A", target: "B", weight: 5},
+        {source: "B", target: "C", weight: 3}
+    ]
+}
+
+println("Graph structure:")
+println(graph)
+println()
+
+# Example 8: AI/ML Data
+println("--- Example 8: AI/ML Data Structures ---")
+
+let trainingData = [
+    {input: [0.1, 0.2, 0.3], output: [1.0], label: "positive"},
+    {input: [0.4, 0.5, 0.6], output: [0.0], label: "negative"},
+    {input: [0.7, 0.8, 0.9], output: [1.0], label: "positive"}
+]
+
+println("Training data:")
+i = 0
+while i < len(trainingData) {
+    println("Sample " + str(i + 1) + ": " + str(trainingData[i]))
+    i = i + 1
+}
+println()
+
+# Example 9: JSON-like Structures
+println("--- Example 9: JSON-like Data ---")
+
+let apiResponse = {
+    status: 200,
+    success: true,
+    data: {
+        users: [
+            {id: 1, name: "Alice"},
+            {id: 2, name: "Bob"}
+        ],
+        total: 2,
+        page: 1
+    },
+    meta: {
+        timestamp: 1234567890,
+        version: "1.0"
+    }
+}
+
+println("API Response:")
+println(apiResponse)
+println()
+
+# Example 10: Object Literals with Functions (if supported)
+println("--- Example 10: Summary ---")
+
+println("✅ Object literals work in KLang!")
+println("✅ Objects can be in arrays")
+println("✅ Nested objects supported")
+println("✅ Mixed type arrays supported")
+println("✅ Complex data structures work")
+println()
+
+println("Syntax examples:")
+println("  let obj = {key: value}")
+println('  let arr = [{id: 1}, {id: 2}]')
+println("  let nested = {outer: {inner: value}}")
+println()
+
+println("=== Demo Complete ===")
+println("Object literals are fully supported in KLang! 🎉")
