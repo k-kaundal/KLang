@@ -30,6 +30,9 @@ jobs:
         run: |
           gcc --version || xcode-select --install
           brew install llvm@16 readline || true
+          # Add LLVM to PATH for macOS builds
+          echo "$(brew --prefix llvm@16)/bin" >> $GITHUB_PATH
+          echo "LLVM_CONFIG=$(brew --prefix llvm@16)/bin/llvm-config" >> $GITHUB_ENV
 
       - name: Setup build tools (Windows)
         if: matrix.os == 'windows-latest'
