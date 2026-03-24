@@ -50,7 +50,20 @@ firefox playground.html
 - Python 3.7+
 - KLang built and ready (run `make` in repository root)
 
-#### Steps
+#### Quick Setup (Recommended)
+
+Use the automated startup script:
+```bash
+./start-playground.sh
+```
+
+This script will:
+- Check if KLang is built (builds it if needed)
+- Install Python dependencies
+- Start the backend server
+- Show connection instructions
+
+#### Manual Setup
 
 1. **Install Python dependencies**
 ```bash
