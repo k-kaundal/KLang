@@ -1,0 +1,413 @@
+# KLang Networking Module
+# Comprehensive networking utilities
+
+import core
+import string
+
+# HTTP Client
+fn HTTPClient(baseURL) {
+    return {
+        baseURL: baseURL || "",
+        headers: {},
+        timeout: 30000,
+        
+        setHeader: fn(key, value) {
+            this.headers[key] = value
+        },
+        
+        setTimeout: fn(ms) {
+            this.timeout = ms
+        },
+        
+        get: fn(path, options) {
+            let url = this.baseURL + path
+            let opts = options || {}
+            
+            # Merge headers
+            let headers = {}
+            for key in keys(this.headers) {
+                headers[key] = this.headers[key]
+            }
+            if opts.headers {
+                for key in keys(opts.headers) {
+                    headers[key] = opts.headers[key]
+                }
+            }
+            
+            return httpRequest("GET", url, null, headers, this.timeout)
+        },
+        
+        post: fn(path, data, options) {
+            let url = this.baseURL + path
+            let opts = options || {}
+            
+            let headers = {}
+            for key in keys(this.headers) {
+                headers[key] = this.headers[key]
+            }
+            if opts.headers {
+                for key in keys(opts.headers) {
+                    headers[key] = opts.headers[key]
+                }
+            }
+            
+            # Set content-type if not set
+            if !("Content-Type" in headers) {
+                headers["Content-Type"] = "application/json"
+            }
+            
+            return httpRequest("POST", url, data, headers, this.timeout)
+        },
+        
+        put: fn(path, data, options) {
+            let url = this.baseURL + path
+            let opts = options || {}
+            
+            let headers = {}
+            for key in keys(this.headers) {
+                headers[key] = this.headers[key]
+            }
+            if opts.headers {
+                for key in keys(opts.headers) {
+                    headers[key] = opts.headers[key]
+                }
+            }
+            
+            return httpRequest("PUT", url, data, headers, this.timeout)
+        },
+        
+        delete: fn(path, options) {
+            let url = this.baseURL + path
+            let opts = options || {}
+            
+            let headers = {}
+            for key in keys(this.headers) {
+                headers[key] = this.headers[key]
+            }
+            if opts.headers {
+                for key in keys(opts.headers) {
+                    headers[key] = opts.headers[key]
+                }
+            }
+            
+            return httpRequest("DELETE", url, null, headers, this.timeout)
+        }
+    }
+}
+
+# Simple HTTP request
+fn get(url, options) {
+    let client = HTTPClient()
+    return client.get(url, options)
+}
+
+fn post(url, data, options) {
+    let client = HTTPClient()
+    return client.post(url, data, options)
+}
+
+# URL utilities
+fn parseURL(url) {
+    # Simple URL parser
+    let result = {
+        protocol: "",
+        host: "",
+        port: "",
+        path: "",
+        query: "",
+        hash: ""
+    }
+    
+    # Extract protocol
+    let protocolEnd = url.indexOf("://")
+    if protocolEnd >= 0 {
+        result.protocol = url.substring(0, protocolEnd)
+        url = url.substring(protocolEnd + 3)
+    }
+    
+    # Extract hash
+    let hashIdx = url.indexOf("#")
+    if hashIdx >= 0 {
+        result.hash = url.substring(hashIdx + 1)
+        url = url.substring(0, hashIdx)
+    }
+    
+    # Extract query
+    let queryIdx = url.indexOf("?")
+    if queryIdx >= 0 {
+        result.query = url.substring(queryIdx + 1)
+        url = url.substring(0, queryIdx)
+    }
+    
+    # Extract path
+    let pathIdx = url.indexOf("/")
+    if pathIdx >= 0 {
+        result.path = url.substring(pathIdx)
+        url = url.substring(0, pathIdx)
+    } else {
+        result.path = "/"
+    }
+    
+    # Extract port
+    let portIdx = url.indexOf(":")
+    if portIdx >= 0 {
+        result.host = url.substring(0, portIdx)
+        result.port = url.substring(portIdx + 1)
+    } else {
+        result.host = url
+        result.port = result.protocol == "https" ? "443" : "80"
+    }
+    
+    return result
+}
+
+fn buildURL(parts) {
+    let url = ""
+    
+    if parts.protocol {
+        url = parts.protocol + "://"
+    }
+    
+    url = url + parts.host
+    
+    if parts.port && parts.port != "80" && parts.port != "443" {
+        url = url + ":" + parts.port
+    }
+    
+    if parts.path {
+        url = url + parts.path
+    }
+    
+    if parts.query {
+        url = url + "?" + parts.query
+    }
+    
+    if parts.hash {
+        url = url + "#" + parts.hash
+    }
+    
+    return url
+}
+
+# Query string utilities
+fn parseQuery(queryString) {
+    let params = {}
+    
+    if !queryString {
+        return params
+    }
+    
+    let pairs = queryString.split("&")
+    for pair in pairs {
+        let parts = pair.split("=")
+        if len(parts) == 2 {
+            let key = urlDecode(parts[0])
+            let value = urlDecode(parts[1])
+            params[key] = value
+        }
+    }
+    
+    return params
+}
+
+fn buildQuery(params) {
+    let parts = []
+    
+    for key in keys(params) {
+        let value = params[key]
+        let encoded = urlEncode(key) + "=" + urlEncode(str(value))
+        parts.push(encoded)
+    }
+    
+    return parts.join("&")
+}
+
+# URL encoding/decoding
+fn urlEncode(str) {
+    # Simple URL encoding
+    let result = ""
+    
+    for i in range(len(str)) {
+        let char = str[i]
+        let code = ord(char)
+        
+        # Alphanumeric and safe chars
+        if (code >= 48 && code <= 57) ||   # 0-9
+           (code >= 65 && code <= 90) ||   # A-Z
+           (code >= 97 && code <= 122) ||  # a-z
+           char == "-" || char == "_" || char == "." || char == "~" {
+            result = result + char
+        } else {
+            # Percent-encode
+            let hex = code.toString(16).upper()
+            if len(hex) == 1 {
+                hex = "0" + hex
+            }
+            result = result + "%" + hex
+        }
+    }
+    
+    return result
+}
+
+fn urlDecode(str) {
+    # Simple URL decoding
+    let result = ""
+    let i = 0
+    
+    while i < len(str) {
+        let char = str[i]
+        
+        if char == "%" && i + 2 < len(str) {
+            let hex = str.substring(i + 1, i + 3)
+            let code = parseInt(hex, 16)
+            result = result + chr(code)
+            i = i + 3
+        } else if char == "+" {
+            result = result + " "
+            i = i + 1
+        } else {
+            result = result + char
+            i = i + 1
+        }
+    }
+    
+    return result
+}
+
+# WebSocket (placeholder for future implementation)
+fn WebSocket(url) {
+    return {
+        url: url,
+        connected: false,
+        
+        connect: fn() {
+            println("WebSocket: Connecting to " + this.url)
+            this.connected = true
+        },
+        
+        send: fn(data) {
+            if !this.connected {
+                throw "WebSocket not connected"
+            }
+            println("WebSocket: Sending data")
+        },
+        
+        close: fn() {
+            this.connected = false
+            println("WebSocket: Closed")
+        },
+        
+        onMessage: fn(handler) {
+            # Register message handler
+        },
+        
+        onError: fn(handler) {
+            # Register error handler
+        }
+    }
+}
+
+# TCP/IP utilities (placeholder)
+fn TCPSocket(host, port) {
+    return {
+        host: host,
+        port: port,
+        connected: false,
+        
+        connect: fn() {
+            println("TCP: Connecting to " + this.host + ":" + str(this.port))
+            this.connected = true
+        },
+        
+        send: fn(data) {
+            if !this.connected {
+                throw "Socket not connected"
+            }
+            # Send data
+        },
+        
+        receive: fn(size) {
+            if !this.connected {
+                throw "Socket not connected"
+            }
+            # Receive data
+            return ""
+        },
+        
+        close: fn() {
+            this.connected = false
+        }
+    }
+}
+
+# DNS lookup (placeholder)
+fn lookup(hostname) {
+    # Would perform actual DNS lookup
+    return {
+        hostname: hostname,
+        addresses: ["127.0.0.1"],
+        family: "IPv4"
+    }
+}
+
+# Network utilities
+fn isValidIP(ip) {
+    # Simple IPv4 validation
+    let parts = ip.split(".")
+    
+    if len(parts) != 4 {
+        return false
+    }
+    
+    for part in parts {
+        let num = int(part)
+        if num < 0 || num > 255 {
+            return false
+        }
+    }
+    
+    return true
+}
+
+fn isValidPort(port) {
+    let num = int(port)
+    return num >= 1 && num <= 65535
+}
+
+# Helper: HTTP request (would call native implementation)
+fn httpRequest(method, url, data, headers, timeout) {
+    # This is a placeholder - real implementation would use native HTTP client
+    return {
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        body: "Response body",
+        
+        json: fn() {
+            return parseJSON(this.body)
+        },
+        
+        text: fn() {
+            return this.body
+        }
+    }
+}
+
+# Export all functions
+export {
+    HTTPClient,
+    get,
+    post,
+    parseURL,
+    buildURL,
+    parseQuery,
+    buildQuery,
+    urlEncode,
+    urlDecode,
+    WebSocket,
+    TCPSocket,
+    lookup,
+    isValidIP,
+    isValidPort
+}
