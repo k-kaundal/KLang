@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KLang Documentation - AI-Native Programming Language</title>
+    <meta name="description" content="Complete documentation for KLang - The first AI-native programming language">
+    
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #22d3ee;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        header {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--primary);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+        }
+        
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            margin: 0 2rem;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .github-link {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .github-link:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Main Layout */
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 80px);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            padding: 2rem 1rem;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            height: calc(100vh - 80px);
+            position: sticky;
+            top: 80px;
+        }
+        
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+        
+        .nav-section h3 {
+            color: var(--accent);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .nav-section ul {
+            list-style: none;
+        }
+        
+        .nav-section li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-section a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 0.75rem;
+            display: block;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        
+        .nav-section a:hover {
+            color: var(--text);
+            background: var(--bg);
+        }
+        
+        .nav-section a.active {
+            color: var(--primary);
+            background: var(--bg);
+            font-weight: 500;
+        }
+        
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 2rem 3rem;
+            overflow-y: auto;
+        }
+        
+        .doc-content {
+            max-width: 900px;
+        }
+        
+        .doc-content h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 1rem;
+        }
+        
+        .doc-content h2 {
+            color: var(--accent);
+            font-size: 2rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .doc-content h3 {
+            color: var(--text);
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .doc-content p {
+            margin-bottom: 1.25rem;
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+        }
+        
+        .doc-content ul, .doc-content ol {
+            margin-bottom: 1.25rem;
+            margin-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        .doc-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .doc-content code {
+            background: var(--bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: var(--accent);
+        }
+        
+        .doc-content pre {
+            background: var(--bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border);
+        }
+        
+        .doc-content pre code {
+            background: none;
+            padding: 0;
+            color: var(--text);
+        }
+        
+        .doc-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        
+        .doc-content table th,
+        .doc-content table td {
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            text-align: left;
+        }
+        
+        .doc-content table th {
+            background: var(--bg-secondary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .doc-content blockquote {
+            border-left: 4px solid var(--primary);
+            padding-left: 1.5rem;
+            margin: 1.5rem 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Table of Contents */
+        .toc {
+            width: 240px;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 80px;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+        
+        .toc h4 {
+            color: var(--accent);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+        
+        .toc ul {
+            list-style: none;
+        }
+        
+        .toc li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .toc a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        
+        .toc a:hover {
+            color: var(--primary);
+        }
+        
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+        
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .toc {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                transition: left 0.3s;
+                z-index: 999;
+            }
+            
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+            
+            .search-box {
+                display: none;
+            }
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+        
+        .badge.new {
+            background: #22c55e;
+        }
+        
+        .badge.beta {
+            background: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <span>KLang Docs</span>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search documentation...">
+            </div>
+            <a href="https://github.com/k-kaundal/KLang" class="github-link" target="_blank">
+                ⭐ GitHub
+            </a>
+        </div>
+    </header>
+    
+    <div class="container">
+        <aside class="sidebar">
+            <nav>
+                <div class="nav-section">
+                    <h3>Getting Started</h3>
+                    <ul>
+                        <li><a href="#" data-doc="docs/web/00-introduction.md" class="active">Introduction</a></li>
+                        <li><a href="#" data-doc="docs/web/01-installation.md">Installation</a></li>
+                        <li><a href="#" data-doc="docs/web/02-quick-start.md">Quick Start</a></li>
+                        <li><a href="#" data-doc="docs/web/03-your-first-program.md">Your First Program</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <h3>Language Basics</h3>
+                    <ul>
+                        <li><a href="#" data-doc="docs/web/10-variables-types.md">Variables & Types</a></li>
+                        <li><a href="#" data-doc="docs/web/11-operators.md">Operators</a></li>
+                        <li><a href="#" data-doc="docs/web/12-control-flow.md">Control Flow</a></li>
+                        <li><a href="#" data-doc="docs/web/13-functions.md">Functions</a></li>
+                        <li><a href="#" data-doc="docs/web/14-arrays.md">Arrays & Methods</a></li>
+                        <li><a href="#" data-doc="docs/web/15-objects.md">Objects & Literals</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <h3>Advanced Features</h3>
+                    <ul>
+                        <li><a href="#" data-doc="docs/web/20-classes-oop.md">Classes & OOP</a></li>
+                        <li><a href="#" data-doc="docs/web/21-arrow-functions.md">Arrow Functions</a></li>
+                        <li><a href="#" data-doc="docs/web/22-closures.md">Closures</a></li>
+                        <li><a href="#" data-doc="docs/web/23-async-await.md">Async/Await</a></li>
+                        <li><a href="#" data-doc="docs/web/24-generators.md">Generators</a></li>
+                        <li><a href="#" data-doc="docs/web/25-destructuring.md">Destructuring</a></li>
+                        <li><a href="#" data-doc="docs/web/26-spread-rest.md">Spread & Rest</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <h3>🤖 AI Features</h3>
+                    <ul>
+                        <li><a href="#" data-doc="docs/web/30-ai-overview.md">AI Overview</a></li>
+                        <li><a href="#" data-doc="docs/web/31-llm-integration.md">LLM Integration</a></li>
+                        <li><a href="#" data-doc="docs/web/32-embeddings.md">Vector Embeddings</a></li>
+                        <li><a href="#" data-doc="docs/web/33-rag-systems.md">RAG Systems</a></li>
+                        <li><a href="#" data-doc="docs/web/34-ai-agents.md">AI Agents</a></li>
+                        <li><a href="#" data-doc="docs/web/35-chat-sessions.md">Chat Sessions</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <h3>Built-in Features</h3>
+                    <ul>
+                        <li><a href="#" data-doc="docs/web/40-http-client.md">HTTP Client</a></li>
+                        <li><a href="#" data-doc="docs/web/41-file-io.md">File I/O</a></li>
+                        <li><a href="#" data-doc="docs/web/42-environment.md">Environment Variables</a></li>
+                        <li><a href="#" data-doc="docs/web/43-json.md">JSON Support</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <h3>API Reference</h3>
+                    <ul>
+                        <li><a href="#" data-doc="docs/web/50-built-in-functions.md">Built-in Functions</a></li>
+                        <li><a href="#" data-doc="docs/web/51-array-methods.md">Array Methods</a></li>
+                        <li><a href="#" data-doc="docs/web/52-string-methods.md">String Methods</a></li>
+                        <li><a href="#" data-doc="docs/web/53-math-functions.md">Math Functions</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <h3>Examples</h3>
+                    <ul>
+                        <li><a href="#" data-doc="docs/web/60-examples-basic.md">Basic Examples</a></li>
+                        <li><a href="#" data-doc="docs/web/61-examples-oop.md">OOP Examples</a></li>
+                        <li><a href="#" data-doc="docs/web/62-examples-ai.md">AI Examples</a></li>
+                        <li><a href="#" data-doc="docs/web/63-examples-projects.md">Project Examples</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="content">
+            <div id="docContent" class="doc-content">
+                <div class="loading">Loading documentation</div>
+            </div>
+        </main>
+        
+        <aside class="toc">
+            <h4>On This Page</h4>
+            <ul id="tocList"></ul>
+        </aside>
+    </div>
+    
+    <script>
+        // Configuration
+        marked.setOptions({
+            highlight: function(code, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    return hljs.highlight(code, { language: lang }).value;
+                }
+                return hljs.highlightAuto(code).value;
+            },
+            breaks: true,
+            gfm: true
+        });
+        
+        // State
+        let currentDoc = 'docs/web/00-introduction.md';
+        
+        // Load documentation
+        async function loadDoc(docPath) {
+            const content = document.getElementById('docContent');
+            content.innerHTML = '<div class="loading">Loading documentation</div>';
+            
+            try {
+                const response = await fetch(docPath);
+                if (!response.ok) throw new Error('Document not found');
+                
+                const markdown = await response.text();
+                const html = marked.parse(markdown);
+                content.innerHTML = html;
+                
+                // Generate TOC
+                generateTOC();
+                
+                // Highlight code blocks
+                document.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+                
+                // Update active nav link
+                document.querySelectorAll('.sidebar a').forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.doc === docPath) {
+                        link.classList.add('active');
+                    }
+                });
+                
+                currentDoc = docPath;
+            } catch (error) {
+                content.innerHTML = `
+                    <h1>Document Not Found</h1>
+                    <p>The requested documentation could not be loaded.</p>
+                    <p>Path: ${docPath}</p>
+                `;
+            }
+        }
+        
+        // Generate Table of Contents
+        function generateTOC() {
+            const tocList = document.getElementById('tocList');
+            const headings = document.querySelectorAll('.doc-content h2, .doc-content h3');
+            
+            tocList.innerHTML = '';
+            headings.forEach((heading, index) => {
+                const id = `heading-${index}`;
+                heading.id = id;
+                
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = `#${id}`;
+                a.textContent = heading.textContent;
+                a.style.paddingLeft = heading.tagName === 'H3' ? '1rem' : '0';
+                li.appendChild(a);
+                tocList.appendChild(li);
+            });
+        }
+        
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const navLinks = document.querySelectorAll('.sidebar a');
+            
+            navLinks.forEach(link => {
+                const text = link.textContent.toLowerCase();
+                const li = link.parentElement;
+                
+                if (text.includes(query)) {
+                    li.style.display = 'block';
+                } else {
+                    li.style.display = query ? 'none' : 'block';
+                }
+            });
+        });
+        
+        // Navigation
+        document.querySelectorAll('.sidebar a[data-doc]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const docPath = link.dataset.doc;
+                loadDoc(docPath);
+                window.scrollTo(0, 0);
+            });
+        });
+        
+        // Load initial doc
+        loadDoc(currentDoc);
+    </script>
+</body>
+</html>
