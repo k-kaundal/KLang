@@ -1,0 +1,10 @@
+klang (0.2.0-1) unstable; urgency=medium
+
+  * Initial release
+  * Core language features
+  * REPL support
+  * Standard library
+  * CLI tools
+  * Documentation
+
+ -- KLang Team <team@klang.dev>  Mon, 24 Mar 2026 00:00:00 +0000

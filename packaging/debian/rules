@@ -1,0 +1,28 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	make
+
+override_dh_auto_install:
+	mkdir -p debian/klang/usr/bin
+	mkdir -p debian/klang/usr/share/klang/examples
+	mkdir -p debian/klang/usr/share/klang/docs
+	mkdir -p debian/klang/usr/share/doc/klang
+	
+	# Install binary
+	install -m 755 klang debian/klang/usr/bin/
+	
+	# Install examples
+	cp -r examples/* debian/klang/usr/share/klang/examples/ || true
+	
+	# Install docs
+	cp -r docs/* debian/klang/usr/share/klang/docs/ || true
+	cp README.md debian/klang/usr/share/doc/klang/
+	cp LICENSE debian/klang/usr/share/doc/klang/ || true
+
+override_dh_auto_clean:
+	make clean || true
+	dh_clean

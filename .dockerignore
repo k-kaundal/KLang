@@ -1,0 +1,50 @@
+# Git files
+.git
+.gitignore
+.github
+
+# Build artifacts
+*.o
+klang
+test_runner
+*.so
+*.a
+*.dylib
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation (except what we explicitly copy)
+*.md
+!README.md
+!LICENSE
+
+# Test files
+tests/
+test_*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Node modules (if any)
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Backup files
+*.bak
+*.backup

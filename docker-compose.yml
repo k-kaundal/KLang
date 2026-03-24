@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # KLang REPL - Interactive mode
+  klang-repl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: klang:latest
+    container_name: klang-repl
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./workspace:/home/klang/workspace
+    command: klang repl
+
+  # KLang Development - Full development environment
+  klang-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    image: klang:dev
+    container_name: klang-dev
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/workspace
+      - klang-build-cache:/workspace/build
+    working_dir: /workspace
+    command: /bin/bash
+
+  # KLang Playground Server
+  klang-playground:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: klang:latest
+    container_name: klang-playground
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./playground-server.py:/opt/klang/playground-server.py
+      - ./playground.html:/opt/klang/playground.html
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python3 /opt/klang/playground-server.py
+
+volumes:
+  klang-build-cache:
+    driver: local
+
+networks:
+  default:
+    name: klang-network
