@@ -1,10 +1,12 @@
-# KLang Playground
+# KLang Playground (Temporarily Unavailable)
 
-An interactive web-based playground for writing, running, and debugging KLang code.
+**Note:** The KLang playground feature is currently undergoing maintenance and improvements. It is temporarily unavailable.
 
-## Features
+In the meantime, please use the KLang CLI to run and test your code locally.
 
-### 🎮 Full-Featured Playground
+## Using KLang Locally
+
+### Installation
 - **Real Code Execution**: Execute actual KLang code via backend API
 - **Professional Code Editor**: CodeMirror with syntax highlighting and line numbers
 - **Live Console Output**: See stdout, stderr, and errors in real-time
