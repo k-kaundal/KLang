@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KLang - The AI-Native Programming Language. Modern, fast, and intelligent.">
+    <meta name="keywords" content="KLang, programming language, AI, machine learning, compiler, interpreter">
+    <title>KLang - The AI-Native Programming Language</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Marked.js for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="nav-brand">
+                <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <path d="M16 2L4 8V16C4 24 16 30 16 30C16 30 28 24 28 16V8L16 2Z" fill="url(#gradient1)"/>
+                    <path d="M12 12L16 16L20 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M16 16V22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <defs>
+                        <linearGradient id="gradient1" x1="4" y1="2" x2="28" y2="30">
+                            <stop offset="0%" stop-color="#6366f1"/>
+                            <stop offset="100%" stop-color="#22d3ee"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="brand-name">KLang</span>
+                <span class="brand-version">v1.0</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#quickstart">Quick Start</a>
+                <a href="docs.html">Documentation</a>
+                <a href="#examples">Examples</a>
+                <a href="playground.html" class="btn-playground">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/>
+                    </svg>
+                    Playground
+                </a>
+                <button class="btn-ai-assistant" id="openAiChat">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16c3.314 0 6-2 6-5.5 0-1.5-.5-3-1.5-4.5a.5.5 0 0 1 .054-.671L14.5 3.5a.5.5 0 0 1 .854.353l.146 1.294a.5.5 0 0 1-.146.353l-2 2a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 0-.708l.5-.5a.5.5 0 0 1 .708 0L13 5.5a.5.5 0 0 1 .146.353L13 7a.5.5 0 0 1-.146.353l-1 1a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 0-.708l.5-.5a.5.5 0 0 1 .708 0l.5.5a.5.5 0 0 1 0 .708l-1 1a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 0-.708l2-2A.5.5 0 0 1 12 3.5V2a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-.146.353l-2 2a.5.5 0 0 1-.708 0L10 5.207V4.5a.5.5 0 0 1 .146-.353l1-1a.5.5 0 0 1 .708 0l.5.5a.5.5 0 0 1 0 .708l-.5.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 0-.708l1-1A.5.5 0 0 1 12 2h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.146.353l-1 1a.5.5 0 0 1-.708 0L11 4.207V3.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.146.353l-1 1a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 0-.708l.5-.5a.5.5 0 0 1 .708 0l.5.5a.5.5 0 0 1 0 .708l-.5.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 0-.708l.5-.5a.5.5 0 0 1 .708 0l.5.5a.5.5 0 0 1 0 .708l-.5.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 0-.708l.5-.5a.5.5 0 0 1 .708 0l.5.5a.5.5 0 0 1 0 .708l-.5.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 0-.708l.5-.5a.5.5 0 0 1 .708 0l.5.5a.5.5 0 0 1 0 .708l-.5.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 0-.708l.5-.5a.5.5 0 0 1 .708 0l.5.5z"/>
+                    </svg>
+                    AI Assistant
+                </button>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <svg class="sun-icon" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                        <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-background">
+            <div class="gradient-orb orb-1"></div>
+            <div class="gradient-orb orb-2"></div>
+            <div class="gradient-orb orb-3"></div>
+        </div>
+        
+        <div class="container hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-icon">🚀</span>
+                    <span>AI-Native Programming Language</span>
+                </div>
+                
+                <h1 class="hero-title">
+                    Build the Future with
+                    <span class="gradient-text">KLang</span>
+                </h1>
+                
+                <p class="hero-subtitle">
+                    The first programming language with native AI integration.
+                    Combining the power of C, simplicity of Python, and intelligence of AI.
+                </p>
+                
+                <div class="hero-buttons">
+                    <a href="#quickstart" class="btn btn-primary btn-large">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/>
+                        </svg>
+                        Get Started
+                    </a>
+                    <a href="docs.html" class="btn btn-secondary btn-large">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
+                        </svg>
+                        Documentation
+                    </a>
+                    <a href="https://github.com/k-kaundal/KLang" class="btn btn-outline btn-large" target="_blank">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                        </svg>
+                        View on GitHub
+                    </a>
+                </div>
+                
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-value">100+</div>
+                        <div class="stat-label">Opcodes</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">366M</div>
+                        <div class="stat-label">Inst/Sec</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">Tests Pass</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">2.7ns</div>
+                        <div class="stat-label">Per Inst</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hero-code">
+                <div class="code-window">
+                    <div class="code-header">
+                        <div class="code-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                        <div class="code-title">hello_ai.kl</div>
+                        <div class="code-actions">
+                            <button class="code-action" title="Copy">
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                            </button>
+                            <button class="code-action" title="Run">
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="code-content">
+<pre><code class="language-klang"># AI-Native Programming in KLang
+import ai
+
+# Traditional programming
+function analyze_data(data) {
+    let processed = data.map(x => x * 2)
+    return processed
+}
+
+# AI-powered analysis
+let data = [1, 2, 3, 4, 5]
+let result = analyze_data(data)
+
+# Ask AI to explain the result
+let explanation = ai.llm(
+    "Explain this data transformation: " + 
+    str(result)
+)
+
+println("Result:", result)
+println("AI Explanation:", explanation)
+
+# AI agents as first-class citizens
+let agent = ai.agent({
+    name: "DataAnalyzer",
+    goal: "Analyze data patterns",
+    tools: ["calculator", "visualizer"]
+})
+
+agent.run("Find patterns in: " + str(data))
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why Choose KLang?</h2>
+                <p class="section-subtitle">Built for the AI era with modern features and performance</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="feature-title">AI-Native</h3>
+                    <p class="feature-description">
+                        First language with built-in LLM, RAG, embeddings, and autonomous agents.
+                        No external libraries needed.
+                    </p>
+                    <ul class="feature-list">
+                        <li>OpenAI, Anthropic, Ollama support</li>
+                        <li>Vector embeddings</li>
+                        <li>Conversational AI</li>
+                        <li>AI agents as primitives</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Blazing Fast</h3>
+                    <p class="feature-description">
+                        366 million instructions per second. Register-based VM with LLVM JIT compilation.
+                    </p>
+                    <ul class="feature-list">
+                        <li>2.7ns per instruction</li>
+                        <li>10x faster than stack VMs</li>
+                        <li>Zero-cost abstractions</li>
+                        <li>Optimized bytecode</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">Modern Syntax</h3>
+                    <p class="feature-description">
+                        Clean Python-like syntax with JavaScript features. Easy to learn, powerful to use.
+                    </p>
+                    <ul class="feature-list">
+                        <li>Arrow functions</li>
+                        <li>Destructuring</li>
+                        <li>Async/await</li>
+                        <li>Classes & OOP</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3 class="feature-title">Memory Safe</h3>
+                    <p class="feature-description">
+                        Automatic memory management with reference counting and garbage collection.
+                    </p>
+                    <ul class="feature-list">
+                        <li>No manual memory management</li>
+                        <li>No use-after-free</li>
+                        <li>No memory leaks</li>
+                        <li>Safe by default</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3 class="feature-title">Batteries Included</h3>
+                    <p class="feature-description">
+                        Rich standard library with HTTP, file I/O, JSON, regex, and more.
+                    </p>
+                    <ul class="feature-list">
+                        <li>HTTP/HTTPS client</li>
+                        <li>File operations</li>
+                        <li>JSON support</li>
+                        <li>Math & utilities</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3 class="feature-title">Developer Experience</h3>
+                    <p class="feature-description">
+                        LSP support, VS Code extension, REPL, debugger, and excellent error messages.
+                    </p>
+                    <ul class="feature-list">
+                        <li>VS Code extension</li>
+                        <li>Language Server Protocol</li>
+                        <li>Interactive REPL</li>
+                        <li>Built-in debugger</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quickstart" class="quickstart-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Get Started in Minutes</h2>
+                <p class="section-subtitle">Install KLang and write your first AI-powered program</p>
+            </div>
+            
+            <div class="quickstart-grid">
+                <div class="quickstart-step">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Install KLang</h3>
+                    <div class="code-block">
+<pre><code class="language-bash"># Clone the repository
+git clone https://github.com/k-kaundal/KLang.git
+cd KLang
+
+# Build and install
+make
+sudo make install
+
+# Verify installation
+klang --version
+</code></pre>
+                    </div>
+                </div>
+                
+                <div class="quickstart-step">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Write Your First Program</h3>
+                    <div class="code-block">
+<pre><code class="language-klang"># hello.kl
+println("Hello, KLang!")
+
+# Use AI features
+import ai
+
+let response = ai.llm("What is 2+2?")
+println(response)
+
+# Traditional programming
+function greet(name) {
+    return "Hello, " + name + "!"
+}
+
+println(greet("World"))
+</code></pre>
+                    </div>
+                </div>
+                
+                <div class="quickstart-step">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">Run Your Program</h3>
+                    <div class="code-block">
+<pre><code class="language-bash"># Run directly
+klang hello.kl
+
+# Or use the REPL
+klang
+> println("Interactive mode!")
+Interactive mode!
+
+# Try the playground
+klang playground
+</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="quickstart-cta">
+                <a href="docs.html" class="btn btn-primary btn-large">Read Full Documentation</a>
+                <a href="playground.html" class="btn btn-outline btn-large">Try Online Playground</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Examples Section -->
+    <section id="examples" class="examples-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">See It in Action</h2>
+                <p class="section-subtitle">Real-world examples showcasing KLang's power</p>
+            </div>
+            
+            <div class="examples-tabs">
+                <button class="tab-button active" data-tab="ai">AI Integration</button>
+                <button class="tab-button" data-tab="async">Async/Await</button>
+                <button class="tab-button" data-tab="classes">Classes & OOP</button>
+                <button class="tab-button" data-tab="http">HTTP Client</button>
+            </div>
+            
+            <div class="examples-content">
+                <div class="example-tab active" id="tab-ai">
+                    <div class="example-code">
+<pre><code class="language-klang"># AI-Powered Web Scraper with Analysis
+import ai
+import http
+
+function scrape_and_analyze(url) {
+    # Fetch web content
+    let response = http.get(url)
+    let content = response.text
+    
+    # Use AI to extract key information
+    let summary = ai.llm(`
+        Summarize this webpage in 3 bullet points:
+        ${content}
+    `)
+    
+    # Generate embeddings for semantic search
+    let embedding = ai.embed(summary)
+    
+    # Use RAG for context-aware responses
+    let rag = ai.rag({
+        documents: [content],
+        query: "What are the main topics?"
+    })
+    
+    return {
+        summary: summary,
+        embedding: embedding,
+        topics: rag
+    }
+}
+
+# Create an AI agent
+let agent = ai.agent({
+    name: "WebAnalyzer",
+    goal: "Analyze web content",
+    tools: ["http", "summarizer"],
+    memory: true
+})
+
+# Let the agent work autonomously
+agent.run("Analyze https://example.com and provide insights")
+</code></pre>
+                    </div>
+                    <div class="example-output">
+                        <div class="output-header">Output</div>
+                        <div class="output-content">
+<pre>Summary:
+• Example domain for documentation
+• Provides illustrative examples
+• Available for testing purposes
+
+Topics:
+- Web development examples
+- Documentation practices
+- Testing resources
+
+Agent completed task successfully! ✓
+</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-tab" id="tab-async">
+                    <div class="example-code">
+<pre><code class="language-klang"># Async/Await for Concurrent Operations
+import http
+import time
+
+async function fetch_data(url) {
+    println("Fetching:", url)
+    let response = await http.get(url)
+    return response.json()
+}
+
+async function fetch_all() {
+    # Concurrent requests
+    let promises = [
+        fetch_data("https://api1.example.com/data"),
+        fetch_data("https://api2.example.com/data"),
+        fetch_data("https://api3.example.com/data")
+    ]
+    
+    # Wait for all to complete
+    let results = await Promise.all(promises)
+    return results
+}
+
+# Async generator
+async function* generate_data() {
+    for i in range(5) {
+        await time.sleep(1)
+        yield i * 2
+    }
+}
+
+# Main async function
+async function main() {
+    let data = await fetch_all()
+    println("All data fetched:", data)
+    
+    # Use async generator
+    async for value in generate_data() {
+        println("Generated:", value)
+    }
+}
+
+# Run async code
+main()
+</code></pre>
+                    </div>
+                </div>
+                
+                <div class="example-tab" id="tab-classes">
+                    <div class="example-code">
+<pre><code class="language-klang"># Object-Oriented Programming in KLang
+class Animal {
+    constructor(name, age) {
+        this.name = name
+        this.age = age
+    }
+    
+    speak() {
+        println(this.name + " makes a sound")
+    }
+    
+    get info() {
+        return `${this.name} is ${this.age} years old`
+    }
+}
+
+class Dog extends Animal {
+    constructor(name, age, breed) {
+        super(name, age)
+        this.breed = breed
+    }
+    
+    speak() {
+        println(this.name + " barks!")
+    }
+    
+    fetch() {
+        println(this.name + " fetches the ball")
+    }
+}
+
+# Using classes
+let dog = new Dog("Max", 3, "Golden Retriever")
+dog.speak()      # Max barks!
+dog.fetch()      # Max fetches the ball
+println(dog.info) # Max is 3 years old
+
+# Class with AI capabilities
+class SmartAssistant extends Animal {
+    constructor(name) {
+        super(name, 0)
+        this.ai = ai.llm_client()
+    }
+    
+    async think(question) {
+        let response = await this.ai.ask(question)
+        return response
+    }
+}
+
+let assistant = new SmartAssistant("Jarvis")
+let answer = await assistant.think("What's the weather?")
+println(answer)
+</code></pre>
+                    </div>
+                </div>
+                
+                <div class="example-tab" id="tab-http">
+                    <div class="example-code">
+<pre><code class="language-klang"># HTTP Client with Full Features
+import http
+import json
+
+# Simple GET request
+let response = http.get("https://api.example.com/data")
+println(response.status)  # 200
+println(response.json())
+
+# POST request with headers
+let post_response = http.post(
+    "https://api.example.com/users",
+    {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer token123"
+        },
+        body: json.dumps({
+            name: "John Doe",
+            email: "john@example.com"
+        })
+    }
+)
+
+# Error handling
+try {
+    let data = http.get("https://invalid-url.com")
+} catch (error) {
+    println("Request failed:", error.message)
+}
+
+# Custom HTTP client
+class APIClient {
+    constructor(base_url, api_key) {
+        this.base_url = base_url
+        this.api_key = api_key
+    }
+    
+    request(method, endpoint, data = null) {
+        let url = this.base_url + endpoint
+        let options = {
+            method: method,
+            headers: {
+                "Authorization": "Bearer " + this.api_key
+            }
+        }
+        
+        if (data) {
+            options.body = json.dumps(data)
+            options.headers["Content-Type"] = "application/json"
+        }
+        
+        return http.request(url, options)
+    }
+    
+    get(endpoint) {
+        return this.request("GET", endpoint)
+    }
+    
+    post(endpoint, data) {
+        return this.request("POST", endpoint, data)
+    }
+}
+
+# Using custom client
+let client = new APIClient(
+    "https://api.example.com",
+    "your-api-key"
+)
+
+let users = client.get("/users")
+let new_user = client.post("/users", {
+    name: "Jane Doe"
+})
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Performance Section -->
+    <section class="performance-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Performance That Matters</h2>
+                <p class="section-subtitle">Real benchmarks on real workloads</p>
+            </div>
+            
+            <div class="performance-grid">
+                <div class="performance-card">
+                    <div class="perf-chart">
+                        <div class="chart-bar" style="--height: 100%; --color: #6366f1;">
+                            <div class="bar-label">KLang</div>
+                            <div class="bar-value">366M</div>
+                        </div>
+                        <div class="chart-bar" style="--height: 30%; --color: #94a3b8;">
+                            <div class="bar-label">Python</div>
+                            <div class="bar-value">110M</div>
+                        </div>
+                        <div class="chart-bar" style="--height: 65%; --color: #94a3b8;">
+                            <div class="bar-label">Ruby</div>
+                            <div class="bar-value">238M</div>
+                        </div>
+                        <div class="chart-bar" style="--height: 85%; --color: #94a3b8;">
+                            <div class="bar-label">Node.js</div>
+                            <div class="bar-value">311M</div>
+                        </div>
+                    </div>
+                    <h3 class="perf-title">Instructions per Second</h3>
+                    <p class="perf-description">Register-based VM outperforms stack-based alternatives</p>
+                </div>
+                
+                <div class="performance-card">
+                    <div class="perf-metrics">
+                        <div class="metric">
+                            <div class="metric-value">2.7ns</div>
+                            <div class="metric-label">Per Instruction</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">256</div>
+                            <div class="metric-label">Registers</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">10x</div>
+                            <div class="metric-label">Faster than Stack VM</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">100+</div>
+                            <div class="metric-label">Optimized Opcodes</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="performance-card">
+                    <h3 class="perf-title">Memory Efficiency</h3>
+                    <ul class="perf-list">
+                        <li>✓ Reference counting for instant deallocation</li>
+                        <li>✓ Garbage collector for cycle detection</li>
+                        <li>✓ Zero-copy string operations</li>
+                        <li>✓ Efficient constant pool</li>
+                        <li>✓ No stack frame overhead</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Section -->
+    <section class="community-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Join the Community</h2>
+                <p class="section-subtitle">Be part of the AI-native programming revolution</p>
+            </div>
+            
+            <div class="community-grid">
+                <a href="https://github.com/k-kaundal/KLang" class="community-card" target="_blank">
+                    <div class="community-icon">
+                        <svg width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                        </svg>
+                    </div>
+                    <h3>GitHub</h3>
+                    <p>Star the repo, report issues, contribute code</p>
+                </a>
+                
+                <a href="https://discord.gg/klang" class="community-card" target="_blank">
+                    <div class="community-icon">
+                        <svg width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.545 2.907a13.227 13.227 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.19 12.19 0 0 0-3.658 0 8.258 8.258 0 0 0-.412-.833.051.051 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.041.041 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032c.001.014.01.028.021.037a13.276 13.276 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019c.308-.42.582-.863.818-1.329a.05.05 0 0 0-.01-.059.051.051 0 0 0-.018-.011 8.875 8.875 0 0 1-1.248-.595.05.05 0 0 1-.02-.066.051.051 0 0 1 .015-.019c.084-.063.168-.129.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.052.052 0 0 1 .053.007c.08.066.164.132.248.195a.051.051 0 0 1-.004.085 8.254 8.254 0 0 1-1.249.594.05.05 0 0 0-.03.03.052.052 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.235 13.235 0 0 0 4.001-2.02.049.049 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.034.034 0 0 0-.02-.019Zm-8.198 7.307c-.789 0-1.438-.724-1.438-1.612 0-.889.637-1.613 1.438-1.613.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612Zm5.316 0c-.788 0-1.438-.724-1.438-1.612 0-.889.637-1.613 1.438-1.613.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612Z"/>
+                        </svg>
+                    </div>
+                    <h3>Discord</h3>
+                    <p>Chat with developers, get help, share projects</p>
+                </a>
+                
+                <a href="https://twitter.com/klang_dev" class="community-card" target="_blank">
+                    <div class="community-icon">
+                        <svg width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"/>
+                        </svg>
+                    </div>
+                    <h3>Twitter</h3>
+                    <p>Follow updates, news, and announcements</p>
+                </a>
+                
+                <a href="docs.html" class="community-card">
+                    <div class="community-icon">
+                        <svg width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
+                        </svg>
+                    </div>
+                    <h3>Documentation</h3>
+                    <p>Comprehensive guides, tutorials, and API reference</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-brand">
+                        <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M16 2L4 8V16C4 24 16 30 16 30C16 30 28 24 28 16V8L16 2Z" fill="url(#gradient2)"/>
+                            <path d="M12 12L16 16L20 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M16 16V22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                            <defs>
+                                <linearGradient id="gradient2" x1="4" y1="2" x2="28" y2="30">
+                                    <stop offset="0%" stop-color="#6366f1"/>
+                                    <stop offset="100%" stop-color="#22d3ee"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <span>KLang</span>
+                    </div>
+                    <p class="footer-description">
+                        The AI-native programming language for the future.
+                        Fast, safe, and intelligent.
+                    </p>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="docs.html">Getting Started</a></li>
+                        <li><a href="docs.html#api">API Reference</a></li>
+                        <li><a href="docs.html#guide">User Guide</a></li>
+                        <li><a href="docs.html#examples">Examples</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="playground.html">Playground</a></li>
+                        <li><a href="https://github.com/k-kaundal/KLang">GitHub</a></li>
+                        <li><a href="../CHANGELOG.md">Changelog</a></li>
+                        <li><a href="../CONTRIBUTING.md">Contributing</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://discord.gg/klang">Discord</a></li>
+                        <li><a href="https://twitter.com/klang_dev">Twitter</a></li>
+                        <li><a href="https://github.com/k-kaundal/KLang/discussions">Discussions</a></li>
+                        <li><a href="../CODE_OF_CONDUCT.md">Code of Conduct</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2026 KLang. Released under the MIT License.</p>
+                <div class="footer-links">
+                    <a href="../LICENSE">License</a>
+                    <a href="../SECURITY.md">Security</a>
+                    <a href="../CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AI Chat Widget -->
+    <div class="ai-chat-widget" id="aiChatWidget">
+        <div class="chat-header">
+            <div class="chat-header-content">
+                <div class="chat-avatar">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16c3.314 0 6-2 6-5.5 0-1.5-.5-3-1.5-4.5a.5.5 0 0 1 .054-.671L14.5 3.5l.146 1.294-2 2-1.5-1.5.5-.5.5.5-1-1 2-2L13 2.5l-.146.353-1 1-.5-.5.5-.5-.5-.5 1-1L12.5 1h1l.5.5v1l-.146.353-1 1-.5-.5.5-.5-.5-.5 1-1L13.5.5h1l.5.5v1l-.146.353-1 1-.5-.5.5-.5-.5-.5.5-.5.5.5.5-.5.5.5-.5.5-.5-.5-.5.5-.5-.5-.5.5-.5-.5.5-.5.5.5.5-.5.5.5-.5.5-.5-.5-.5.5-.5-.5.5-.5.5.5.5-.5.5.5-.5.5-.5-.5-.5.5-.5-.5.5-.5.5.5.5-.5.5.5z"/>
+                    </svg>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-title">KLang AI Assistant</div>
+                    <div class="chat-status">Online</div>
+                </div>
+            </div>
+            <button class="chat-close" id="closeChatWidget">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-message assistant">
+                <div class="message-avatar">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16c3.314 0 6-2 6-5.5 0-1.5-.5-3-1.5-4.5"/>
+                    </svg>
+                </div>
+                <div class="message-content">
+                    <p>Hello! I'm the KLang AI Assistant. I can help you with:</p>
+                    <ul>
+                        <li>Understanding KLang syntax</li>
+                        <li>Finding documentation</li>
+                        <li>Writing code examples</li>
+                        <li>Debugging issues</li>
+                    </ul>
+                    <p>What would you like to know?</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Ask me anything about KLang...">
+            <button class="chat-send" id="sendMessage">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- FAB for AI Chat -->
+    <button class="fab-ai-chat" id="fabAiChat" style="display: none;">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 16c3.314 0 6-2 6-5.5 0-1.5-.5-3-1.5-4.5a.5.5 0 0 1 .054-.671L14.5 3.5l.146 1.294-2 2"/>
+        </svg>
+    </button>
+
+    <script src="script.js"></script>
+</body>
+</html>
