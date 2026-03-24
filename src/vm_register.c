@@ -14,6 +14,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 /* ============================================================================
  * FORWARD DECLARATIONS
@@ -21,6 +22,16 @@
 
 static void execute_instruction(VM *vm, CallFrame *frame, Instruction *instr);
 static void init_special_registers(CallFrame *frame);
+
+// String operation helpers
+static Value string_slice(const char *str, int start, int end);
+static Value string_split(const char *str, const char *delim);
+static Value string_join(Array *arr, const char *separator);
+static Value string_find(const char *str, const char *substr);
+static Value string_replace(const char *str, const char *old_str, const char *new_str);
+static Value string_lower(const char *str);
+static Value string_upper(const char *str);
+static Value string_trim(const char *str);
 
 /* ============================================================================
  * VALUE OPERATIONS
@@ -1267,16 +1278,108 @@ static void execute_instruction(VM *vm, CallFrame *frame, Instruction *instr) {
             break;
         }
         
-        /* ===== ADVANCED STRING OPERATIONS (UNIMPLEMENTED) ===== */
-        case OP_STR_SLICE:
-        case OP_STR_SPLIT:
-        case OP_STR_JOIN:
-        case OP_STR_FIND:
-        case OP_STR_REPLACE:
-        case OP_STR_LOWER:
-        case OP_STR_UPPER:
-        case OP_STR_TRIM:
-            vm_v3_error(vm, "String operation not yet implemented: 0x%02X", instr->opcode);
+        /* ===== ADVANCED STRING OPERATIONS ===== */
+        case OP_STR_SLICE: {
+            if (regs[instr->src1].type == VALUE_TYPE_STRING &&
+                regs[instr->src2].type == VALUE_TYPE_INT) {
+                const char *str = regs[instr->src1].data.as_string;
+                int start = (int)regs[instr->src2].data.as_int;
+                int end = instr->immediate; // End index from immediate
+                regs[instr->dest] = string_slice(str, start, end);
+            } else {
+                regs[instr->dest] = value_make_null();
+            }
+            break;
+        }
+            
+        case OP_STR_SPLIT: {
+            if (regs[instr->src1].type == VALUE_TYPE_STRING &&
+                regs[instr->src2].type == VALUE_TYPE_STRING) {
+                const char *str = regs[instr->src1].data.as_string;
+                const char *delim = regs[instr->src2].data.as_string;
+                regs[instr->dest] = string_split(str, delim);
+            } else {
+                regs[instr->dest] = value_make_array(array_new());
+            }
+            break;
+        }
+            
+        case OP_STR_JOIN: {
+            if (regs[instr->src1].type == VALUE_TYPE_ARRAY &&
+                regs[instr->src2].type == VALUE_TYPE_STRING) {
+                Array *arr = (Array*)regs[instr->src1].data.as_array;
+                const char *sep = regs[instr->src2].data.as_string;
+                regs[instr->dest] = string_join(arr, sep);
+            } else {
+                regs[instr->dest] = value_make_string("");
+            }
+            break;
+        }
+            
+        case OP_STR_FIND: {
+            if (regs[instr->src1].type == VALUE_TYPE_STRING &&
+                regs[instr->src2].type == VALUE_TYPE_STRING) {
+                const char *str = regs[instr->src1].data.as_string;
+                const char *substr = regs[instr->src2].data.as_string;
+                regs[instr->dest] = string_find(str, substr);
+            } else {
+                regs[instr->dest] = value_make_int(-1);
+            }
+            break;
+        }
+            
+        case OP_STR_REPLACE: {
+            // R[src1] = source string, R[src2] = old string, constant pool[imm] = new string
+            if (regs[instr->src1].type == VALUE_TYPE_STRING &&
+                regs[instr->src2].type == VALUE_TYPE_STRING) {
+                const char *str = regs[instr->src1].data.as_string;
+                const char *old_str = regs[instr->src2].data.as_string;
+                const char *new_str = "";
+                
+                // Get new string from constant pool
+                if (frame->constants && instr->immediate < frame->constants->count) {
+                    Value new_val = frame->constants->values[instr->immediate];
+                    if (new_val.type == VALUE_TYPE_STRING) {
+                        new_str = new_val.data.as_string;
+                    }
+                }
+                
+                regs[instr->dest] = string_replace(str, old_str, new_str);
+            } else {
+                regs[instr->dest] = value_make_string("");
+            }
+            break;
+        }
+            
+        case OP_STR_LOWER: {
+            if (regs[instr->src1].type == VALUE_TYPE_STRING) {
+                const char *str = regs[instr->src1].data.as_string;
+                regs[instr->dest] = string_lower(str);
+            } else {
+                regs[instr->dest] = value_make_string("");
+            }
+            break;
+        }
+            
+        case OP_STR_UPPER: {
+            if (regs[instr->src1].type == VALUE_TYPE_STRING) {
+                const char *str = regs[instr->src1].data.as_string;
+                regs[instr->dest] = string_upper(str);
+            } else {
+                regs[instr->dest] = value_make_string("");
+            }
+            break;
+        }
+            
+        case OP_STR_TRIM: {
+            if (regs[instr->src1].type == VALUE_TYPE_STRING) {
+                const char *str = regs[instr->src1].data.as_string;
+                regs[instr->dest] = string_trim(str);
+            } else {
+                regs[instr->dest] = value_make_string("");
+            }
+            break;
+        }
             break;
         
         default:
@@ -1921,5 +2024,216 @@ Value value_make_closure(Closure *closure) {
     Value v;
     v.type = VALUE_TYPE_CLOSURE;
     v.data.as_function = closure;
+    return v;
+}
+
+/* ============================================================================
+ * ADVANCED STRING OPERATIONS IMPLEMENTATION
+ * ============================================================================ */
+
+/**
+ * @brief Slice a string (substring)
+ */
+static Value string_slice(const char *str, int start, int end) {
+    if (!str) return value_make_null();
+    
+    int len = strlen(str);
+    
+    // Handle negative indices
+    if (start < 0) start = len + start;
+    if (end < 0) end = len + end;
+    
+    // Clamp to valid range
+    if (start < 0) start = 0;
+    if (end > len) end = len;
+    if (start >= end) return value_make_string("");
+    
+    int slice_len = end - start;
+    char *result = malloc(slice_len + 1);
+    strncpy(result, str + start, slice_len);
+    result[slice_len] = '\0';
+    
+    Value v = value_make_string(result);
+    free(result);
+    return v;
+}
+
+/**
+ * @brief Split a string by delimiter
+ */
+static Value string_split(const char *str, const char *delim) {
+    if (!str || !delim) return value_make_array(array_new());
+    
+    Array *result = array_new();
+    char *str_copy = strdup(str);
+    char *token = strtok(str_copy, delim);
+    
+    while (token) {
+        array_push(result, value_make_string(token));
+        token = strtok(NULL, delim);
+    }
+    
+    free(str_copy);
+    return value_make_array(result);
+}
+
+/**
+ * @brief Join array elements into string
+ */
+static Value string_join(Array *arr, const char *separator) {
+    if (!arr || arr->count == 0) return value_make_string("");
+    
+    // Calculate total length needed
+    int total_len = 0;
+    int sep_len = separator ? strlen(separator) : 0;
+    
+    for (int i = 0; i < arr->count; i++) {
+        if (arr->elements[i].type == VALUE_TYPE_STRING) {
+            total_len += strlen(arr->elements[i].data.as_string);
+        }
+        if (i < arr->count - 1) {
+            total_len += sep_len;
+        }
+    }
+    
+    // Build result string
+    char *result = malloc(total_len + 1);
+    result[0] = '\0';
+    
+    for (int i = 0; i < arr->count; i++) {
+        if (arr->elements[i].type == VALUE_TYPE_STRING) {
+            strcat(result, arr->elements[i].data.as_string);
+        }
+        if (i < arr->count - 1 && separator) {
+            strcat(result, separator);
+        }
+    }
+    
+    Value v = value_make_string(result);
+    free(result);
+    return v;
+}
+
+/**
+ * @brief Find substring in string
+ */
+static Value string_find(const char *str, const char *substr) {
+    if (!str || !substr) return value_make_int(-1);
+    
+    const char *found = strstr(str, substr);
+    if (found) {
+        return value_make_int(found - str);
+    }
+    return value_make_int(-1);
+}
+
+/**
+ * @brief Replace occurrences in string
+ */
+static Value string_replace(const char *str, const char *old_str, const char *new_str) {
+    if (!str || !old_str || !new_str) return value_make_string(str ? str : "");
+    
+    int old_len = strlen(old_str);
+    int new_len = strlen(new_str);
+    
+    // Count occurrences
+    int count = 0;
+    const char *pos = str;
+    while ((pos = strstr(pos, old_str)) != NULL) {
+        count++;
+        pos += old_len;
+    }
+    
+    if (count == 0) {
+        return value_make_string(str);
+    }
+    
+    // Allocate result
+    int result_len = strlen(str) + count * (new_len - old_len);
+    char *result = malloc(result_len + 1);
+    char *dst = result;
+    const char *src = str;
+    
+    while ((pos = strstr(src, old_str)) != NULL) {
+        int len = pos - src;
+        strncpy(dst, src, len);
+        dst += len;
+        strcpy(dst, new_str);
+        dst += new_len;
+        src = pos + old_len;
+    }
+    strcpy(dst, src);
+    
+    Value v = value_make_string(result);
+    free(result);
+    return v;
+}
+
+/**
+ * @brief Convert string to lowercase
+ */
+static Value string_lower(const char *str) {
+    if (!str) return value_make_string("");
+    
+    int len = strlen(str);
+    char *result = malloc(len + 1);
+    
+    for (int i = 0; i < len; i++) {
+        result[i] = tolower(str[i]);
+    }
+    result[len] = '\0';
+    
+    Value v = value_make_string(result);
+    free(result);
+    return v;
+}
+
+/**
+ * @brief Convert string to uppercase
+ */
+static Value string_upper(const char *str) {
+    if (!str) return value_make_string("");
+    
+    int len = strlen(str);
+    char *result = malloc(len + 1);
+    
+    for (int i = 0; i < len; i++) {
+        result[i] = toupper(str[i]);
+    }
+    result[len] = '\0';
+    
+    Value v = value_make_string(result);
+    free(result);
+    return v;
+}
+
+/**
+ * @brief Trim whitespace from string
+ */
+static Value string_trim(const char *str) {
+    if (!str) return value_make_string("");
+    
+    // Find start of non-whitespace
+    while (*str && isspace(*str)) {
+        str++;
+    }
+    
+    if (*str == '\0') {
+        return value_make_string("");
+    }
+    
+    // Find end of non-whitespace
+    const char *end = str + strlen(str) - 1;
+    while (end > str && isspace(*end)) {
+        end--;
+    }
+    
+    int len = end - str + 1;
+    char *result = malloc(len + 1);
+    strncpy(result, str, len);
+    result[len] = '\0';
+    
+    Value v = value_make_string(result);
+    free(result);
     return v;
 }
