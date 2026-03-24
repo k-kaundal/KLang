@@ -326,8 +326,9 @@
     </header>
     
     <div class="info-banner">
-        🎮 Try KLang code interactively! This playground simulates KLang execution. 
-        For full features, <a href="https://github.com/k-kaundal/KLang#installation" target="_blank">install KLang locally</a>.
+        🎮 <strong>Interactive Playground</strong> - Try KLang syntax and examples! 
+        <strong>Note:</strong> This simulates basic <code>println()</code> output for demonstration. 
+        For full KLang execution with all features, <a href="https://github.com/k-kaundal/KLang#installation" target="_blank">install locally</a>.
     </div>
     
     <div class="playground-container">
@@ -408,11 +409,12 @@ println("Doubled: " + str(doubled))</textarea>
                 
                 <div class="output-container">
                     <div class="output-header">
-                        <div class="output-title">📟 Output Console</div>
+                        <div class="output-title">📟 Output Console (Simulated - basic println only)</div>
                         <button class="btn btn-secondary" id="clearOutputBtn" style="padding: 0.25rem 0.75rem; font-size: 0.85rem;">Clear</button>
                     </div>
                     <div class="output-content" id="outputConsole">
                         <div class="output-line output-info">Ready to run code. Click "Run Code" button above.</div>
+                        <div class="output-line output-info">ℹ️  This playground simulates basic println() output for learning syntax.</div>
                     </div>
                 </div>
             </div>
@@ -661,10 +663,11 @@ println("\\nTotal: $" + str(total))`
                 }
                 
                 addOutput('');
-                addOutput('✓ Execution completed', 'success');
+                addOutput('✓ Simulation completed', 'success');
                 addOutput('');
-                addOutput('⚠️  Note: This is a simulated playground for demonstration.', 'info');
-                addOutput('For full KLang execution, install locally: https://github.com/k-kaundal/KLang', 'info');
+                addOutput('⚠️  Simulation Note: Only basic println() statements are executed.', 'info');
+                addOutput('   For full KLang features (variables, functions, classes, AI), install locally.', 'info');
+                addOutput('   Install guide: https://github.com/k-kaundal/KLang#installation', 'info');
                 
             } catch (error) {
                 addOutput('Error: ' + error.message, 'error');
