@@ -2,7 +2,7 @@
 #define COMPILER_H
 
 #include "ast.h"
-#include "vm.h"
+#include "vm_stack.h"
 
 typedef struct {
     Chunk *chunk;

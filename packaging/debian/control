@@ -1,0 +1,29 @@
+Source: klang
+Section: devel
+Priority: optional
+Maintainer: KLang Team <team@klang.dev>
+Build-Depends: debhelper (>= 10),
+               build-essential,
+               libreadline-dev,
+               llvm-16-dev
+Standards-Version: 4.5.0
+Homepage: https://github.com/k-kaundal/KLang
+Vcs-Git: https://github.com/k-kaundal/KLang.git
+Vcs-Browser: https://github.com/k-kaundal/KLang
+
+Package: klang
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         libreadline8,
+         llvm-16
+Description: KLang - The AI-Native Programming Language
+ KLang is a modern, high-performance programming language designed with
+ AI-native features. It combines the best aspects of modern languages
+ with powerful AI integration capabilities.
+ .
+ Features include:
+  * Fast compilation and execution
+  * Modern syntax with type inference
+  * Built-in AI capabilities
+  * Comprehensive standard library
+  * Cross-platform support

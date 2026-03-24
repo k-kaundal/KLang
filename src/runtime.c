@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#ifndef _WIN32
 #include <regex.h>
+#endif
 
 /* Forward declarations for helper functions */
 extern Value eval_block(Interpreter *interp, ASTNode *block, Env *env);
@@ -2459,6 +2461,11 @@ static Value builtin_regexTest(Interpreter *interp, Value *args, int argc) {
         return make_bool(0);
     }
     
+#ifdef _WIN32
+    /* Regex not supported on Windows - return false */
+    fprintf(stderr, "Warning: Regex not supported on Windows\n");
+    return make_bool(0);
+#else
     const char *pattern = args[0].as.str_val;
     const char *text = args[1].as.str_val;
     
@@ -2475,6 +2482,7 @@ static Value builtin_regexTest(Interpreter *interp, Value *args, int argc) {
     regfree(&regex);
     
     return make_bool(result == 0);
+#endif
 }
 
 static Value builtin_regexMatch(Interpreter *interp, Value *args, int argc) {
@@ -2484,6 +2492,11 @@ static Value builtin_regexMatch(Interpreter *interp, Value *args, int argc) {
         return make_null();
     }
     
+#ifdef _WIN32
+    /* Regex not supported on Windows - return null */
+    fprintf(stderr, "Warning: Regex not supported on Windows\n");
+    return make_null();
+#else
     const char *pattern = args[0].as.str_val;
     const char *text = args[1].as.str_val;
     
@@ -2529,6 +2542,7 @@ static Value builtin_regexMatch(Interpreter *interp, Value *args, int argc) {
     
     regfree(&regex);
     return match_list;
+#endif
 }
 
 static Value builtin_regexReplace(Interpreter *interp, Value *args, int argc) {
@@ -2539,6 +2553,11 @@ static Value builtin_regexReplace(Interpreter *interp, Value *args, int argc) {
         return make_null();
     }
     
+#ifdef _WIN32
+    /* Regex not supported on Windows - return original text */
+    fprintf(stderr, "Warning: Regex not supported on Windows\n");
+    return make_string(args[1].as.str_val);
+#else
     const char *pattern = args[0].as.str_val;
     const char *text = args[1].as.str_val;
     const char *replacement = args[2].as.str_val;
@@ -2577,6 +2596,7 @@ static Value builtin_regexReplace(Interpreter *interp, Value *args, int argc) {
     free(new_text);
     regfree(&regex);
     return result_val;
+#endif
 }
 
 static Value builtin_regexSplit(Interpreter *interp, Value *args, int argc) {
@@ -2586,6 +2606,17 @@ static Value builtin_regexSplit(Interpreter *interp, Value *args, int argc) {
         return make_null();
     }
     
+#ifdef _WIN32
+    /* Regex not supported on Windows - return array with original text */
+    fprintf(stderr, "Warning: Regex not supported on Windows\n");
+    Value list;
+    list.type = VAL_LIST;
+    list.as.list_val.items = malloc(sizeof(Value));
+    list.as.list_val.count = 1;
+    list.as.list_val.capacity = 1;
+    list.as.list_val.items[0] = make_string(args[1].as.str_val);
+    return list;
+#else
     const char *pattern = args[0].as.str_val;
     const char *text = args[1].as.str_val;
     
@@ -2649,6 +2680,7 @@ static Value builtin_regexSplit(Interpreter *interp, Value *args, int argc) {
     
     regfree(&regex);
     return list;
+#endif
 }
 
 /* ============================================

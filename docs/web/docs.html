@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KLang Documentation - Complete Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .docs-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .docs-sidebar {
+            position: sticky;
+            top: 6rem;
+            height: fit-content;
+            max-height: calc(100vh - 8rem);
+            overflow-y: auto;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+        }
+        
+        .docs-sidebar h3 {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            margin-bottom: 1rem;
+        }
+        
+        .docs-nav {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .docs-nav a {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.9375rem;
+            transition: var(--transition);
+        }
+        
+        .docs-nav a:hover {
+            background: var(--bg-tertiary);
+            color: var(--text);
+        }
+        
+        .docs-nav a.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .docs-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+        }
+        
+        .docs-content h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+        
+        .docs-content h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .docs-content h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .docs-content p {
+            margin-bottom: 1rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+        
+        .docs-content pre {
+            background: #1e1e1e;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+        
+        .docs-content code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .docs-content :not(pre) > code {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 0.125rem 0.375rem;
+            border-radius: var(--radius-sm);
+            color: var(--primary-light);
+        }
+        
+        .docs-content ul, .docs-content ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        
+        .docs-content li {
+            margin: 0.5rem 0;
+            color: var(--text-secondary);
+        }
+        
+        .docs-search {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .docs-search input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 0.9375rem;
+        }
+        
+        .docs-search svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+        }
+        
+        .note {
+            background: rgba(34, 211, 238, 0.1);
+            border-left: 3px solid var(--secondary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: var(--radius);
+        }
+        
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 3px solid var(--accent-yellow);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: var(--radius);
+        }
+        
+        .api-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        
+        .api-table th {
+            background: var(--bg-tertiary);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .api-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        
+        @media (max-width: 768px) {
+            .docs-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .docs-sidebar {
+                position: relative;
+                top: 0;
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation (same as index.html) -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="nav-brand">
+                <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <path d="M16 2L4 8V16C4 24 16 30 16 30C16 30 28 24 28 16V8L16 2Z" fill="url(#gradient1)"/>
+                    <path d="M12 12L16 16L20 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M16 16V22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <defs>
+                        <linearGradient id="gradient1" x1="4" y1="2" x2="28" y2="30">
+                            <stop offset="0%" stop-color="#6366f1"/>
+                            <stop offset="100%" stop-color="#22d3ee"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="brand-name">KLang</span>
+                <span class="brand-version">v1.0</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="index.html#features">Features</a>
+                <a href="index.html#quickstart">Quick Start</a>
+                <a href="docs.html">Documentation</a>
+                <a href="playground.html" class="btn-playground">Playground</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Docs Container -->
+    <div class="docs-container">
+        <!-- Sidebar -->
+        <aside class="docs-sidebar">
+            <div class="docs-search">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+                <input type="text" placeholder="Search docs..." id="docsSearch">
+            </div>
+            
+            <h3>Getting Started</h3>
+            <ul class="docs-nav">
+                <li><a href="#installation" class="active">Installation</a></li>
+                <li><a href="#hello-world">Hello World</a></li>
+                <li><a href="#basic-syntax">Basic Syntax</a></li>
+            </ul>
+            
+            <h3>Language Guide</h3>
+            <ul class="docs-nav">
+                <li><a href="#variables">Variables</a></li>
+                <li><a href="#functions">Functions</a></li>
+                <li><a href="#classes">Classes</a></li>
+                <li><a href="#async">Async/Await</a></li>
+            </ul>
+            
+            <h3>AI Features</h3>
+            <ul class="docs-nav">
+                <li><a href="#ai-llm">LLM Integration</a></li>
+                <li><a href="#ai-embeddings">Embeddings</a></li>
+                <li><a href="#ai-rag">RAG Systems</a></li>
+                <li><a href="#ai-agents">AI Agents</a></li>
+            </ul>
+            
+            <h3>API Reference</h3>
+            <ul class="docs-nav">
+                <li><a href="#api-stdlib">Standard Library</a></li>
+                <li><a href="#api-http">HTTP Client</a></li>
+                <li><a href="#api-fs">File System</a></li>
+                <li><a href="#api-json">JSON</a></li>
+            </ul>
+            
+            <h3>Advanced</h3>
+            <ul class="docs-nav">
+                <li><a href="#vm">Virtual Machine</a></li>
+                <li><a href="#bytecode">Bytecode</a></li>
+                <li><a href="#performance">Performance</a></li>
+            </ul>
+        </aside>
+        
+        <!-- Content -->
+        <main class="docs-content">
+            <h1>KLang Documentation</h1>
+            <p>Welcome to the complete documentation for KLang, the AI-native programming language. This guide will help you learn everything from basic syntax to advanced AI integration.</p>
+            
+            <h2 id="installation">Installation</h2>
+            <p>Getting started with KLang is easy. Follow these steps to install on your system:</p>
+            
+            <h3>Linux/macOS</h3>
+<pre><code class="language-bash"># Clone the repository
+git clone https://github.com/k-kaundal/KLang.git
+cd KLang
+
+# Build and install
+make
+sudo make install
+
+# Verify installation
+klang --version
+</code></pre>
+
+            <h3>Windows</h3>
+<pre><code class="language-bash"># Using WSL (recommended)
+git clone https://github.com/k-kaundal/KLang.git
+cd KLang
+make
+sudo make install
+
+# Or download pre-built binaries
+# Visit: https://github.com/k-kaundal/KLang/releases
+</code></pre>
+
+            <div class="note">
+                <strong>Note:</strong> KLang requires GCC or Clang compiler and Make build tool. Make sure these are installed on your system before building.
+            </div>
+
+            <h2 id="hello-world">Hello World</h2>
+            <p>Let's write your first KLang program:</p>
+            
+<pre><code class="language-klang"># hello.kl
+println("Hello, World!")
+</code></pre>
+
+            <p>Run it with:</p>
+<pre><code class="language-bash">klang hello.kl
+</code></pre>
+
+            <h2 id="basic-syntax">Basic Syntax</h2>
+            <p>KLang uses a clean, intuitive syntax inspired by Python and JavaScript.</p>
+            
+            <h3>Comments</h3>
+<pre><code class="language-klang"># Single-line comment
+
+/*
+  Multi-line
+  comment
+*/
+</code></pre>
+
+            <h3 id="variables">Variables</h3>
+<pre><code class="language-klang"># Variable declaration
+let x = 10
+let name = "KLang"
+let pi = 3.14159
+let isActive = true
+
+# Constant declaration
+const MAX_SIZE = 100
+
+# Type inference
+let numbers = [1, 2, 3, 4, 5]  # Array
+let person = {name: "John", age: 30}  # Object
+</code></pre>
+
+            <h3 id="functions">Functions</h3>
+<pre><code class="language-klang"># Regular function
+function add(a, b) {
+    return a + b
+}
+
+# Arrow function
+let multiply = (a, b) => a * b
+
+# Function with default parameters
+function greet(name = "World") {
+    return "Hello, " + name
+}
+
+# Rest parameters
+function sum(...numbers) {
+    let total = 0
+    for num in numbers {
+        total += num
+    }
+    return total
+}
+
+# Example usage
+println(add(5, 3))        # 8
+println(multiply(4, 7))   # 28
+println(greet())          # Hello, World
+println(sum(1, 2, 3, 4))  # 10
+</code></pre>
+
+            <h3 id="classes">Classes and OOP</h3>
+<pre><code class="language-klang"># Class definition
+class Person {
+    constructor(name, age) {
+        this.name = name
+        this.age = age
+    }
+    
+    greet() {
+        println("Hello, my name is " + this.name)
+    }
+    
+    # Getter
+    get info() {
+        return this.name + " is " + str(this.age) + " years old"
+    }
+    
+    # Static method
+    static create(name, age) {
+        return new Person(name, age)
+    }
+}
+
+# Inheritance
+class Student extends Person {
+    constructor(name, age, grade) {
+        super(name, age)
+        this.grade = grade
+    }
+    
+    study() {
+        println(this.name + " is studying")
+    }
+}
+
+# Usage
+let person = new Person("Alice", 25)
+person.greet()
+println(person.info)
+
+let student = new Student("Bob", 20, "A")
+student.greet()
+student.study()
+</code></pre>
+
+            <h3 id="async">Async/Await</h3>
+<pre><code class="language-klang"># Async function
+async function fetchData(url) {
+    let response = await http.get(url)
+    return response.json()
+}
+
+# Error handling with async
+async function safeF fetch() {
+    try {
+        let data = await fetchData("https://api.example.com")
+        println(data)
+    } catch (error) {
+        println("Error:", error.message)
+    }
+}
+
+# Parallel requests
+async function fetchAll() {
+    let urls = [
+        "https://api1.example.com",
+        "https://api2.example.com",
+        "https://api3.example.com"
+    ]
+    
+    let promises = urls.map(url => fetchData(url))
+    let results = await Promise.all(promises)
+    
+    return results
+}
+
+# Run async code
+fetchAll().then(data => {
+    println("All data fetched:", data)
+})
+</code></pre>
+
+            <h2 id="ai-llm">AI: LLM Integration</h2>
+            <p>KLang has native support for Large Language Models. Connect to OpenAI, Anthropic, or local models:</p>
+            
+<pre><code class="language-klang">import ai
+
+# Simple LLM call
+let response = ai.llm("What is the capital of France?")
+println(response)
+
+# With options
+let result = ai.llm(
+    "Explain quantum computing",
+    {
+        model: "gpt-4",
+        temperature: 0.7,
+        maxTokens: 500
+    }
+)
+
+# Chat conversation
+let chat = ai.chat()
+chat.addMessage("user", "Hello!")
+chat.addMessage("assistant", "Hi! How can I help?")
+let reply = chat.send("Tell me about KLang")
+println(reply)
+
+# Using different providers
+let openai = ai.llm("Question", {provider: "openai"})
+let anthropic = ai.llm("Question", {provider: "anthropic"})
+let ollama = ai.llm("Question", {provider: "ollama", model: "llama2"})
+</code></pre>
+
+            <h2 id="ai-embeddings">AI: Embeddings</h2>
+<pre><code class="language-klang">import ai
+
+# Generate embeddings
+let text = "KLang is an AI-native programming language"
+let embedding = ai.embed(text)
+println("Embedding dimension:", len(embedding))
+
+# Batch embeddings
+let texts = [
+    "First document",
+    "Second document",
+    "Third document"
+]
+let embeddings = ai.embedBatch(texts)
+
+# Similarity search
+let query = "Programming language"
+let queryEmbed = ai.embed(query)
+
+# Calculate cosine similarity
+function cosineSimilarity(a, b) {
+    let dot = 0
+    let magA = 0
+    let magB = 0
+    
+    for i in range(len(a)) {
+        dot += a[i] * b[i]
+        magA += a[i] ** 2
+        magB += b[i] ** 2
+    }
+    
+    return dot / (sqrt(magA) * sqrt(magB))
+}
+
+let similarity = cosineSimilarity(embedding, queryEmbed)
+println("Similarity:", similarity)
+</code></pre>
+
+            <h2 id="ai-rag">AI: RAG Systems</h2>
+<pre><code class="language-klang">import ai
+
+# Create RAG system
+let rag = ai.rag({
+    documents: [
+        "KLang is fast with 366M inst/sec",
+        "KLang has native AI integration",
+        "KLang uses a register-based VM"
+    ],
+    embedModel: "text-embedding-ada-002",
+    llmModel: "gpt-4"
+})
+
+# Query with context
+let answer = rag.query("How fast is KLang?")
+println(answer)
+# Output: KLang achieves 366 million instructions per second...
+
+# Add more documents
+rag.addDocument("KLang supports async/await")
+rag.addDocument("KLang has 100+ opcodes")
+
+# Query again
+let answer2 = rag.query("What are KLang's features?")
+println(answer2)
+
+# Get sources
+let result = rag.queryWithSources("Tell me about KLang performance")
+println("Answer:", result.answer)
+println("Sources:", result.sources)
+</code></pre>
+
+            <h2 id="ai-agents">AI: Autonomous Agents</h2>
+<pre><code class="language-klang">import ai
+
+# Create an agent
+let agent = ai.agent({
+    name: "CodeHelper",
+    goal: "Help developers write better code",
+    tools: ["search", "calculator", "code_executor"],
+    llm: "gpt-4",
+    memory: true
+})
+
+# Give the agent a task
+agent.run("Write a function to calculate fibonacci numbers")
+
+# Agent with custom tools
+function customTool(input) {
+    # Your custom logic
+    return "Result: " + input
+}
+
+let agent2 = ai.agent({
+    name: "CustomAgent",
+    tools: [
+        {
+            name: "custom",
+            function: customTool,
+            description: "My custom tool"
+        }
+    ]
+})
+
+agent2.run("Use the custom tool with input: test")
+
+# Multi-agent system
+let researcher = ai.agent({name: "Researcher", goal: "Research topics"})
+let writer = ai.agent({name: "Writer", goal: "Write articles"})
+
+let research = researcher.run("Research AI programming languages")
+let article = writer.run("Write an article based on: " + research)
+println(article)
+</code></pre>
+
+            <h2 id="api-stdlib">Standard Library</h2>
+            <p>KLang comes with a rich standard library:</p>
+            
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>Module</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>math</code></td>
+                        <td>Mathematical functions</td>
+                        <td><code>math.sqrt(16)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>string</code></td>
+                        <td>String manipulation</td>
+                        <td><code>string.upper("hello")</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>array</code></td>
+                        <td>Array operations</td>
+                        <td><code>array.filter(arr, fn)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>time</code></td>
+                        <td>Time and date</td>
+                        <td><code>time.now()</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>json</code></td>
+                        <td>JSON encoding/decoding</td>
+                        <td><code>json.dumps(obj)</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2 id="api-http">HTTP Client</h2>
+<pre><code class="language-klang">import http
+
+# GET request
+let response = http.get("https://api.example.com/data")
+println(response.status)      # 200
+println(response.text)        # Response body
+println(response.json())      # Parsed JSON
+
+# POST request
+let postData = {
+    name: "John Doe",
+    email: "john@example.com"
+}
+
+let response = http.post(
+    "https://api.example.com/users",
+    {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: json.dumps(postData)
+    }
+)
+
+# Custom request
+let response = http.request(
+    "PUT",
+    "https://api.example.com/resource/123",
+    {
+        headers: {"Authorization": "Bearer token"},
+        body: json.dumps({status: "active"})
+    }
+)
+</code></pre>
+
+            <h2 id="performance">Performance</h2>
+            <p>KLang is built for speed with a register-based virtual machine:</p>
+            
+            <ul>
+                <li><strong>366 million instructions per second</strong></li>
+                <li><strong>2.7 nanoseconds per instruction</strong></li>
+                <li><strong>10x faster</strong> than stack-based VMs</li>
+                <li><strong>256 registers</strong> per call frame</li>
+                <li><strong>100+ optimized opcodes</strong></li>
+            </ul>
+            
+            <div class="note">
+                <strong>Tip:</strong> For maximum performance, use the VM's bytecode compilation or LLVM JIT compilation features.
+            </div>
+
+            <h2>Next Steps</h2>
+            <p>Now that you know the basics, explore more:</p>
+            <ul>
+                <li><a href="index.html#examples">See more examples</a></li>
+                <li><a href="playground.html">Try the online playground</a></li>
+                <li><a href="https://github.com/k-kaundal/KLang">Contribute on GitHub</a></li>
+                <li><a href="https://discord.gg/klang">Join our Discord community</a></li>
+            </ul>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Smooth scrolling for sidebar links
+        document.querySelectorAll('.docs-nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all links
+                document.querySelectorAll('.docs-nav a').forEach(a => a.classList.remove('active'));
+                
+                // Add active class to clicked link
+                this.classList.add('active');
+                
+                // Scroll to target
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({behavior: 'smooth', block: 'start'});
+                }
+            });
+        });
+        
+        // Search functionality
+        document.getElementById('docsSearch').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const sections = document.querySelectorAll('.docs-content h2, .docs-content h3');
+            
+            sections.forEach(section => {
+                const text = section.textContent.toLowerCase();
+                const parent = section.closest('h2, h3');
+                
+                if (text.includes(query) || query === '') {
+                    section.style.display = '';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        });
+        
+        // Highlight code
+        hljs.highlightAll();
+    </script>
+</body>
+</html>

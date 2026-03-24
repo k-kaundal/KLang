@@ -1,0 +1,69 @@
+# KLang Development Docker Image
+# Full development environment with all tools
+
+FROM ubuntu:22.04 AS development
+
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install all development dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    vim \
+    nano \
+    libreadline-dev \
+    llvm-16-dev \
+    clang \
+    clang-format \
+    clang-tidy \
+    valgrind \
+    gdb \
+    cmake \
+    ninja-build \
+    python3 \
+    python3-pip \
+    wget \
+    curl \
+    ca-certificates \
+    bash-completion \
+    man-db \
+    less \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install modern git
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository ppa:git-core/ppa -y && \
+    apt-get update && apt-get install -y git && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create development user
+RUN useradd -m -s /bin/bash -G sudo klang && \
+    echo "klang ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy source code
+COPY --chown=klang:klang . .
+
+# Build KLang
+RUN make clean && make
+
+# Install KLang system-wide
+RUN make install
+
+# Set up development environment
+RUN echo 'export PS1="\[\033[01;32m\]klang-dev\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "' >> /home/klang/.bashrc && \
+    echo 'alias ll="ls -lah"' >> /home/klang/.bashrc && \
+    echo 'alias k="klang"' >> /home/klang/.bashrc
+
+# Switch to dev user
+USER klang
+
+# Set environment variables
+ENV KLANG_HOME=/usr/local
+ENV PATH="${PATH}:/usr/local/bin"
+
+# Default command
+CMD ["/bin/bash"]

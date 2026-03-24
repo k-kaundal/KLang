@@ -1,9 +1,13 @@
+#define _GNU_SOURCE  /* For asprintf() */
 #include "lsp_server.h"
 #include "lexer.h"
 #include "parser.h"
 #include "cli_colors.h"
 #include <stdarg.h>
 #include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* Initialize LSP server */
 LSPServer* lsp_server_init(void) {
@@ -184,6 +188,7 @@ LSPMessageType lsp_parse_message_type(const char *method) {
 
 /* Handle initialize request */
 void lsp_handle_initialize(LSPServer *server, int id, const char *params) {
+    (void)params;  /* Reserved for future capability negotiation */
     lsp_log(server, "Handling initialize request");
     
     server->initialized = 1;
@@ -207,18 +212,21 @@ void lsp_handle_initialize(LSPServer *server, int id, const char *params) {
 
 /* Handle textDocument/didOpen */
 void lsp_handle_text_document_did_open(LSPServer *server, const char *params) {
+    (void)params;  /* Would parse document URI and content */
     lsp_log(server, "Document opened");
     /* In a full implementation, would parse document and store it */
 }
 
 /* Handle textDocument/didChange */
 void lsp_handle_text_document_did_change(LSPServer *server, const char *params) {
+    (void)params;  /* Would parse document changes */
     lsp_log(server, "Document changed");
     /* In a full implementation, would update stored document and provide diagnostics */
 }
 
 /* Handle textDocument/completion */
 void lsp_handle_text_document_completion(LSPServer *server, int id, const char *params) {
+    (void)params;  /* Would parse cursor position */
     lsp_log(server, "Completion requested");
     
     /* Provide basic completions */
@@ -245,6 +253,7 @@ void lsp_handle_text_document_completion(LSPServer *server, int id, const char *
 
 /* Handle textDocument/hover */
 void lsp_handle_text_document_hover(LSPServer *server, int id, const char *params) {
+    (void)params;  /* Would parse hover position */
     lsp_log(server, "Hover requested");
     
     /* Provide basic hover info */
@@ -261,18 +270,21 @@ void lsp_handle_text_document_hover(LSPServer *server, int id, const char *param
 
 /* Handle textDocument/definition */
 void lsp_handle_text_document_definition(LSPServer *server, int id, const char *params) {
+    (void)params;  /* Would parse symbol position */
     lsp_log(server, "Definition requested");
     lsp_send_response(id, "null");
 }
 
 /* Handle textDocument/references */
 void lsp_handle_text_document_references(LSPServer *server, int id, const char *params) {
+    (void)params;  /* Would parse symbol position */
     lsp_log(server, "References requested");
     lsp_send_response(id, "[]");
 }
 
 /* Handle textDocument/formatting */
 void lsp_handle_text_document_formatting(LSPServer *server, int id, const char *params) {
+    (void)params;  /* Would parse formatting options */
     lsp_log(server, "Formatting requested");
     lsp_send_response(id, "[]");
 }

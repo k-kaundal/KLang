@@ -1,5 +1,5 @@
-#ifndef VM_H
-#define VM_H
+#ifndef VM_STACK_H
+#define VM_STACK_H
 
 typedef enum {
     OP_PUSH_INT, OP_PUSH_FLOAT, OP_PUSH_STR, OP_PUSH_BOOL, OP_PUSH_NULL,

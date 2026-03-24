@@ -47,7 +47,7 @@ void report_error_with_context(
 ) {
     char *source_line;
     int i;
-    int leading_ws;
+    int leading_ws;  /* Keep this for use below */
     
     /* Print error header */
     printf("\n%s%s%s at line %d, column %d:\n",
@@ -65,6 +65,7 @@ void report_error_with_context(
     /* Get and display source line */
     source_line = get_source_line(source, line);
     leading_ws = count_leading_whitespace(source_line);
+    (void)leading_ws;  /* May be used in future for better formatting */
     
     printf("\n%s%4d |%s ", get_color(COLOR_BLUE), line, get_color(COLOR_RESET));
     printf("%s\n", source_line);
