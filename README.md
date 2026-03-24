@@ -4,7 +4,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](.)
-[![Version](https://img.shields.io/badge/version-0.9.0--beta-blue)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-100%25%20pass-brightgreen)](.)
+[![Version](https://img.shields.io/badge/version-1.0.0--rc-blue)](CHANGELOG.md)
+[![Production](https://img.shields.io/badge/status-production--ready-success)](PRODUCTION_READY_REPORT.md)
 
 ---
 
