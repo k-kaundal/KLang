@@ -1,7 +1,8 @@
 CC = gcc
-LLVM_CONFIG = llvm-config-16
-LLVM_CFLAGS = $(shell $(LLVM_CONFIG) --cflags)
-LLVM_LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags --libs core executionengine mcjit native passes)
+# Try to find llvm-config in order of preference
+LLVM_CONFIG ?= $(shell which llvm-config-16 2>/dev/null || which llvm-config-18 2>/dev/null || which llvm-config-17 2>/dev/null || which llvm-config 2>/dev/null || echo "llvm-config-16")
+LLVM_CFLAGS = $(shell $(LLVM_CONFIG) --cflags 2>/dev/null || echo "")
+LLVM_LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags --libs core executionengine mcjit native passes 2>/dev/null || echo "")
 
 CFLAGS = -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200809L -Isrc -Iinclude -g $(LLVM_CFLAGS)
 LDFLAGS = $(LLVM_LDFLAGS) -lm -lreadline

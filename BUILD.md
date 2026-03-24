@@ -77,9 +77,15 @@ brew install readline llvm@16
 
 You may need to set environment variables:
 ```bash
-export LDFLAGS="-L/opt/homebrew/opt/readline/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/readline/include"
-export PKG_CONFIG_PATH="/opt/homebrew/opt/llvm@16/lib/pkgconfig"
+export LDFLAGS="-L/opt/homebrew/opt/readline/lib -L/opt/homebrew/opt/llvm@16/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/readline/include -I/opt/homebrew/opt/llvm@16/include"
+export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"
+```
+
+Or use the llvm-config from Homebrew:
+```bash
+export LLVM_CONFIG=/opt/homebrew/opt/llvm@16/bin/llvm-config
+make
 ```
 
 ## Playground Setup
