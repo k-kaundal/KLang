@@ -29,6 +29,8 @@
             --text-secondary: #94a3b8;
             --border: #334155;
             --accent: #22d3ee;
+            --gradient-start: #6366f1;
+            --gradient-end: #22d3ee;
         }
         
         body {
@@ -64,7 +66,7 @@
             font-size: 1.5rem;
             font-weight: bold;
             color: var(--primary);
-            background: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -100,7 +102,8 @@
         }
         
         .search-box input:focus {
-            outline: none;
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
@@ -210,7 +213,7 @@
         /* Gradient text with fallback for accessibility */
         @supports (background-clip: text) or (-webkit-background-clip: text) {
             .doc-content h1 {
-                background: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
+                background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
                 background-clip: text;
@@ -434,7 +437,7 @@
         /* Better focus states for accessibility */
         a:focus-visible,
         button:focus-visible,
-        input:focus-visible {
+        input:not(.search-box input):focus-visible {
             outline: 2px solid var(--primary);
             outline-offset: 2px;
         }
@@ -446,8 +449,7 @@
         }
         
         /* Professional animations */
-        .sidebar a,
-        .github-link {
+        .sidebar a {
             transition: all 0.2s ease;
         }
         
