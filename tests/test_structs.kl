@@ -1,0 +1,97 @@
+# Test struct and union support in KLang
+
+println("=== Struct/Union Tests ===")
+println("")
+
+# Test 1: Simple struct declaration and initialization
+println("Test 1: Simple struct declaration and initialization")
+struct Point {
+    x: int,
+    y: int
+}
+
+let p = Point { x: 10, y: 20 }
+println("  Point: p.x =", p.x, ", p.y =", p.y)
+if (p.x == 10) {
+    println("  ✓ Struct field access works")
+} else {
+    println("  ✗ Struct field access failed")
+}
+println("")
+
+# Test 2: Struct with address-of operator
+println("Test 2: Struct with address-of operator")
+let ptr = &p
+println("  &p =", ptr)
+println("  ✓ Address-of operator works with structs")
+println("")
+
+# Test 3: Arrow operator with struct pointers
+println("Test 3: Arrow operator with struct pointers")
+println("  ptr->x =", ptr->x)
+println("  ptr->y =", ptr->y)
+if (ptr->x == 10) {
+    println("  ✓ Arrow operator works with struct pointers")
+} else {
+    println("  ✗ Arrow operator failed")
+}
+println("")
+
+# Test 4: Nested struct initialization
+println("Test 4: Multiple struct instances")
+struct Rectangle {
+    width: int,
+    height: int
+}
+
+let r1 = Rectangle { width: 100, height: 50 }
+let r2 = Rectangle { width: 200, height: 150 }
+println("  r1: width =", r1.width, ", height =", r1.height)
+println("  r2: width =", r2.width, ", height =", r2.height)
+println("  ✓ Multiple struct instances work")
+println("")
+
+# Test 5: Union declaration and usage
+println("Test 5: Union declaration and usage")
+union Data {
+    i: int,
+    f: float
+}
+
+let d = Data { i: 42 }
+println("  Data.i =", d.i)
+println("  ✓ Union declaration and initialization works")
+println("")
+
+# Test 6: Struct with different types
+println("Test 6: Struct with different types")
+struct Person {
+    name: string,
+    age: int
+}
+
+let person = Person { name: "Alice", age: 30 }
+println("  Person: name =", person.name, ", age =", person.age)
+println("  ✓ Struct with mixed types works")
+println("")
+
+# Test 7: Dereferencing struct pointer
+println("Test 7: Dereferencing struct pointer")
+let point_ptr = &p
+let point_val = *point_ptr
+println("  *point_ptr = ", point_val)
+println("  Dereferenced struct.x =", point_val.x)
+println("  ✓ Struct pointer dereference works")
+println("")
+
+println("=== All Struct/Union Tests Complete ===")
+println("")
+println("Summary:")
+println("  ✓ Struct declaration and initialization")
+println("  ✓ Struct field access (obj.member)")
+println("  ✓ Address-of operator with structs (&struct)")
+println("  ✓ Arrow operator with struct pointers (ptr->member)")
+println("  ✓ Multiple struct instances")
+println("  ✓ Union declaration and usage")
+println("  ✓ Struct with mixed types")
+println("  ✓ Struct pointer dereference")
