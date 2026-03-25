@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     vim \
     nano \
     libreadline-dev \
-    llvm-16-dev \
+    llvm-14-dev \
     clang \
     clang-format \
     clang-tidy \

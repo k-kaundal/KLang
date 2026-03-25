@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     git \
     libreadline-dev \
-    llvm-16-dev \
+    llvm-14-dev \
     wget \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -29,7 +29,7 @@ FROM ubuntu:22.04
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \
     libreadline8 \
-    llvm-16 \
+    llvm-14 \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
