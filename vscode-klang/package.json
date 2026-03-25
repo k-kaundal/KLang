@@ -2,7 +2,7 @@
   "name": "klang",
   "displayName": "KLang - AI-Native Programming Language",
   "description": "Complete language support for KLang with syntax highlighting, snippets, and intelligent code editing",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "KaundalVIP",
   "icon": "icon.png",
   "license": "MIT",
