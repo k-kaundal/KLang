@@ -10,7 +10,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Docker registry requires lowercase - use lowercase repository name
+  IMAGE_NAME: k-kaundal/klang
 
 jobs:
   docker-build:
