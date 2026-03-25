@@ -605,8 +605,24 @@ static ASTNode *parse_unary(Parser *parser) {
     return parse_postfix(parser);
 }
 
-static ASTNode *parse_multiplicative(Parser *parser) {
+static ASTNode *parse_exponentiation(Parser *parser) {
     ASTNode *left = parse_unary(parser);
+    // Right-associative: parse recursively for right side
+    if (check(parser, TOKEN_POWER)) {
+        Token t = advance(parser);
+        int line = t.line;
+        char op[4];
+        strncpy(op, t.value, 3);
+        op[3] = '\0';
+        token_free(&t);
+        ASTNode *right = parse_exponentiation(parser);  // Recursive for right-associativity
+        left = ast_new_binop(op, left, right, line);
+    }
+    return left;
+}
+
+static ASTNode *parse_multiplicative(Parser *parser) {
+    ASTNode *left = parse_exponentiation(parser);
     while (check(parser, TOKEN_STAR) || check(parser, TOKEN_SLASH) || check(parser, TOKEN_PERCENT)) {
         Token t = advance(parser);
         int line = t.line;
@@ -615,7 +631,7 @@ static ASTNode *parse_multiplicative(Parser *parser) {
         op[3] = '\0';
         token_free(&t);
         {
-            ASTNode *right = parse_unary(parser);
+            ASTNode *right = parse_exponentiation(parser);
             left = ast_new_binop(op, left, right, line);
         }
     }

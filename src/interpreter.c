@@ -2108,6 +2108,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     else result = make_float(rv != 0.0 ? lv / rv : 0.0);
                 }
                 else if (strcmp(op, "%") == 0) result = is_int ? make_int(lvi % rvi) : make_float(fmod(lv, rv));
+                else if (strcmp(op, "**") == 0) result = make_float(pow(lv, rv));
                 else if (strcmp(op, "<") == 0) result = make_bool(lv < rv);
                 else if (strcmp(op, ">") == 0) result = make_bool(lv > rv);
                 else if (strcmp(op, "<=") == 0) result = make_bool(lv <= rv);

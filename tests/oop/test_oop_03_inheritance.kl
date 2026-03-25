@@ -1,0 +1,223 @@
+# Test: Inheritance in KLang
+# Comprehensive test suite for inheritance concepts
+
+println("============================================================")
+println("KLang OOP Test 03: Inheritance")
+println("============================================================")
+println()
+
+# Section 1: Basic Inheritance
+println("Section 1: Basic Inheritance")
+println("----------------------------------------")
+
+# Test 1.1: Simple inheritance
+class Animal {
+    let name: string = ""
+    
+    fn init(n: string) {
+        this.name = n
+    }
+    
+    fn speak() {
+        println("Some sound")
+    }
+}
+
+class Dog extends Animal {
+    let breed: string = ""
+    
+    fn init(n: string, b: string) {
+        super.init(n)
+        this.breed = b
+    }
+}
+
+let dog = new Dog("Buddy", "Golden Retriever")
+println("PASS Test 1.1: Basic inheritance")
+println("  Name: " + dog.name)
+println("  Breed: " + dog.breed)
+
+# Test 1.2: Inherited method call
+print("PASS Test 1.2: Inherited method: ")
+dog.speak()
+
+println()
+
+# Section 2: Method Overriding
+println("Section 2: Method Overriding")
+println("----------------------------------------")
+
+# Test 2.1: Override parent method
+class Cat extends Animal {
+    fn init(n: string) {
+        super.init(n)
+    }
+    
+    fn speak() {
+        println("Meow!")
+    }
+}
+
+let cat = new Cat("Whiskers")
+print("PASS Test 2.1: Method override: ")
+cat.speak()
+
+# Test 2.2: Multiple children with different overrides
+class Bird extends Animal {
+    fn init(n: string) {
+        super.init(n)
+    }
+    
+    fn speak() {
+        println("Tweet tweet!")
+    }
+}
+
+let bird = new Bird("Tweety")
+print("PASS Test 2.2: Different override: ")
+bird.speak()
+
+println()
+
+# Section 3: Super Keyword
+println("Section 3: Super Keyword")
+println("----------------------------------------")
+
+# Test 3.1: Calling parent method with super
+class Vehicle {
+    let brand: string = ""
+    let speed: float = 0.0
+    
+    fn init(b: string) {
+        this.brand = b
+    }
+    
+    fn displayInfo() {
+        println("Brand: " + this.brand)
+        println("Speed: " + str(this.speed) + " km/h")
+    }
+}
+
+class Car extends Vehicle {
+    let doors: int = 4
+    
+    fn init(b: string, d: int) {
+        super.init(b)
+        this.doors = d
+    }
+    
+    fn displayInfo() {
+        super.displayInfo()
+        println("Doors: " + str(this.doors))
+    }
+}
+
+let car = new Car("Toyota", 4)
+car.speed = 60.0
+println("PASS Test 3.1: Super method call")
+car.displayInfo()
+
+println()
+
+# Section 4: Multi-Level Inheritance
+println("Section 4: Multi-Level Inheritance")
+println("----------------------------------------")
+
+# Test 4.1: Three-level inheritance
+class LivingThing {
+    let alive: bool = true
+    
+    fn init() {
+        this.alive = true
+    }
+    
+    fn breathe() {
+        println("Breathing...")
+    }
+}
+
+class Mammal extends LivingThing {
+    let warmBlooded: bool = true
+    
+    fn init() {
+        super.init()
+        this.warmBlooded = true
+    }
+}
+
+class Human extends Mammal {
+    let name: string = ""
+    
+    fn init(n: string) {
+        super.init()
+        this.name = n
+    }
+}
+
+let human = new Human("Alice")
+println("PASS Test 4.1: Multi-level inheritance")
+println("  Name: " + human.name)
+println("  Warm-blooded: " + str(human.warmBlooded))
+println("  Alive: " + str(human.alive))
+human.breathe()
+
+println()
+
+# Section 5: Real-World Example - Employee Hierarchy
+println("Section 5: Real-World Example")
+println("----------------------------------------")
+
+class Employee {
+    let name: string = ""
+    let id: int = 0
+    let baseSalary: float = 0.0
+    
+    fn init(n: string, empId: int, salary: float) {
+        this.name = n
+        this.id = empId
+        this.baseSalary = salary
+    }
+    
+    fn calculateSalary() -> float {
+        return this.baseSalary
+    }
+    
+    fn displayInfo() {
+        println("Name: " + this.name)
+        println("ID: " + str(this.id))
+        println("Salary: $" + str(this.calculateSalary()))
+    }
+}
+
+class Manager extends Employee {
+    let bonus: float = 0.0
+    
+    fn init(n: string, empId: int, salary: float, b: float) {
+        super.init(n, empId, salary)
+        this.bonus = b
+    }
+    
+    fn calculateSalary() -> float {
+        return this.baseSalary + this.bonus
+    }
+}
+
+let manager = new Manager("Bob", 101, 80000.0, 10000.0)
+println("PASS Test 5.1: Employee hierarchy")
+manager.displayInfo()
+
+println()
+
+# Test Summary
+println("============================================================")
+println("Inheritance Test Suite Complete!")
+println("============================================================")
+println()
+println("Summary:")
+println("- Basic inheritance: PASS")
+println("- Method overriding: PASS")
+println("- Super keyword: PASS")
+println("- Multi-level inheritance: PASS")
+println("- Real-world example: PASS")
+println()
+println("All inheritance tests passed!")

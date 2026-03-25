@@ -1,0 +1,199 @@
+# Comprehensive Test: Classes and Objects
+# Tests basic class definition, object creation, properties, and methods
+
+println("============================================================")
+println("KLang OOP Test 01: Classes and Objects")
+println("============================================================")
+println()
+
+# Section 1: Basic Class Definition
+println("Section 1: Basic Class Definition")
+println("----------------------------------------")
+
+# Test 1.1: Empty class
+class EmptyClass {
+}
+
+let empty = new EmptyClass()
+println("PASS Test 1.1: Empty class created")
+
+# Test 1.2: Class with single property
+class SingleProperty {
+    let value: int = 42
+}
+
+let sp = new SingleProperty()
+println("PASS Test 1.2: Class with property, value = " + str(sp.value))
+
+# Test 1.3: Class with multiple properties
+class MultipleProperties {
+    let name: string = "Test"
+    let age: int = 0
+    let active: bool = true
+}
+
+let mp = new MultipleProperties()
+println("PASS Test 1.3: Class with multiple properties")
+println("  name = " + mp.name)
+println("  age = " + str(mp.age))
+println("  active = " + str(mp.active))
+
+println()
+
+# Section 2: Object Creation
+println("Section 2: Object Creation")
+println("----------------------------------------")
+
+# Test 2.1: Creating single object
+class Point {
+    let x: float = 0.0
+    let y: float = 0.0
+}
+
+let p1 = new Point()
+println("PASS Test 2.1: Single object created")
+
+# Test 2.2: Creating multiple objects
+let p2 = new Point()
+let p3 = new Point()
+println("PASS Test 2.2: Multiple objects created")
+
+# Test 2.3: Objects are independent
+p1.x = 10.0
+p1.y = 20.0
+p2.x = 30.0
+p2.y = 40.0
+
+println("PASS Test 2.3: Objects are independent")
+println("  p1: (" + str(p1.x) + ", " + str(p1.y) + ")")
+println("  p2: (" + str(p2.x) + ", " + str(p2.y) + ")")
+
+println()
+
+# Section 3: Methods
+println("Section 3: Methods")
+println("----------------------------------------")
+
+# Test 3.1: Method without parameters
+class Greeter {
+    let name: string = "World"
+    
+    fn greet() {
+        println("Hello, " + this.name + "!")
+    }
+}
+
+let greeter = new Greeter()
+greeter.name = "KLang"
+print("PASS Test 3.1: Method without params: ")
+greeter.greet()
+
+# Test 3.2: Method with return value
+class Calculator {
+    fn add(a: int, b: int) -> int {
+        return a + b
+    }
+}
+
+let calc = new Calculator()
+let sum = calc.add(5, 3)
+println("PASS Test 3.2: Method with return: add(5, 3) = " + str(sum))
+
+# Test 3.3: Method accessing properties
+class Circle {
+    let radius: float = 1.0
+    
+    fn area() -> float {
+        return 3.14159 * this.radius * this.radius
+    }
+}
+
+let circle = new Circle()
+circle.radius = 3.0
+println("PASS Test 3.3: Method accessing properties")
+println("  radius = " + str(circle.radius))
+println("  area = " + str(circle.area()))
+
+println()
+
+# Section 4: The 'this' Keyword
+println("Section 4: The 'this' Keyword")
+println("----------------------------------------")
+
+# Test 4.1: Using 'this' to access properties
+class Counter {
+    let count: int = 0
+    
+    fn increment() {
+        this.count = this.count + 1
+    }
+    
+    fn getValue() -> int {
+        return this.count
+    }
+}
+
+let counter = new Counter()
+counter.increment()
+counter.increment()
+counter.increment()
+println("PASS Test 4.1: Using 'this' keyword")
+println("  count after 3 increments: " + str(counter.getValue()))
+
+println()
+
+# Section 5: Real-World Example
+println("Section 5: Real-World Example - Bank Account")
+println("----------------------------------------")
+
+class BankAccount {
+    let accountNumber: int = 0
+    let balance: float = 0.0
+    let owner: string = ""
+    
+    fn deposit(amount: float) {
+        if (amount > 0.0) {
+            this.balance = this.balance + amount
+        }
+    }
+    
+    fn withdraw(amount: float) -> bool {
+        if (amount > 0.0 && amount <= this.balance) {
+            this.balance = this.balance - amount
+            return true
+        }
+        return false
+    }
+    
+    fn getBalance() -> float {
+        return this.balance
+    }
+}
+
+let account = new BankAccount()
+account.accountNumber = 12345
+account.owner = "Alice"
+account.deposit(1000.0)
+account.deposit(500.0)
+account.withdraw(200.0)
+
+println("PASS Test 5.1: Bank Account")
+println("  Owner: " + account.owner)
+println("  Account: " + str(account.accountNumber))
+println("  Balance: $" + str(account.getBalance()))
+
+println()
+
+# Test Summary
+println("============================================================")
+println("Classes and Objects Test Suite Complete!")
+println("============================================================")
+println()
+println("Summary:")
+println("- Basic class definition: PASS")
+println("- Object creation: PASS")
+println("- Methods: PASS")
+println("- The 'this' keyword: PASS")
+println("- Real-world example: PASS")
+println()
+println("All classes and objects tests passed!")

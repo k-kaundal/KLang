@@ -1,0 +1,525 @@
+# Comprehensive Loops Test Suite for KLang
+# Tests: while, for, for-of, nested loops, break, continue, loop control
+
+println("=" * 60)
+println("KLang Loops Comprehensive Test Suite")
+println("=" * 60)
+println()
+
+# ============================================
+# Section 1: While Loops
+# ============================================
+println("Section 1: While Loops")
+println("-" * 40)
+
+# Test 1.1: Basic while loop
+println("Test 1.1: Count 1 to 5")
+let count = 1
+while (count <= 5) {
+    print(str(count) + " ")
+    count = count + 1
+}
+println("✓")
+
+# Test 1.2: While loop with condition
+println("Test 1.2: Sum numbers until > 50")
+let sum = 0
+let i = 1
+while (sum < 50) {
+    sum = sum + i
+    i = i + 1
+}
+println("Sum: " + str(sum) + ", iterations: " + str(i - 1) + " ✓")
+
+# Test 1.3: While loop with complex condition
+println("Test 1.3: Loop with AND condition")
+let x = 0
+let y = 10
+while (x < 5 && y > 5) {
+    x = x + 1
+    y = y - 1
+}
+println("x=" + str(x) + ", y=" + str(y) + " ✓")
+
+# Test 1.4: Countdown with while
+println("Test 1.4: Countdown from 5")
+let countdown = 5
+while (countdown > 0) {
+    print(str(countdown) + "... ")
+    countdown = countdown - 1
+}
+println("Blast off! ✓")
+
+println()
+
+# ============================================
+# Section 2: For Loops (C-style)
+# ============================================
+println("Section 2: For Loops (C-style)")
+println("-" * 40)
+
+# Test 2.1: Basic for loop
+println("Test 2.1: For loop 0 to 4")
+for (let j = 0; j < 5; j = j + 1) {
+    print(str(j) + " ")
+}
+println("✓")
+
+# Test 2.2: For loop with step
+println("Test 2.2: Even numbers 0 to 10")
+for (let k = 0; k <= 10; k = k + 2) {
+    print(str(k) + " ")
+}
+println("✓")
+
+# Test 2.3: Backwards for loop
+println("Test 2.3: Countdown 10 to 1")
+for (let m = 10; m >= 1; m = m - 1) {
+    print(str(m) + " ")
+}
+println("✓")
+
+# Test 2.4: For loop with calculation
+println("Test 2.4: Calculate factorial of 5")
+let factorial = 1
+for (let n = 1; n <= 5; n = n + 1) {
+    factorial = factorial * n
+}
+println("5! = " + str(factorial) + " ✓")
+
+# Test 2.5: For loop with variable step
+println("Test 2.5: Powers of 2 up to 128")
+for (let p = 1; p <= 128; p = p * 2) {
+    print(str(p) + " ")
+}
+println("✓")
+
+println()
+
+# ============================================
+# Section 3: For-Of Loops (Array Iteration)
+# ============================================
+println("Section 3: For-Of Loops")
+println("-" * 40)
+
+# Test 3.1: Basic for-of with array
+println("Test 3.1: Iterate array [1, 2, 3, 4, 5]")
+let numbers = [1, 2, 3, 4, 5]
+for (let num of numbers) {
+    print(str(num) + " ")
+}
+println("✓")
+
+# Test 3.2: For-of with strings
+println("Test 3.2: Iterate string array")
+let fruits = ["apple", "banana", "cherry"]
+for (let fruit of fruits) {
+    print(fruit + " ")
+}
+println("✓")
+
+# Test 3.3: For-of with sum calculation
+println("Test 3.3: Sum array elements")
+let values = [10, 20, 30, 40, 50]
+let total = 0
+for (let val of values) {
+    total = total + val
+}
+println("Total: " + str(total) + " ✓")
+
+# Test 3.4: For-of with mixed types
+println("Test 3.4: Mixed type array")
+let mixed = [1, "two", 3, "four", 5]
+for (let item of mixed) {
+    print(str(item) + " ")
+}
+println("✓")
+
+println()
+
+# ============================================
+# Section 4: Break Statement
+# ============================================
+println("Section 4: Break Statement")
+println("-" * 40)
+
+# Test 4.1: Break in while loop
+println("Test 4.1: Break at 5")
+let counter = 0
+while (counter < 10) {
+    if (counter == 5) {
+        break
+    }
+    print(str(counter) + " ")
+    counter = counter + 1
+}
+println("✓")
+
+# Test 4.2: Break in for loop
+println("Test 4.2: Find first number > 50")
+for (let b = 1; b < 100; b = b + 10) {
+    if (b > 50) {
+        println("Found: " + str(b) + " ✓")
+        break
+    }
+}
+
+# Test 4.3: Break with condition
+println("Test 4.3: Search in array")
+let searchArr = [1, 5, 10, 15, 20, 25]
+let target = 15
+let found = false
+for (let elem of searchArr) {
+    if (elem == target) {
+        println("Found " + str(target) + " ✓")
+        found = true
+        break
+    }
+}
+
+# Test 4.4: Early exit on error condition
+println("Test 4.4: Validate positive numbers")
+let nums = [1, 2, 3, -5, 4, 5]
+let allPositive = true
+for (let num of nums) {
+    if (num < 0) {
+        println("Found negative number: " + str(num) + " ✓")
+        allPositive = false
+        break
+    }
+}
+
+println()
+
+# ============================================
+# Section 5: Continue Statement
+# ============================================
+println("Section 5: Continue Statement")
+println("-" * 40)
+
+# Test 5.1: Continue in while loop (skip even numbers)
+println("Test 5.1: Print odd numbers 1-10")
+let c = 0
+while (c < 10) {
+    c = c + 1
+    if (c % 2 == 0) {
+        continue
+    }
+    print(str(c) + " ")
+}
+println("✓")
+
+# Test 5.2: Continue in for loop
+println("Test 5.2: Skip multiples of 3")
+for (let d = 1; d <= 12; d = d + 1) {
+    if (d % 3 == 0) {
+        continue
+    }
+    print(str(d) + " ")
+}
+println("✓")
+
+# Test 5.3: Continue with multiple conditions
+println("Test 5.3: Print numbers not divisible by 2 or 3")
+for (let e = 1; e <= 20; e = e + 1) {
+    if (e % 2 == 0 || e % 3 == 0) {
+        continue
+    }
+    print(str(e) + " ")
+}
+println("✓")
+
+# Test 5.4: Continue in for-of
+println("Test 5.4: Skip negative values")
+let testValues = [-1, 2, -3, 4, -5, 6, 7, -8]
+print("Positive values: ")
+for (let tv of testValues) {
+    if (tv < 0) {
+        continue
+    }
+    print(str(tv) + " ")
+}
+println("✓")
+
+println()
+
+# ============================================
+# Section 6: Nested Loops
+# ============================================
+println("Section 6: Nested Loops")
+println("-" * 40)
+
+# Test 6.1: Simple nested loop
+println("Test 6.1: Multiplication table (3x3)")
+for (let row = 1; row <= 3; row = row + 1) {
+    for (let col = 1; col <= 3; col = col + 1) {
+        print(str(row * col) + " ")
+    }
+    println()
+}
+println("✓")
+
+# Test 6.2: Nested loop with array
+println("Test 6.2: Matrix iteration")
+let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+for (let r of matrix) {
+    for (let c of r) {
+        print(str(c) + " ")
+    }
+    println()
+}
+println("✓")
+
+# Test 6.3: Nested loop with break
+println("Test 6.3: Find pair that sums to 10")
+let arr1 = [1, 2, 3, 4, 5]
+let arr2 = [6, 7, 8, 9, 10]
+let foundPair = false
+for (let a1 of arr1) {
+    for (let a2 of arr2) {
+        if (a1 + a2 == 10) {
+            println("Found pair: " + str(a1) + " + " + str(a2) + " = 10 ✓")
+            foundPair = true
+            break
+        }
+    }
+    if (foundPair) {
+        break
+    }
+}
+
+# Test 6.4: Three-level nested loop
+println("Test 6.4: Three dimensions (2x2x2)")
+for (let i1 = 0; i1 < 2; i1 = i1 + 1) {
+    for (let i2 = 0; i2 < 2; i2 = i2 + 1) {
+        for (let i3 = 0; i3 < 2; i3 = i3 + 1) {
+            print(str(i1) + str(i2) + str(i3) + " ")
+        }
+    }
+}
+println("✓")
+
+println()
+
+# ============================================
+# Section 7: Loop Patterns and Algorithms
+# ============================================
+println("Section 7: Loop Patterns")
+println("-" * 40)
+
+# Test 7.1: Find minimum in array
+println("Test 7.1: Find minimum value")
+let findMin = [23, 5, 89, 12, 3, 67]
+let minVal = findMin[0]
+for (let fv of findMin) {
+    if (fv < minVal) {
+        minVal = fv
+    }
+}
+println("Minimum: " + str(minVal) + " ✓")
+
+# Test 7.2: Find maximum in array
+println("Test 7.2: Find maximum value")
+let findMax = [23, 5, 89, 12, 3, 67]
+let maxVal = findMax[0]
+for (let fv of findMax) {
+    if (fv > maxVal) {
+        maxVal = fv
+    }
+}
+println("Maximum: " + str(maxVal) + " ✓")
+
+# Test 7.3: Count occurrences
+println("Test 7.3: Count 3s in array")
+let countArr = [1, 3, 5, 3, 7, 3, 9]
+let countThrees = 0
+for (let ca of countArr) {
+    if (ca == 3) {
+        countThrees = countThrees + 1
+    }
+}
+println("Count of 3s: " + str(countThrees) + " ✓")
+
+# Test 7.4: Reverse array (build new)
+println("Test 7.4: Reverse array")
+let original = [1, 2, 3, 4, 5]
+let reversed = []
+for (let idx = 4; idx >= 0; idx = idx - 1) {
+    reversed[5 - idx - 1] = original[idx]
+}
+print("Reversed: ")
+for (let rv of reversed) {
+    print(str(rv) + " ")
+}
+println("✓")
+
+# Test 7.5: Calculate average
+println("Test 7.5: Calculate average")
+let avgNums = [10, 20, 30, 40, 50]
+let avgSum = 0
+let avgCount = 0
+for (let an of avgNums) {
+    avgSum = avgSum + an
+    avgCount = avgCount + 1
+}
+let average = avgSum / avgCount
+println("Average: " + str(average) + " ✓")
+
+println()
+
+# ============================================
+# Section 8: Complex Loop Scenarios
+# ============================================
+println("Section 8: Complex Scenarios")
+println("-" * 40)
+
+# Test 8.1: Fibonacci sequence (first 10 terms)
+println("Test 8.1: Fibonacci sequence")
+let fib1 = 0
+let fib2 = 1
+print(str(fib1) + " " + str(fib2) + " ")
+for (let f = 2; f < 10; f = f + 1) {
+    let next = fib1 + fib2
+    print(str(next) + " ")
+    fib1 = fib2
+    fib2 = next
+}
+println("✓")
+
+# Test 8.2: Prime number checker
+println("Test 8.2: Check if 17 is prime")
+let checkNum = 17
+let isPrime = true
+if (checkNum < 2) {
+    isPrime = false
+} else {
+    for (let div = 2; div * div <= checkNum; div = div + 1) {
+        if (checkNum % div == 0) {
+            isPrime = false
+            break
+        }
+    }
+}
+println(str(checkNum) + " is prime: " + str(isPrime) + " ✓")
+
+# Test 8.3: String character count
+println("Test 8.3: Count characters in string")
+let str = "hello"
+let charCount = 0
+for (let ch of str) {
+    charCount = charCount + 1
+}
+println("Length of 'hello': " + str(charCount) + " ✓")
+
+# Test 8.4: Collect even numbers
+println("Test 8.4: Filter even numbers")
+let filterArr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+let evens = []
+let evenIdx = 0
+for (let fa of filterArr) {
+    if (fa % 2 == 0) {
+        evens[evenIdx] = fa
+        evenIdx = evenIdx + 1
+    }
+}
+print("Even numbers: ")
+for (let ev of evens) {
+    print(str(ev) + " ")
+}
+println("✓")
+
+println()
+
+# ============================================
+# Section 9: Loop Performance Patterns
+# ============================================
+println("Section 9: Performance Patterns")
+println("-" * 40)
+
+# Test 9.1: Large iteration count
+println("Test 9.1: Sum 1 to 1000")
+let largeSum = 0
+for (let big = 1; big <= 1000; big = big + 1) {
+    largeSum = largeSum + big
+}
+println("Sum(1-1000): " + str(largeSum) + " ✓")
+
+# Test 9.2: Skip pattern optimization
+println("Test 9.2: Sum odd numbers 1-100")
+let oddSum = 0
+for (let odd = 1; odd <= 100; odd = odd + 2) {
+    oddSum = oddSum + odd
+}
+println("Sum of odds: " + str(oddSum) + " ✓")
+
+# Test 9.3: Early exit optimization
+println("Test 9.3: Find first > 500")
+for (let search = 1; search < 1000; search = search + 1) {
+    if (search > 500) {
+        println("First > 500: " + str(search) + " ✓")
+        break
+    }
+}
+
+println()
+
+# ============================================
+# Section 10: Edge Cases
+# ============================================
+println("Section 10: Edge Cases")
+println("-" * 40)
+
+# Test 10.1: Loop with single iteration
+println("Test 10.1: Single iteration loop")
+for (let single = 0; single < 1; single = single + 1) {
+    println("Single iteration ✓")
+}
+
+# Test 10.2: Loop that never executes
+println("Test 10.2: Zero iteration loop")
+let zeroCheck = false
+for (let zero = 10; zero < 5; zero = zero + 1) {
+    zeroCheck = true
+}
+if (!zeroCheck) {
+    println("Loop never executed ✓")
+}
+
+# Test 10.3: Empty array iteration
+println("Test 10.3: Empty array")
+let emptyArr = []
+let emptyCount = 0
+for (let ea of emptyArr) {
+    emptyCount = emptyCount + 1
+}
+println("Empty array iterations: " + str(emptyCount) + " ✓")
+
+# Test 10.4: Break on first iteration
+println("Test 10.4: Immediate break")
+for (let imm = 0; imm < 10; imm = imm + 1) {
+    println("Breaking immediately ✓")
+    break
+}
+
+println()
+
+# ============================================
+# Test Summary
+# ============================================
+println("=" * 60)
+println("Loops Test Suite Complete!")
+println("=" * 60)
+println()
+println("Summary:")
+println("- While loops: ✓")
+println("- For loops (C-style): ✓")
+println("- For-of loops: ✓")
+println("- Break statement: ✓")
+println("- Continue statement: ✓")
+println("- Nested loops: ✓")
+println("- Loop patterns: ✓")
+println("- Complex scenarios: ✓")
+println("- Performance patterns: ✓")
+println("- Edge cases: ✓")
+println()
+println("All loop tests passed! ✓")

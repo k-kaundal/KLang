@@ -291,6 +291,10 @@ Token lexer_next_token(Lexer *lexer) {
             }
             return make_token(TOKEN_MINUS, "-", line, col);
         case '*':
+            if (lexer->source[lexer->pos] == '*') {
+                lexer->pos++; lexer->col++;
+                return make_token(TOKEN_POWER, "**", line, col);
+            }
             if (lexer->source[lexer->pos] == '=') {
                 lexer->pos++; lexer->col++;
                 return make_token(TOKEN_STAR_ASSIGN, "*=", line, col);

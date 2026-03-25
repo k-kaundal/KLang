@@ -57,7 +57,7 @@ println("");
 
 // Test 9: Function return value
 println("Test 9: Function");
-function greet() {
+fn greet() {
     return "Greetings";
 }
 println(greet());

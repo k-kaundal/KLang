@@ -1,0 +1,414 @@
+# Practical Example: Classes and Objects in KLang
+# Real-world examples demonstrating class and object usage
+
+println("=" * 60)
+println("Classes and Objects - Practical Examples")
+println("=" * 60)
+println()
+
+# ============================================
+# Example 1: Student Management System
+# ============================================
+println("Example 1: Student Management System")
+println("-" * 40)
+
+class Student {
+    let studentId: int = 0
+    let name: string = ""
+    let grade: float = 0.0
+    let subject: string = ""
+    
+    fn displayInfo() {
+        println("Student ID: " + str(this.studentId))
+        println("Name: " + this.name)
+        println("Subject: " + this.subject)
+        println("Grade: " + str(this.grade) + "%")
+    }
+    
+    fn isPassing() -> bool {
+        return this.grade >= 60.0
+    }
+    
+    fn getLetterGrade() -> string {
+        if (this.grade >= 90.0) {
+            return "A"
+        } else if (this.grade >= 80.0) {
+            return "B"
+        } else if (this.grade >= 70.0) {
+            return "C"
+        } else if (this.grade >= 60.0) {
+            return "D"
+        } else {
+            return "F"
+        }
+    }
+}
+
+# Create students
+let student1 = new Student()
+student1.studentId = 1001
+student1.name = "Alice Johnson"
+student1.subject = "Mathematics"
+student1.grade = 92.5
+
+let student2 = new Student()
+student2.studentId = 1002
+student2.name = "Bob Smith"
+student2.subject = "Physics"
+student2.grade = 78.0
+
+let student3 = new Student()
+student3.studentId = 1003
+student3.name = "Charlie Brown"
+student3.subject = "Chemistry"
+student3.grade = 55.5
+
+# Display information
+println("Student 1:")
+student1.displayInfo()
+println("Letter Grade: " + student1.getLetterGrade())
+println("Status: " + (student1.isPassing() ? "PASSING" : "FAILING"))
+println()
+
+println("Student 2:")
+student2.displayInfo()
+println("Letter Grade: " + student2.getLetterGrade())
+println("Status: " + (student2.isPassing() ? "PASSING" : "FAILING"))
+println()
+
+println("Student 3:")
+student3.displayInfo()
+println("Letter Grade: " + student3.getLetterGrade())
+println("Status: " + (student3.isPassing() ? "PASSING" : "FAILING"))
+println()
+
+# ============================================
+# Example 2: Library Book System
+# ============================================
+println("Example 2: Library Book System")
+println("-" * 40)
+
+class LibraryBook {
+    let isbn: string = ""
+    let title: string = ""
+    let author: string = ""
+    let available: bool = true
+    let borrower: string = ""
+    
+    fn borrowBook(borrowerName: string) -> bool {
+        if (this.available) {
+            this.available = false
+            this.borrower = borrowerName
+            return true
+        }
+        return false
+    }
+    
+    fn returnBook() {
+        this.available = true
+        this.borrower = ""
+    }
+    
+    fn getStatus() -> string {
+        if (this.available) {
+            return "Available"
+        } else {
+            return "Borrowed by " + this.borrower
+        }
+    }
+    
+    fn displayInfo() {
+        println("ISBN: " + this.isbn)
+        println("Title: " + this.title)
+        println("Author: " + this.author)
+        println("Status: " + this.getStatus())
+    }
+}
+
+# Create books
+let book1 = new LibraryBook()
+book1.isbn = "978-0-061-96436-7"
+book1.title = "To Kill a Mockingbird"
+book1.author = "Harper Lee"
+
+let book2 = new LibraryBook()
+book2.isbn = "978-0-451-52493-5"
+book2.title = "1984"
+book2.author = "George Orwell"
+
+# Simulate library operations
+println("Initial Status:")
+book1.displayInfo()
+println()
+
+println("Alice borrows the book:")
+if (book1.borrowBook("Alice")) {
+    println("Success!")
+    book1.displayInfo()
+}
+println()
+
+println("Bob tries to borrow the same book:")
+if (!book1.borrowBook("Bob")) {
+    println("Failed - book is not available")
+    book1.displayInfo()
+}
+println()
+
+println("Alice returns the book:")
+book1.returnBook()
+book1.displayInfo()
+println()
+
+# ============================================
+# Example 3: Shopping Cart
+# ============================================
+println("Example 3: Shopping Cart System")
+println("-" * 40)
+
+class CartItem {
+    let name: string = ""
+    let price: float = 0.0
+    let quantity: int = 1
+    
+    fn getSubtotal() -> float {
+        return this.price * float(this.quantity)
+    }
+    
+    fn displayItem() {
+        println("  " + this.name + " x" + str(this.quantity) + " @ $" + str(this.price) + " = $" + str(this.getSubtotal()))
+    }
+}
+
+# Create cart items
+let item1 = new CartItem()
+item1.name = "Laptop"
+item1.price = 999.99
+item1.quantity = 1
+
+let item2 = new CartItem()
+item2.name = "Mouse"
+item2.price = 29.99
+item2.quantity = 2
+
+let item3 = new CartItem()
+item3.name = "USB Cable"
+item3.price = 9.99
+item3.quantity = 3
+
+# Display cart
+println("Shopping Cart:")
+item1.displayItem()
+item2.displayItem()
+item3.displayItem()
+
+let total = item1.getSubtotal() + item2.getSubtotal() + item3.getSubtotal()
+println("Total: $" + str(total))
+println()
+
+# ============================================
+# Example 4: User Profile
+# ============================================
+println("Example 4: User Profile System")
+println("-" * 40)
+
+class UserProfile {
+    let username: string = ""
+    let email: string = ""
+    let age: int = 0
+    let country: string = ""
+    let verified: bool = false
+    
+    fn displayProfile() {
+        println("Profile Information:")
+        println("  Username: " + this.username)
+        println("  Email: " + this.email)
+        println("  Age: " + str(this.age))
+        println("  Country: " + this.country)
+        println("  Verified: " + (this.verified ? "Yes" : "No"))
+    }
+    
+    fn verify() {
+        this.verified = true
+    }
+    
+    fn isAdult() -> bool {
+        return this.age >= 18
+    }
+}
+
+# Create user profile
+let user = new UserProfile()
+user.username = "johndoe"
+user.email = "john@example.com"
+user.age = 25
+user.country = "USA"
+
+println("Before verification:")
+user.displayProfile()
+println("Is adult: " + str(user.isAdult()))
+println()
+
+println("After verification:")
+user.verify()
+user.displayProfile()
+println()
+
+# ============================================
+# Example 5: Temperature Monitor
+# ============================================
+println("Example 5: Temperature Monitor")
+println("-" * 40)
+
+class TemperatureReading {
+    let location: string = ""
+    let celsius: float = 0.0
+    let timestamp: string = ""
+    
+    fn toFahrenheit() -> float {
+        return (this.celsius * 9.0 / 5.0) + 32.0
+    }
+    
+    fn toKelvin() -> float {
+        return this.celsius + 273.15
+    }
+    
+    fn getStatus() -> string {
+        if (this.celsius < 0.0) {
+            return "Freezing"
+        } else if (this.celsius < 10.0) {
+            return "Cold"
+        } else if (this.celsius < 20.0) {
+            return "Cool"
+        } else if (this.celsius < 30.0) {
+            return "Warm"
+        } else {
+            return "Hot"
+        }
+    }
+    
+    fn displayReading() {
+        println("Location: " + this.location)
+        println("Time: " + this.timestamp)
+        println("Temperature: " + str(this.celsius) + "°C (" + str(this.toFahrenheit()) + "°F)")
+        println("Status: " + this.getStatus())
+    }
+}
+
+# Create temperature readings
+let reading1 = new TemperatureReading()
+reading1.location = "New York"
+reading1.celsius = 22.5
+reading1.timestamp = "2024-03-25 10:00"
+
+let reading2 = new TemperatureReading()
+reading2.location = "Alaska"
+reading2.celsius = -5.0
+reading2.timestamp = "2024-03-25 10:00"
+
+let reading3 = new TemperatureReading()
+reading3.location = "Dubai"
+reading3.celsius = 38.0
+reading3.timestamp = "2024-03-25 10:00"
+
+println("Reading 1:")
+reading1.displayReading()
+println()
+
+println("Reading 2:")
+reading2.displayReading()
+println()
+
+println("Reading 3:")
+reading3.displayReading()
+println()
+
+# ============================================
+# Example 6: Game Character
+# ============================================
+println("Example 6: Game Character")
+println("-" * 40)
+
+class GameCharacter {
+    let name: string = ""
+    let health: int = 100
+    let level: int = 1
+    let experience: int = 0
+    
+    fn takeDamage(damage: int) {
+        this.health = this.health - damage
+        if (this.health < 0) {
+            this.health = 0
+        }
+    }
+    
+    fn heal(amount: int) {
+        this.health = this.health + amount
+        if (this.health > 100) {
+            this.health = 100
+        }
+    }
+    
+    fn gainExperience(xp: int) {
+        this.experience = this.experience + xp
+        
+        # Check for level up (100 XP per level)
+        while (this.experience >= 100) {
+            this.experience = this.experience - 100
+            this.level = this.level + 1
+            println(this.name + " leveled up to level " + str(this.level) + "!")
+        }
+    }
+    
+    fn isAlive() -> bool {
+        return this.health > 0
+    }
+    
+    fn displayStats() {
+        println("Character: " + this.name)
+        println("  Level: " + str(this.level))
+        println("  Health: " + str(this.health) + "/100")
+        println("  Experience: " + str(this.experience) + "/100")
+        println("  Status: " + (this.isAlive() ? "Alive" : "Dead"))
+    }
+}
+
+# Create character
+let hero = new GameCharacter()
+hero.name = "Knight"
+
+println("Initial stats:")
+hero.displayStats()
+println()
+
+println("After taking 30 damage:")
+hero.takeDamage(30)
+hero.displayStats()
+println()
+
+println("After healing 20 HP:")
+hero.heal(20)
+hero.displayStats()
+println()
+
+println("After gaining 150 XP:")
+hero.gainExperience(150)
+hero.displayStats()
+println()
+
+# ============================================
+# Summary
+# ============================================
+println("=" * 60)
+println("Examples Complete!")
+println("=" * 60)
+println()
+println("These examples demonstrate:")
+println("- Student Management (grades, status)")
+println("- Library System (borrowing, availability)")
+println("- Shopping Cart (items, totals)")
+println("- User Profiles (verification, validation)")
+println("- Temperature Monitoring (conversions, status)")
+println("- Game Characters (health, leveling)")
+println()
+println("All examples show practical uses of classes and objects!")
