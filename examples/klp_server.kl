@@ -1,0 +1,103 @@
+// KLP Server Example in KLang
+// Demonstrates using KLP protocol from KLang scripts
+//
+// Note: This is the target API we're working towards.
+// The runtime integration is partially complete.
+
+// Import KLP module (future syntax)
+// import klp
+
+// For now, we'll document the intended API:
+
+/*
+// Create KLP server on port 9000
+let server = klp.server(9000)
+
+// Register echo route
+server.route("/echo", fn(stream) {
+    println("Client connected to /echo")
+    let data = stream.read()
+    println("Received:", data)
+    stream.write("Echo: " + data)
+})
+
+// Register data processing route
+server.route("/process", fn(stream) {
+    println("Client connected to /process")
+    let data = stream.read()
+    
+    // Process data
+    let result = "Processed: " + data.toUpper()
+    
+    stream.write(result)
+})
+
+// Register AI tensor route (future)
+server.route("/predict", fn(stream) {
+    println("Client connected to /predict")
+    
+    // Read tensor from client
+    let tensor = stream.readTensor()
+    println("Received tensor with shape:", tensor.shape)
+    
+    // Run inference (hypothetical)
+    let prediction = model.predict(tensor)
+    
+    // Send result back
+    stream.writeTensor(prediction)
+})
+
+// Async route example (future)
+server.route("/async", async fn(stream) {
+    let data = await stream.readAsync()
+    await asyncProcess(data)
+    stream.write("Done")
+})
+
+// Start server
+println("Starting KLP server on port 9000...")
+server.start()
+
+println("KLP Server running!")
+println("Available endpoints:")
+println("  - /echo     : Echo server")
+println("  - /process  : Data processing")
+println("  - /predict  : AI inference")
+println("  - /async    : Async processing")
+println("")
+println("Press Ctrl+C to stop")
+
+// Keep running (server runs in background thread)
+while true {
+    // Could add server statistics here
+    sleep(1000)
+}
+*/
+
+// Current implementation status:
+println("KLP Protocol - Phase 2 Implementation")
+println("=====================================")
+println("")
+println("✅ Core protocol (Phase 1)")
+println("✅ Binary framing")
+println("✅ Stream multiplexing")
+println("✅ Server implementation")
+println("✅ Client implementation")
+println("")
+println("⏳ Runtime integration (Phase 2)")
+println("  - KLP module bindings created")
+println("  - Server API functions implemented")
+println("  - Client API functions implemented")
+println("  - Stream I/O functions implemented")
+println("  - Tensor streaming (partial)")
+println("")
+println("📋 Next steps:")
+println("  - Complete runtime registration")
+println("  - Add proper error handling")
+println("  - Implement async/await integration")
+println("  - Add performance optimizations")
+println("  - Create comprehensive tests")
+println("")
+println("To test KLP protocol, use C examples:")
+println("  ./examples/klp_echo_server 9000")
+println("  ./examples/klp_test_client 127.0.0.1 9000")

@@ -70,6 +70,9 @@ println(analysis)
 <td>
 
 ### 🔧 Built-in Features
+- **HTTP Server**: Built-in web server with routing
+- **Hot Reload**: Development mode with auto-reload
+- **Build Modes**: Debug, dev, release, production
 - HTTP/HTTPS client
 - File I/O operations
 - Environment variables
@@ -81,7 +84,10 @@ println(analysis)
 <td>
 
 ### 🚀 Performance
-- Multi-tier execution
+- **Multi-tier execution**: Interpreter → VM → LLVM
+- **Optimization levels**: O0, O1, O2, O3
+- **Link-time optimization** (LTO)
+- **C/C++ compatibility**: Pointers, manual memory
 - Interpreter for quick iterations
 - VM for optimized bytecode
 - LLVM JIT for native speed
@@ -282,11 +288,87 @@ More examples in [`examples/`](examples/) directory.
 
 ---
 
+## 🆕 New Features (v1.1)
+
+### Built-in HTTP Server
+
+Start a web server instantly:
+
+```bash
+# Serve current directory
+klang serve
+
+# Custom port and directory
+klang serve --port=3000 --dir=./public
+
+# Development mode with hot reload
+klang serve --mode=dev --hot-reload
+```
+
+Create APIs in KLang:
+
+```klang
+import http from "stdlib/net"
+
+let server = http.createServer(3000)
+
+server.get("/api/hello", (req, res) => {
+    res.json({message: "Hello from KLang!"})
+})
+
+server.start()
+```
+
+### Build Modes & Optimization
+
+Optimize for different environments:
+
+```bash
+# Development (fast compile, hot reload)
+klang compile --mode=dev app.kl
+
+# Production (max performance)
+klang compile --mode=production --lto app.kl
+
+# Custom optimization
+klang compile --opt=O3 --lto --strip app.kl
+
+# Check configuration
+klang config
+```
+
+### C/C++ Compatibility
+
+Access low-level features when needed:
+
+```bash
+export KLANG_ENABLE_POINTERS=1
+export KLANG_ENABLE_MANUAL_MEMORY=1
+```
+
+```klang
+# Pointers and manual memory management
+let ptr = malloc(sizeof(int) * 100)
+ptr[0] = 42
+free(ptr)
+
+# Bitwise operations
+let flags = 0b1010 & 0b1100  # AND
+let shifted = flags << 2      # Left shift
+```
+
+See [Build Modes Guide](docs/BUILD_MODES.md), [HTTP Server Guide](docs/HTTP_SERVER.md), and [C/C++ Features](docs/C_CPP_FEATURES.md) for details.
+
+---
+
 ## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
 | [User Guide](docs/USER_GUIDE.md) | **Start here!** Installation, basics, and tutorials |
+| [Build Modes](docs/BUILD_MODES.md) | **NEW!** Build modes and optimization guide |
+| [HTTP Server](docs/HTTP_SERVER.md) | **NEW!** Built-in web server documentation |
+| [C/C++ Features](docs/C_CPP_FEATURES.md) | **NEW!** Low-level programming features |
 | [API Reference](docs/API_REFERENCE.md) | Complete API with all functions and methods |
 | [AI Native Guide](docs/AI_NATIVE_GUIDE.md) | Deep dive into AI features |
 | [Architecture](docs/architecture/ARCHITECTURE.md) | Technical design and internals |

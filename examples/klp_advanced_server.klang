@@ -1,0 +1,115 @@
+// KLP Advanced Server - Demonstrates advanced features
+// Including multiplexing, streaming, and error handling
+
+let server = klp.server(9001)
+
+// Streaming data example - Process large data in chunks
+server.route("/stream", fn(stream) {
+    print("Client connected to /stream")
+    
+    let total_chunks = 0
+    let total_bytes = 0
+    
+    // Read chunks until done
+    while true {
+        let chunk = stream.read()
+        
+        if chunk == "EOF" {
+            break
+        }
+        
+        total_chunks = total_chunks + 1
+        total_bytes = total_bytes + len(chunk)
+        
+        // Process chunk (in real app: write to file, analyze, etc.)
+        print("Received chunk " + total_chunks + " (" + len(chunk) + " bytes)")
+    }
+    
+    // Send summary
+    let summary = "Received " + total_chunks + " chunks, " + total_bytes + " bytes total"
+    stream.write(summary)
+    print("Stream processing complete")
+})
+
+// JSON-like data processing
+server.route("/json", fn(stream) {
+    print("Client connected to /json")
+    
+    // In a real implementation, you would parse JSON
+    // This is a simplified example
+    let data = stream.read()
+    
+    // Echo back with metadata
+    stream.write("Received data: " + data)
+    stream.write("Data length: " + len(data))
+})
+
+// Concurrent request handling
+server.route("/concurrent", fn(stream) {
+    print("Client connected to /concurrent (thread-safe)")
+    
+    let client_id = stream.read()
+    
+    // Simulate some processing time
+    let start_time = time()
+    let computation = 0
+    let i = 0
+    while i < 1000000 {
+        computation = computation + i
+        i = i + 1
+    }
+    let end_time = time()
+    
+    let response = "Client " + client_id + " processed in " + (end_time - start_time) + "ms"
+    stream.write(response)
+})
+
+// Error handling example
+server.route("/divide", fn(stream) {
+    print("Client connected to /divide")
+    
+    let numerator = stream.read()
+    let denominator = stream.read()
+    
+    if denominator == 0 {
+        stream.write("ERROR")
+        stream.write("Division by zero not allowed")
+    } else {
+        let result = numerator / denominator
+        stream.write("SUCCESS")
+        stream.write(result)
+    }
+})
+
+// Binary data handling (for AI/ML workloads)
+server.route("/tensor", fn(stream) {
+    print("Client connected to /tensor")
+    
+    // In production, this would use stream.write_tensor()
+    // and stream.read_tensor() for efficient binary transfer
+    
+    let tensor_size = stream.read()
+    print("Receiving tensor of size: " + tensor_size)
+    
+    // Acknowledge receipt
+    stream.write("Tensor received successfully")
+    stream.write("Size: " + tensor_size)
+})
+
+print("Advanced KLP Server starting on port 9001...")
+print("Available advanced routes:")
+print("  /stream - Streaming data processing")
+print("  /json - JSON-like data handling")
+print("  /concurrent - Concurrent request handling")
+print("  /divide - Error handling demonstration")
+print("  /tensor - Binary tensor data (AI/ML)")
+print("")
+print("Server supports:")
+print("  ✓ Multiplexing (multiple concurrent connections)")
+print("  ✓ Compression (gzip/zstd)")
+print("  ✓ Flow control")
+print("  ✓ Binary and text data")
+print("")
+print("Press Ctrl+C to stop")
+
+server.start()

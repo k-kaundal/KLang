@@ -388,6 +388,70 @@ ASTNode *ast_new_destructure_element(const char *name, const char *key, ASTNode 
     return n;
 }
 
+/* Pointer operation constructors (C/C++ compatibility) */
+ASTNode *ast_new_address_of(ASTNode *operand, int line) {
+    ASTNode *n = ast_alloc(NODE_ADDRESS_OF, line);
+    n->data.address_of.operand = operand;
+    return n;
+}
+
+ASTNode *ast_new_dereference(ASTNode *operand, int line) {
+    ASTNode *n = ast_alloc(NODE_DEREFERENCE, line);
+    n->data.dereference.operand = operand;
+    return n;
+}
+
+ASTNode *ast_new_pointer_member(ASTNode *ptr, const char *member, int line) {
+    ASTNode *n = ast_alloc(NODE_POINTER_MEMBER, line);
+    n->data.pointer_member.ptr = ptr;
+    n->data.pointer_member.member = member ? strdup(member) : NULL;
+    return n;
+}
+
+/* Struct/Union constructors (C/C++ compatibility) */
+ASTNode *ast_new_struct_def(const char *name, int is_union, int line) {
+    ASTNode *n = ast_alloc(is_union ? NODE_UNION_DEF : NODE_STRUCT_DEF, line);
+    n->data.struct_def.name = name ? strdup(name) : NULL;
+    n->data.struct_def.fields = NULL;
+    n->data.struct_def.field_count = 0;
+    n->data.struct_def.is_union = is_union;
+    return n;
+}
+
+void ast_struct_add_field(ASTNode *struct_node, const char *field_name, const char *field_type, ASTNode *default_value) {
+    if (!struct_node || (struct_node->type != NODE_STRUCT_DEF && struct_node->type != NODE_UNION_DEF)) return;
+    
+    int count = struct_node->data.struct_def.field_count;
+    struct_node->data.struct_def.fields = realloc(struct_node->data.struct_def.fields, 
+                                                   (count + 1) * sizeof(StructField));
+    struct_node->data.struct_def.fields[count].name = field_name ? strdup(field_name) : NULL;
+    struct_node->data.struct_def.fields[count].type = field_type ? strdup(field_type) : NULL;
+    struct_node->data.struct_def.fields[count].default_value = default_value;
+    struct_node->data.struct_def.field_count++;
+}
+
+ASTNode *ast_new_struct_literal(const char *struct_name, int line) {
+    ASTNode *n = ast_alloc(NODE_STRUCT_LITERAL, line);
+    n->data.struct_literal.struct_name = struct_name ? strdup(struct_name) : NULL;
+    n->data.struct_literal.fields = NULL;
+    n->data.struct_literal.field_count = 0;
+    return n;
+}
+
+void ast_struct_literal_add_field(ASTNode *literal, const char *field_name, ASTNode *value) {
+    if (!literal || literal->type != NODE_STRUCT_LITERAL) return;
+    
+    int count = literal->data.struct_literal.field_count;
+    literal->data.struct_literal.fields = realloc(literal->data.struct_literal.fields,
+                                                   (count + 1) * sizeof(ObjectProperty));
+    literal->data.struct_literal.fields[count].key = field_name ? strdup(field_name) : NULL;
+    literal->data.struct_literal.fields[count].key_expr = NULL;
+    literal->data.struct_literal.fields[count].value = value;
+    literal->data.struct_literal.fields[count].is_shorthand = 0;
+    literal->data.struct_literal.fields[count].is_method = 0;
+    literal->data.struct_literal.field_count++;
+}
+
 
 void ast_free(ASTNode *node) {
     int i;
@@ -630,6 +694,46 @@ void ast_free(ASTNode *node) {
             break;
         case NODE_THROW:
             ast_free(node->data.throw_stmt.expression);
+            break;
+        case NODE_ADDRESS_OF:
+            ast_free(node->data.address_of.operand);
+            break;
+        case NODE_DEREFERENCE:
+            ast_free(node->data.dereference.operand);
+            break;
+        case NODE_POINTER_MEMBER:
+            ast_free(node->data.pointer_member.ptr);
+            if (node->data.pointer_member.member)
+                free(node->data.pointer_member.member);
+            break;
+        case NODE_STRUCT_DEF:
+        case NODE_UNION_DEF:
+            if (node->data.struct_def.name)
+                free(node->data.struct_def.name);
+            if (node->data.struct_def.fields) {
+                for (i = 0; i < node->data.struct_def.field_count; i++) {
+                    if (node->data.struct_def.fields[i].name)
+                        free(node->data.struct_def.fields[i].name);
+                    if (node->data.struct_def.fields[i].type)
+                        free(node->data.struct_def.fields[i].type);
+                    if (node->data.struct_def.fields[i].default_value)
+                        ast_free(node->data.struct_def.fields[i].default_value);
+                }
+                free(node->data.struct_def.fields);
+            }
+            break;
+        case NODE_STRUCT_LITERAL:
+            if (node->data.struct_literal.struct_name)
+                free(node->data.struct_literal.struct_name);
+            if (node->data.struct_literal.fields) {
+                for (i = 0; i < node->data.struct_literal.field_count; i++) {
+                    if (node->data.struct_literal.fields[i].key)
+                        free(node->data.struct_literal.fields[i].key);
+                    if (node->data.struct_literal.fields[i].value)
+                        ast_free(node->data.struct_literal.fields[i].value);
+                }
+                free(node->data.struct_literal.fields);
+            }
             break;
         default:
             break;

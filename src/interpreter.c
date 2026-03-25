@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdint.h>
 
 static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env);
 
@@ -26,6 +27,8 @@ static void value_retain(Value *v) {
         v->as.dict_val->ref_count++;
     } else if (v->type == VAL_SET && v->as.set_val) {
         v->as.set_val->ref_count++;
+    } else if (v->type == VAL_STRUCT && v->as.struct_val) {
+        v->as.struct_val->ref_count++;
     }
 }
 
@@ -418,6 +421,26 @@ Value make_set(void) {
     return val;
 }
 
+Value make_pointer(void *ptr, const char *type_name) {
+    Value val;
+    val.type = VAL_POINTER;
+    val.as.pointer_val.ptr = ptr;
+    val.as.pointer_val.type_name = type_name ? strdup(type_name) : NULL;
+    return val;
+}
+
+Value make_struct(const char *struct_name, int is_union) {
+    Value val;
+    StructVal *sv = malloc(sizeof(StructVal));
+    val.type = VAL_STRUCT;
+    sv->struct_name = struct_name ? strdup(struct_name) : NULL;
+    sv->fields = env_new(NULL);
+    sv->is_union = is_union;
+    sv->ref_count = 1;
+    val.as.struct_val = sv;
+    return val;
+}
+
 Value make_generator(FunctionVal *func, Env *env) {
     Value v;
     v.type = VAL_GENERATOR;
@@ -605,6 +628,29 @@ void value_free(Value *v) {
             }
             v->as.set_val = NULL;
         }
+    }
+    if (v->type == VAL_POINTER) {
+        /* Free type name if allocated */
+        if (v->as.pointer_val.type_name) {
+            free(v->as.pointer_val.type_name);
+            v->as.pointer_val.type_name = NULL;
+        }
+        /* Note: We don't free the pointer itself as we don't own it */
+        v->as.pointer_val.ptr = NULL;
+    }
+    if (v->type == VAL_STRUCT && v->as.struct_val) {
+        /* Decrement reference count and free only when it reaches 0 */
+        v->as.struct_val->ref_count--;
+        if (v->as.struct_val->ref_count <= 0) {
+            if (v->as.struct_val->struct_name) {
+                free(v->as.struct_val->struct_name);
+            }
+            if (v->as.struct_val->fields) {
+                env_free(v->as.struct_val->fields);
+            }
+            free(v->as.struct_val);
+        }
+        v->as.struct_val = NULL;
     }
 }
 
@@ -794,6 +840,27 @@ char *value_to_string(Value *v) {
             free(item_strs);
             return result;
         }
+        case VAL_POINTER: {
+            // Print pointer with address and optional type
+            if (v->as.pointer_val.type_name) {
+                snprintf(buf, sizeof(buf), "*%s<%p>", 
+                    v->as.pointer_val.type_name, 
+                    v->as.pointer_val.ptr);
+            } else {
+                snprintf(buf, sizeof(buf), "<pointer %p>", v->as.pointer_val.ptr);
+            }
+            return strdup(buf);
+        }
+        case VAL_STRUCT: {
+            // Print struct/union with type name and fields
+            if (!v->as.struct_val) {
+                return strdup("struct(<freed>)");
+            }
+            snprintf(buf, sizeof(buf), "%s %s { ... }", 
+                v->as.struct_val->is_union ? "union" : "struct",
+                v->as.struct_val->struct_name ? v->as.struct_val->struct_name : "?");
+            return strdup(buf);
+        }
         default:
             return strdup("<unknown>");
     }
@@ -955,6 +1022,9 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 v->as.object_val->ref_count++;
                 REFCOUNT_LOG("NODE_IDENT: ptr=%p ref_count=%d (after increment)", 
                              (void*)v->as.object_val, v->as.object_val->ref_count);
+            }
+            if (v->type == VAL_STRUCT && v->as.struct_val) {
+                v->as.struct_val->ref_count++;
             }
             if (v->type == VAL_FUNCTION) {
                 Value copy = *v;
@@ -2791,6 +2861,30 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                             node->line, node->data.member_access.member);
                     interp->had_error = 1;
                 }
+            } else if (obj.type == VAL_STRUCT) {
+                // Access to struct/union fields
+                if (!obj.as.struct_val || !obj.as.struct_val->fields) {
+                    fprintf(stderr, "Error at line %d: attempting to access field on invalid struct\n", node->line);
+                    interp->had_error = 1;
+                    value_free(&obj);
+                    return make_null();
+                }
+                
+                Value *field = env_get(obj.as.struct_val->fields, node->data.member_access.member);
+                if (field) {
+                    if (field->type == VAL_STRING) {
+                        result = make_string(field->as.str_val);
+                    } else {
+                        result = *field;
+                        value_retain(&result);
+                    }
+                } else {
+                    fprintf(stderr, "Error at line %d: struct '%s' has no field '%s'\n",
+                            node->line, 
+                            obj.as.struct_val->struct_name ? obj.as.struct_val->struct_name : "?",
+                            node->data.member_access.member);
+                    interp->had_error = 1;
+                }
             }
             
             // Free obj to properly decrement reference counts
@@ -3195,6 +3289,165 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             
             /* Otherwise return left */
             return left;
+        }
+        
+        case NODE_ADDRESS_OF: {
+            /* Handle address-of operator &variable */
+            ASTNode *operand = node->data.address_of.operand;
+            
+            /* For now, we can only take the address of identifiers */
+            if (operand->type == NODE_IDENT) {
+                Value *var_ref = env_get(env, operand->data.ident.name);
+                if (!var_ref) {
+                    fprintf(stderr, "Error at line %d: undefined variable '%s'\n", 
+                        node->line, operand->data.ident.name);
+                    interp->had_error = 1;
+                    return make_null();
+                }
+                /* Return a pointer to the variable's value */
+                return make_pointer((void*)var_ref, NULL);
+            } else {
+                fprintf(stderr, "Error at line %d: address-of operator requires a variable\n", node->line);
+                interp->had_error = 1;
+                return make_null();
+            }
+        }
+        
+        case NODE_DEREFERENCE: {
+            /* Handle dereference operator *pointer */
+            Value ptr_val = eval_node_env(interp, node->data.dereference.operand, env);
+            
+            if (ptr_val.type == VAL_POINTER) {
+                /* Dereference the pointer to get the value */
+                Value *pointed_value = (Value*)ptr_val.as.pointer_val.ptr;
+                
+                /* Make a copy of the pointed-to value */
+                Value result;
+                if (pointed_value->type == VAL_STRING) {
+                    result = make_string(pointed_value->as.str_val);
+                } else {
+                    result = *pointed_value;
+                    value_retain(&result);
+                }
+                value_free(&ptr_val);
+                return result;
+            } else if (ptr_val.type == VAL_INT) {
+                /* Handle pointers stored as integers (from malloc) */
+                void *ptr = (void*)(uintptr_t)ptr_val.as.int_val;
+                if (!ptr) {
+                    fprintf(stderr, "Error at line %d: attempt to dereference null pointer\n", node->line);
+                    interp->had_error = 1;
+                    value_free(&ptr_val);
+                    return make_null();
+                }
+                /* For raw pointers, we can't safely dereference without type info */
+                fprintf(stderr, "Error at line %d: cannot dereference raw pointer without type information\n", node->line);
+                interp->had_error = 1;
+                value_free(&ptr_val);
+                return make_null();
+            } else {
+                fprintf(stderr, "Error at line %d: dereference operator requires a pointer\n", node->line);
+                interp->had_error = 1;
+                value_free(&ptr_val);
+                return make_null();
+            }
+        }
+        
+        case NODE_POINTER_MEMBER: {
+            /* Handle ptr->member (equivalent to (*ptr).member) */
+            Value ptr_val = eval_node_env(interp, node->data.pointer_member.ptr, env);
+            
+            if (ptr_val.type == VAL_POINTER) {
+                /* Dereference the pointer */
+                Value *pointed_value = (Value*)ptr_val.as.pointer_val.ptr;
+                
+                /* Access the member */
+                if (pointed_value->type == VAL_OBJECT) {
+                    const char *member = node->data.pointer_member.member;
+                    Value *field = env_get(pointed_value->as.object_val->fields, member);
+                    if (field) {
+                        Value result = *field;
+                        value_retain(&result);
+                        value_free(&ptr_val);
+                        return result;
+                    } else {
+                        fprintf(stderr, "Error at line %d: object has no member '%s'\n", 
+                            node->line, member);
+                        interp->had_error = 1;
+                        value_free(&ptr_val);
+                        return make_null();
+                    }
+                } else if (pointed_value->type == VAL_STRUCT) {
+                    /* Access struct member through pointer */
+                    const char *member = node->data.pointer_member.member;
+                    if (!pointed_value->as.struct_val || !pointed_value->as.struct_val->fields) {
+                        fprintf(stderr, "Error at line %d: invalid struct pointer\n", node->line);
+                        interp->had_error = 1;
+                        value_free(&ptr_val);
+                        return make_null();
+                    }
+                    Value *field = env_get(pointed_value->as.struct_val->fields, member);
+                    if (field) {
+                        Value result = *field;
+                        value_retain(&result);
+                        value_free(&ptr_val);
+                        return result;
+                    } else {
+                        fprintf(stderr, "Error at line %d: struct '%s' has no field '%s'\n", 
+                            node->line,
+                            pointed_value->as.struct_val->struct_name ? pointed_value->as.struct_val->struct_name : "?",
+                            member);
+                        interp->had_error = 1;
+                        value_free(&ptr_val);
+                        return make_null();
+                    }
+                } else {
+                    fprintf(stderr, "Error at line %d: pointer member access requires object or struct pointer\n", node->line);
+                    interp->had_error = 1;
+                    value_free(&ptr_val);
+                    return make_null();
+                }
+            } else {
+                fprintf(stderr, "Error at line %d: arrow operator requires a pointer\n", node->line);
+                interp->had_error = 1;
+                value_free(&ptr_val);
+                return make_null();
+            }
+        }
+        
+        case NODE_STRUCT_DEF:
+        case NODE_UNION_DEF: {
+            /* Store struct/union definition in environment as a type */
+            /* For now, we'll store the AST node itself as metadata */
+            /* In a full implementation, we'd have a type system */
+            char *struct_name = node->data.struct_def.name;
+            if (struct_name) {
+                /* Register the struct type - store type info in a special way */
+                /* For simplicity, just store as a marker in env for now */
+                Value type_marker = make_null();  /* Placeholder for type info */
+                env_set(env, struct_name, type_marker);
+            }
+            return make_null();
+        }
+        
+        case NODE_STRUCT_LITERAL: {
+            /* Create struct instance from literal */
+            char *struct_name = node->data.struct_literal.struct_name;
+            int is_union = 0;  /* TODO: Determine if it's a union based on type info */
+            Value struct_val = make_struct(struct_name, is_union);
+            
+            /* Initialize fields */
+            for (int i = 0; i < node->data.struct_literal.field_count; i++) {
+                char *field_name = node->data.struct_literal.fields[i].key;
+                ASTNode *field_value_node = node->data.struct_literal.fields[i].value;
+                
+                if (field_name && field_value_node) {
+                    Value field_value = eval_node_env(interp, field_value_node, env);
+                    env_set(struct_val.as.struct_val->fields, field_name, field_value);
+                }
+            }
+            
+            return struct_val;
         }
         
         default:

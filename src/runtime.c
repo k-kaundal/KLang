@@ -1,10 +1,17 @@
 #include "runtime.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stdint.h>
 #ifndef _WIN32
 #include <regex.h>
+#endif
+
+/* KLP Protocol Support */
+#ifdef ENABLE_KLP
+#include "klp_runtime.h"
 #endif
 
 /* Forward declarations for helper functions */
@@ -2986,6 +2993,281 @@ static Value builtin_json_parse_stream(Interpreter *interp, Value *args, int arg
     return make_null();
 }
 
+
+/* Memory Management Functions (C/C++ Compatibility) */
+
+/* Memory allocation tracker for debug mode */
+typedef struct MemoryBlock {
+    void *ptr;
+    size_t size;
+    const char *file;
+    int line;
+    struct MemoryBlock *next;
+} MemoryBlock;
+
+static MemoryBlock *memory_tracker_head = NULL;
+static size_t total_allocated = 0;
+static size_t total_deallocated = 0;
+
+/* Track allocated memory in debug mode */
+static void track_allocation(void *ptr, size_t size) {
+    Config *cfg = config_get();
+    if (!cfg || !cfg->debug_mode) return;
+    
+    MemoryBlock *block = (MemoryBlock*)malloc(sizeof(MemoryBlock));
+    if (!block) return;
+    
+    block->ptr = ptr;
+    block->size = size;
+    block->file = "runtime";
+    block->line = 0;
+    block->next = memory_tracker_head;
+    memory_tracker_head = block;
+    total_allocated += size;
+}
+
+/* Remove tracking for deallocated memory */
+static void track_deallocation(void *ptr) {
+    Config *cfg = config_get();
+    if (!cfg || !cfg->debug_mode) return;
+    
+    MemoryBlock *prev = NULL;
+    MemoryBlock *curr = memory_tracker_head;
+    
+    while (curr) {
+        if (curr->ptr == ptr) {
+            if (prev) {
+                prev->next = curr->next;
+            } else {
+                memory_tracker_head = curr->next;
+            }
+            total_deallocated += curr->size;
+            free(curr);
+            return;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+}
+
+/* builtin malloc(size) - Allocate memory */
+static Value builtin_malloc(Interpreter *interp, Value *args, int argc) {
+    Config *cfg = config_get();
+    (void)interp;
+    
+    if (!cfg || !cfg->enable_manual_memory) {
+        fprintf(stderr, "Error: Manual memory management is disabled. Set KLANG_ENABLE_MANUAL_MEMORY=1\n");
+        return make_null();
+    }
+    
+    if (argc < 1) {
+        fprintf(stderr, "Error: malloc() requires size argument\n");
+        return make_null();
+    }
+    
+    if (args[0].type != VAL_INT) {
+        fprintf(stderr, "Error: malloc() size must be an integer\n");
+        return make_null();
+    }
+    
+    size_t size = (size_t)args[0].as.int_val;
+    if (size == 0) {
+        fprintf(stderr, "Warning: malloc(0) returns NULL\n");
+        return make_null();
+    }
+    
+    void *ptr = malloc(size);
+    if (!ptr) {
+        fprintf(stderr, "Error: malloc(%zu) failed - out of memory\n", size);
+        return make_null();
+    }
+    
+    track_allocation(ptr, size);
+    
+    /* Return pointer as integer (address) */
+    /* In a full implementation, we'd have VAL_POINTER type */
+    Value result;
+    result.type = VAL_INT;
+    result.as.int_val = (long long)(uintptr_t)ptr;
+    return result;
+}
+
+/* builtin calloc(nmemb, size) - Allocate and zero-initialize memory */
+static Value builtin_calloc(Interpreter *interp, Value *args, int argc) {
+    Config *cfg = config_get();
+    (void)interp;
+    
+    if (!cfg || !cfg->enable_manual_memory) {
+        fprintf(stderr, "Error: Manual memory management is disabled. Set KLANG_ENABLE_MANUAL_MEMORY=1\n");
+        return make_null();
+    }
+    
+    if (argc < 2) {
+        fprintf(stderr, "Error: calloc() requires nmemb and size arguments\n");
+        return make_null();
+    }
+    
+    if (args[0].type != VAL_INT || args[1].type != VAL_INT) {
+        fprintf(stderr, "Error: calloc() arguments must be integers\n");
+        return make_null();
+    }
+    
+    size_t nmemb = (size_t)args[0].as.int_val;
+    size_t size = (size_t)args[1].as.int_val;
+    
+    void *ptr = calloc(nmemb, size);
+    if (!ptr && (nmemb * size) > 0) {
+        fprintf(stderr, "Error: calloc(%zu, %zu) failed - out of memory\n", nmemb, size);
+        return make_null();
+    }
+    
+    if (ptr) {
+        track_allocation(ptr, nmemb * size);
+    }
+    
+    Value result;
+    result.type = VAL_INT;
+    result.as.int_val = (long long)(uintptr_t)ptr;
+    return result;
+}
+
+/* builtin realloc(ptr, size) - Reallocate memory */
+static Value builtin_realloc(Interpreter *interp, Value *args, int argc) {
+    Config *cfg = config_get();
+    Value result;
+    (void)interp;
+    
+    if (!cfg || !cfg->enable_manual_memory) {
+        fprintf(stderr, "Error: Manual memory management is disabled. Set KLANG_ENABLE_MANUAL_MEMORY=1\n");
+        return make_null();
+    }
+    
+    if (argc < 2) {
+        fprintf(stderr, "Error: realloc() requires ptr and size arguments\n");
+        return make_null();
+    }
+    
+    if (args[0].type != VAL_INT || args[1].type != VAL_INT) {
+        fprintf(stderr, "Error: realloc() arguments must be integers\n");
+        return make_null();
+    }
+    
+    void *old_ptr = (void*)(uintptr_t)args[0].as.int_val;
+    size_t new_size = (size_t)args[1].as.int_val;
+    
+    track_deallocation(old_ptr);
+    
+    void *new_ptr = realloc(old_ptr, new_size);
+    if (!new_ptr && new_size > 0) {
+        fprintf(stderr, "Error: realloc(%p, %zu) failed - out of memory\n", old_ptr, new_size);
+        /* Note: old_ptr is still valid if realloc fails */
+        track_allocation(old_ptr, 0); /* Re-track old pointer */
+        result.type = VAL_INT;
+        result.as.int_val = (long long)(uintptr_t)old_ptr;
+        return result;
+    }
+    
+    if (new_ptr) {
+        track_allocation(new_ptr, new_size);
+    }
+    
+    result.type = VAL_INT;
+    result.as.int_val = (long long)(uintptr_t)new_ptr;
+    return result;
+}
+
+/* builtin free(ptr) - Deallocate memory */
+static Value builtin_free(Interpreter *interp, Value *args, int argc) {
+    Config *cfg = config_get();
+    (void)interp;
+    
+    if (!cfg || !cfg->enable_manual_memory) {
+        fprintf(stderr, "Error: Manual memory management is disabled. Set KLANG_ENABLE_MANUAL_MEMORY=1\n");
+        return make_null();
+    }
+    
+    if (argc < 1) {
+        fprintf(stderr, "Error: free() requires ptr argument\n");
+        return make_null();
+    }
+    
+    if (args[0].type != VAL_INT) {
+        fprintf(stderr, "Error: free() ptr must be an integer (pointer address)\n");
+        return make_null();
+    }
+    
+    void *ptr = (void*)(uintptr_t)args[0].as.int_val;
+    
+    if (!ptr) {
+        /* free(NULL) is safe and does nothing */
+        return make_null();
+    }
+    
+    track_deallocation(ptr);
+    free(ptr);
+    
+    return make_null();
+}
+
+/* builtin sizeof(type_or_value) - Get size of type or value */
+static Value builtin_sizeof(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    
+    if (argc < 1) {
+        fprintf(stderr, "Error: sizeof() requires an argument\n");
+        return make_int(0);
+    }
+    
+    /* For now, return sizes based on value type */
+    /* In a full implementation, this would work with type names */
+    switch (args[0].type) {
+        case VAL_INT:
+            return make_int(sizeof(long long));
+        case VAL_FLOAT:
+            return make_int(sizeof(double));
+        case VAL_BOOL:
+            return make_int(sizeof(int));
+        case VAL_STRING:
+            return make_int(args[0].as.str_val ? (long long)strlen(args[0].as.str_val) + 1 : 1);
+        case VAL_LIST:
+            return make_int(sizeof(ListVal) + args[0].as.list_val.capacity * sizeof(Value));
+        default:
+            return make_int(sizeof(Value));
+    }
+}
+
+/* builtin memstat() - Print memory statistics (debug mode) */
+static Value builtin_memstat(Interpreter *interp, Value *args, int argc) {
+    Config *cfg = config_get();
+    (void)interp;
+    (void)args;
+    (void)argc;
+    
+    if (!cfg || !cfg->debug_mode) {
+        fprintf(stderr, "Error: Memory statistics only available in debug mode\n");
+        return make_null();
+    }
+    
+    printf("Memory Statistics:\n");
+    printf("  Total allocated:   %zu bytes\n", total_allocated);
+    printf("  Total deallocated: %zu bytes\n", total_deallocated);
+    printf("  Currently in use:  %zu bytes\n", total_allocated - total_deallocated);
+    
+    if (memory_tracker_head) {
+        printf("\n  Active allocations:\n");
+        MemoryBlock *curr = memory_tracker_head;
+        int count = 0;
+        while (curr) {
+            printf("    %d. %p (%zu bytes)\n", ++count, curr->ptr, curr->size);
+            curr = curr->next;
+        }
+    } else {
+        printf("  No active allocations\n");
+    }
+    
+    return make_null();
+}
+
 void runtime_init(Interpreter *interp) {
     Value v;
     v.type = VAL_BUILTIN;
@@ -3342,6 +3624,45 @@ void runtime_init(Interpreter *interp) {
     v.as.builtin = builtin_Promise_reject;
     env_set_local(promise_class.as.class_val.static_methods, "reject", v);
     env_set_local(interp->global_env, "Promise", promise_class);
+    
+    /* Manual Memory Management Functions (C/C++ Compatibility) */
+    v.as.builtin = builtin_malloc;
+    env_set_local(interp->global_env, "malloc", v);
+    
+    v.as.builtin = builtin_calloc;
+    env_set_local(interp->global_env, "calloc", v);
+    
+    v.as.builtin = builtin_realloc;
+    env_set_local(interp->global_env, "realloc", v);
+    
+    v.as.builtin = builtin_free;
+    env_set_local(interp->global_env, "free", v);
+    
+    v.as.builtin = builtin_sizeof;
+    env_set_local(interp->global_env, "sizeof", v);
+    
+    v.as.builtin = builtin_memstat;
+    env_set_local(interp->global_env, "memstat", v);
+    
+    /* KLP Protocol Module */
+#ifdef ENABLE_KLP
+    // Create klp module object
+    Value klp_obj = make_object("KLP", NULL);
+    
+    // Server functions
+    v.as.builtin = builtin_klp_server;
+    env_set_local(klp_obj.as.object_val->fields, "server", v);
+    
+    // Client functions
+    v.as.builtin = builtin_klp_connect;
+    env_set_local(klp_obj.as.object_val->fields, "connect", v);
+    
+    // Add klp module to global namespace
+    env_set_local(interp->global_env, "klp", klp_obj);
+    
+    // Initialize KLP runtime
+    klp_runtime_init(interp);
+#endif
 }
 
 void runtime_free(Interpreter *interp) {

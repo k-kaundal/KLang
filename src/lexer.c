@@ -252,6 +252,9 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "export") == 0) type = TOKEN_EXPORT;
             else if (strcmp(buf, "from") == 0) type = TOKEN_FROM;
             else if (strcmp(buf, "as") == 0) type = TOKEN_AS;
+            else if (strcmp(buf, "struct") == 0) type = TOKEN_STRUCT;
+            else if (strcmp(buf, "union") == 0) type = TOKEN_UNION;
+            else if (strcmp(buf, "typedef") == 0) type = TOKEN_TYPEDEF;
             t.type = type;
             t.value = buf;
             t.line = line;
@@ -367,12 +370,8 @@ Token lexer_next_token(Lexer *lexer) {
                 lexer->pos++; lexer->col++;
                 return make_token(TOKEN_AND_AND, "&&", line, col);
             }
-            // Single & is not supported (bitwise operators not implemented)
-            fprintf(stderr, "Lexer error at line %d, col %d: unexpected character '&' (bitwise operators not supported yet)\n", line, col);
-            {
-                char buf[2] = {c, 0};
-                return make_token(TOKEN_EOF, buf, line, col);
-            }
+            // Single & for address-of operator (pointer support)
+            return make_token(TOKEN_AMP, "&", line, col);
         case '|':
             if (lexer->source[lexer->pos] == '|') {
                 lexer->pos++; lexer->col++;
@@ -444,6 +443,9 @@ const char *token_type_name(TokenType type) {
         case TOKEN_EXPORT: return "EXPORT";
         case TOKEN_FROM: return "FROM";
         case TOKEN_AS: return "AS";
+        case TOKEN_STRUCT: return "STRUCT";
+        case TOKEN_UNION: return "UNION";
+        case TOKEN_TYPEDEF: return "TYPEDEF";
         case TOKEN_PLUS: return "PLUS";
         case TOKEN_MINUS: return "MINUS";
         case TOKEN_STAR: return "STAR";
@@ -459,6 +461,7 @@ const char *token_type_name(TokenType type) {
         case TOKEN_BANG: return "BANG";
         case TOKEN_AND_AND: return "AND_AND";
         case TOKEN_OR_OR: return "OR_OR";
+        case TOKEN_AMP: return "AMP";
         case TOKEN_PLUS_ASSIGN: return "PLUS_ASSIGN";
         case TOKEN_MINUS_ASSIGN: return "MINUS_ASSIGN";
         case TOKEN_STAR_ASSIGN: return "STAR_ASSIGN";

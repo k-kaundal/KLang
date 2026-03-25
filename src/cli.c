@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
+#include <unistd.h>
 #include "lexer.h"
 #include "parser.h"
 #include "interpreter.h"
@@ -17,6 +18,7 @@
 #include "llvm_backend.h"
 #include "../include/package_manager.h"
 #include "../include/lsp_server.h"
+#include "../include/http_server.h"
 
 void run_repl(void);
 
@@ -147,6 +149,7 @@ static void compile_file(const char *path) {
     int count = 0;
     ASTNode **nodes;
     int i;
+    Config *cfg = config_get();
     
     if (!validate_file_extension(path)) {
         print_error("Invalid file extension. KLang files must have .kl, .k, or .klang extension");
@@ -180,6 +183,9 @@ static void compile_file(const char *path) {
         print_success("Compiling with LLVM backend...");
         printf("Input: %s\n", path);
         printf("Output: %s\n", output_path);
+        printf("Build mode: %s\n", config_get_build_mode_name(cfg->build_mode));
+        printf("Optimization: %s\n", config_get_opt_level_name(cfg->opt_level));
+        printf("LTO: %s\n", cfg->enable_lto ? "enabled" : "disabled");
         
         // Initialize LLVM backend
         llvm_backend_init();
@@ -234,6 +240,13 @@ int main(int argc, char **argv) {
         config_free();
         return 0;
     }
+    
+    /* Check for config command */
+    if (strcmp(argv[1], "config") == 0) {
+        config_print();
+        config_free();
+        return 0;
+    }
 
     /* Handle commands */
     if (strcmp(argv[1], "repl") == 0) {
@@ -260,11 +273,39 @@ int main(int argc, char **argv) {
     else if (strcmp(argv[1], "compile") == 0) {
         if (argc < 3) {
             print_error("Missing file argument");
-            fprintf(stderr, "Usage: klang compile <file.kl>\n");
+            fprintf(stderr, "Usage: klang compile [--mode=<mode>] [--opt=<level>] [--lto] <file.kl>\n");
             fprintf(stderr, "Try 'klang help compile' for more information.\n");
             return 1;
         }
-        compile_file(argv[2]);
+        
+        /* Parse compile options */
+        const char *file_path = NULL;
+        for (i = 2; i < argc; i++) {
+            if (strncmp(argv[i], "--mode=", 7) == 0) {
+                config_set_build_mode(config_parse_build_mode(argv[i] + 7));
+            } else if (strncmp(argv[i], "--opt=", 6) == 0 || strncmp(argv[i], "-O", 2) == 0) {
+                const char *level_str = (argv[i][1] == 'O') ? argv[i] + 2 : argv[i] + 6;
+                config_set_opt_level(config_parse_opt_level(level_str));
+            } else if (strcmp(argv[i], "--lto") == 0) {
+                Config *cfg = config_get();
+                cfg->enable_lto = 1;
+            } else if (strcmp(argv[i], "--no-lto") == 0) {
+                Config *cfg = config_get();
+                cfg->enable_lto = 0;
+            } else if (strcmp(argv[i], "--strip") == 0) {
+                Config *cfg = config_get();
+                cfg->strip_debug = 1;
+            } else if (argv[i][0] != '-') {
+                file_path = argv[i];
+            }
+        }
+        
+        if (!file_path) {
+            print_error("Missing file argument");
+            return 1;
+        }
+        
+        compile_file(file_path);
     }
     else if (strcmp(argv[1], "check") == 0) {
         if (argc < 3) {
@@ -471,6 +512,74 @@ int main(int argc, char **argv) {
         
         config_free();
         return result;
+    }
+    else if (strcmp(argv[1], "serve") == 0) {
+        /* Start built-in HTTP server */
+        int port = 8080; /* Default port */
+        const char *static_dir = "."; /* Default directory */
+        int hot_reload = 0;
+        
+        /* Parse serve options */
+        for (i = 2; i < argc; i++) {
+            if (strncmp(argv[i], "--port=", 7) == 0 || strncmp(argv[i], "-p", 2) == 0) {
+                const char *port_str = (argv[i][1] == 'p' && argv[i][2] == '=') ? argv[i] + 3 :
+                                       (argv[i][1] == 'p' && i + 1 < argc) ? argv[++i] : argv[i] + 7;
+                port = atoi(port_str);
+                if (port <= 0 || port > 65535) {
+                    print_error("Invalid port number");
+                    return 1;
+                }
+            } else if (strncmp(argv[i], "--dir=", 6) == 0) {
+                static_dir = argv[i] + 6;
+            } else if (strcmp(argv[i], "--hot-reload") == 0 || strcmp(argv[i], "--watch") == 0) {
+                hot_reload = 1;
+            } else if (strncmp(argv[i], "--mode=", 7) == 0) {
+                config_set_build_mode(config_parse_build_mode(argv[i] + 7));
+                Config *cfg = config_get();
+                if (cfg->build_mode == BUILD_MODE_DEV) {
+                    hot_reload = 1; /* Auto-enable hot reload in dev mode */
+                }
+            }
+        }
+        
+        HttpServer *server = http_server_new(port);
+        if (!server) {
+            print_error("Failed to create HTTP server");
+            config_free();
+            return 1;
+        }
+        
+        /* Setup static file serving */
+        http_server_static(server, "/", static_dir);
+        
+        /* Enable hot reload if requested */
+        if (hot_reload) {
+            http_server_enable_hot_reload(server, 1);
+            http_server_watch_directory(server, static_dir);
+            print_success("Hot reload enabled");
+        }
+        
+        /* Start server */
+        if (http_server_start(server) < 0) {
+            print_error("Failed to start HTTP server");
+            http_server_free(server);
+            config_free();
+            return 1;
+        }
+        
+        print_success("HTTP server started");
+        printf("Listening on http://localhost:%d\n", port);
+        printf("Serving files from: %s\n", static_dir);
+        printf("Press Ctrl+C to stop the server\n");
+        
+        /* Keep server running */
+        while (http_server_is_running(server)) {
+            sleep(1);
+        }
+        
+        http_server_free(server);
+        config_free();
+        return 0;
     }
     else {
         print_error("Unknown command");
