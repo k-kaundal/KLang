@@ -72,6 +72,27 @@ test: $(TEST_SRC)
 	$(CC) $(CFLAGS) -Itests -o test_runner $(TEST_SRC) -lm
 	./test_runner
 
+# Phase 2 Unit Tests
+PHASE2_SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/runtime.c src/gc.c src/vm_stack.c src/vm_register.c src/compiler.c src/ssa_ir.c src/llvm_backend.c src/type_checker.c src/config.c src/error_reporter.c src/cli_colors.c
+
+test-pointers: $(PHASE2_SRC)
+	$(CC) $(CFLAGS) -o test_pointers_unit tests/test_pointers_unit.c $(PHASE2_SRC) $(LDFLAGS)
+	./test_pointers_unit
+
+test-structs: $(PHASE2_SRC)
+	$(CC) $(CFLAGS) -o test_structs_unit tests/test_structs_unit.c $(PHASE2_SRC) $(LDFLAGS)
+	./test_structs_unit
+
+test-memory: $(PHASE2_SRC)
+	$(CC) $(CFLAGS) -o test_memory_unit tests/test_memory_unit.c $(PHASE2_SRC) $(LDFLAGS)
+	./test_memory_unit
+
+test-phase2: test-pointers test-structs test-memory
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "✓ All Phase 2 unit tests completed"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
 run: $(TARGET)
 	./klang repl
 
@@ -151,10 +172,11 @@ clean:
 	rm -f src/*.o $(TARGET) test_runner
 	rm -f benchmarks/language/*_bench
 	rm -f benchmarks/reports/*.json
+	rm -f test_pointers_unit test_structs_unit test_memory_unit
 
 clean-bench:
 	rm -f benchmarks/language/*_bench
 	rm -f benchmarks/reports/*.json
 	rm -f benchmarks/reports/*.md
 
-.PHONY: all test run clean install install-user uninstall uninstall-user benchmarks bench bench-quick clean-bench
+.PHONY: all test run clean install install-user uninstall uninstall-user benchmarks bench bench-quick clean-bench test-pointers test-structs test-memory test-phase2
