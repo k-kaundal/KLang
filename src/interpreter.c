@@ -41,8 +41,8 @@ void env_free(Env *env) {
     while (e) {
         EnvEntry *next = e->next;
         REFCOUNT_LOG("env_free: freeing entry '%s'", e->name);
-        free(e->name);
         value_free(&e->value);
+        free(e->name);
         free(e);
         e = next;
     }
@@ -845,7 +845,10 @@ void interpreter_free(Interpreter *interp) {
     }
     free(interp->loaded_modules);
     if (interp->current_module_dir) free(interp->current_module_dir);
-    env_release(interp->global_env);
+    // Only release global_env if it hasn't been freed already
+    if (interp->global_env && interp->global_env->ref_count > 0) {
+        env_release(interp->global_env);
+    }
     free(interp);
 }
 
