@@ -512,6 +512,7 @@ void value_free(Value *v) {
             // Properly free the receiver value first (decrements ref_count)
             REFCOUNT_LOG("value_free(METHOD): freeing receiver");
             value_free(v->as.method_val.receiver);
+            // The pointer is already freed by value_free if needed, just free the container
             free(v->as.method_val.receiver);
             v->as.method_val.receiver = NULL;
         }
@@ -2170,10 +2171,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         EnvEntry *entry = spread_val.as.object_val->fields->entries;
                         while (entry) {
                             Value field_val = entry->value;
-                            /* Deep copy strings */
-                            if (field_val.type == VAL_STRING) {
-                                field_val = make_string(entry->value.as.str_val);
-                            } else {
+                            /* Don't duplicate strings here - env_set_local will handle it */
+                            if (field_val.type != VAL_STRING) {
                                 /* Retain dict/set values */
                                 value_retain(&field_val);
                             }
@@ -2333,13 +2332,11 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         env_set_local(class_val.as.class_val.methods, e->name, method_copy);
                         e = e->next;
                     }
-                    // Copy parent fields (deep copy strings)
+                    // Copy parent fields (env_set_local will duplicate strings)
                     e = parent->as.class_val.fields->entries;
                     while (e) {
                         Value field_copy = e->value;
-                        if (field_copy.type == VAL_STRING) {
-                            field_copy.as.str_val = strdup(e->value.as.str_val);
-                        }
+                        // Don't duplicate strings here - env_set_local will handle it
                         env_set_local(class_val.as.class_val.fields, e->name, field_copy);
                         e = e->next;
                     }
@@ -2356,13 +2353,11 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         env_set_local(class_val.as.class_val.static_methods, e->name, method_copy);
                         e = e->next;
                     }
-                    // Copy parent static fields
+                    // Copy parent static fields (env_set_local will duplicate strings)
                     e = parent->as.class_val.static_fields->entries;
                     while (e) {
                         Value field_copy = e->value;
-                        if (field_copy.type == VAL_STRING) {
-                            field_copy.as.str_val = strdup(e->value.as.str_val);
-                        }
+                        // Don't duplicate strings here - env_set_local will handle it
                         env_set_local(class_val.as.class_val.static_fields, e->name, field_copy);
                         e = e->next;
                     }
@@ -2431,13 +2426,11 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             // Create object
             Value obj = make_object(node->data.new_expr.class_name, class_val->as.class_val.methods);
             
-            // Initialize fields with default values from class (deep copy strings)
+            // Initialize fields with default values from class (env_set_local will duplicate strings)
             EnvEntry *field_entry = class_val->as.class_val.fields->entries;
             while (field_entry) {
                 Value field_val = field_entry->value;
-                if (field_val.type == VAL_STRING) {
-                    field_val.as.str_val = strdup(field_entry->value.as.str_val);
-                }
+                // Don't duplicate here - env_set_local will handle it
                 env_set_local(obj.as.object_val->fields, field_entry->name, field_val);
                 field_entry = field_entry->next;
             }
