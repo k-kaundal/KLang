@@ -11,6 +11,15 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env);
 // Forward declaration for Promise constructor
 extern Value builtin_Promise_constructor(Interpreter *interp, Value *args, int argc);
 
+// Debug flag for tracking object reference counting
+#define DEBUG_REFCOUNT 0
+
+#if DEBUG_REFCOUNT
+#define REFCOUNT_LOG(fmt, ...) fprintf(stderr, "[REFCOUNT] " fmt "\n", ##__VA_ARGS__)
+#else
+#define REFCOUNT_LOG(fmt, ...) ((void)0)
+#endif
+
 /* Helper function to increment reference count when copying dict/set values */
 static void value_retain(Value *v) {
     if (v->type == VAL_DICT && v->as.dict_val) {
@@ -31,6 +40,7 @@ void env_free(Env *env) {
     EnvEntry *e = env->entries;
     while (e) {
         EnvEntry *next = e->next;
+        REFCOUNT_LOG("env_free: freeing entry '%s'", e->name);
         free(e->name);
         value_free(&e->value);
         free(e);
@@ -115,6 +125,8 @@ void env_set_local(Env *env, const char *name, Value val) {
         val.as.set_val->ref_count++;
     } else if (val.type == VAL_OBJECT && val.as.object_val) {
         val.as.object_val->ref_count++;
+        REFCOUNT_LOG("env_set_local(%s): ptr=%p ref_count=%d (after increment)", 
+                     name, (void*)val.as.object_val, val.as.object_val->ref_count);
     }
     
     EnvEntry *e = env->entries;
@@ -165,6 +177,8 @@ void env_set_local_with_access(Env *env, const char *name, Value val, AccessModi
         val.as.set_val->ref_count++;
     } else if (val.type == VAL_OBJECT && val.as.object_val) {
         val.as.object_val->ref_count++;
+        REFCOUNT_LOG("env_set_local_with_access(%s): ptr=%p ref_count=%d (after increment)", 
+                     name, (void*)val.as.object_val, val.as.object_val->ref_count);
     }
     
     EnvEntry *e = env->entries;
@@ -327,6 +341,7 @@ Value make_object(const char *class_name, Env *methods) {
     val.as.object_val->fields = env_new(NULL);
     val.as.object_val->methods = methods;
     val.as.object_val->ref_count = 1;  // Initialize reference count
+    REFCOUNT_LOG("make_object(%s) -> ptr=%p ref_count=1", class_name, (void*)val.as.object_val);
     return val;
 }
 
@@ -340,6 +355,8 @@ Value make_method(Value receiver, Value method) {
     // Increment ref_count for object receiver to track shared ownership
     if (receiver.type == VAL_OBJECT && receiver.as.object_val) {
         receiver.as.object_val->ref_count++;
+        REFCOUNT_LOG("make_method: ptr=%p ref_count=%d (after increment)", 
+                     (void*)receiver.as.object_val, receiver.as.object_val->ref_count);
     }
     
     // Deep copy function if needed
@@ -415,6 +432,7 @@ Value make_generator(FunctionVal *func, Env *env) {
 
 void value_free(Value *v) {
     if (!v) return;
+    REFCOUNT_LOG("value_free: type=%d", v->type);
     if (v->type == VAL_STRING && v->as.str_val) {
         free(v->as.str_val);
         v->as.str_val = NULL;
@@ -470,8 +488,11 @@ void value_free(Value *v) {
     }
     if (v->type == VAL_OBJECT && v->as.object_val) {
         // Decrement reference count and only free when count reaches 0
+        REFCOUNT_LOG("value_free: ptr=%p ref_count=%d (before decrement)", 
+                     (void*)v->as.object_val, v->as.object_val->ref_count);
         v->as.object_val->ref_count--;
         if (v->as.object_val->ref_count <= 0) {
+            REFCOUNT_LOG("value_free: ptr=%p FREEING (ref_count reached 0)", (void*)v->as.object_val);
             if (v->as.object_val->class_name) {
                 free(v->as.object_val->class_name);
             }
@@ -479,12 +500,17 @@ void value_free(Value *v) {
                 env_free(v->as.object_val->fields);
             }
             free(v->as.object_val);
+            v->as.object_val = NULL;  // Only null out if we actually freed it
+        } else {
+            REFCOUNT_LOG("value_free: ptr=%p ref_count=%d (after decrement, not freeing)", 
+                         (void*)v->as.object_val, v->as.object_val->ref_count);
+            // Don't null out the pointer if we didn't free - it's still valid for other references
         }
-        v->as.object_val = NULL;
     }
     if (v->type == VAL_METHOD) {
         if (v->as.method_val.receiver) {
             // Properly free the receiver value first (decrements ref_count)
+            REFCOUNT_LOG("value_free(METHOD): freeing receiver");
             value_free(v->as.method_val.receiver);
             free(v->as.method_val.receiver);
             v->as.method_val.receiver = NULL;
@@ -923,6 +949,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             if (v->type == VAL_OBJECT && v->as.object_val) {
                 v->as.object_val->ref_count++;
+                REFCOUNT_LOG("NODE_RETURN: ptr=%p ref_count=%d (after increment)", 
+                             (void*)v->as.object_val, v->as.object_val->ref_count);
             }
             if (v->type == VAL_FUNCTION) {
                 Value copy = *v;
@@ -1897,7 +1925,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
                 
                 // Don't free val - it's now owned by the object's fields
-                // Don't free obj if it's an object - fields are shared
+                // Don't free obj - it's a view of 'this' from the environment, no ownership transfer
                 return make_null();
             }
             
