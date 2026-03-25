@@ -4,7 +4,7 @@
 class Klang < Formula
   desc "KLang - The AI-Native Programming Language"
   homepage "https://github.com/k-kaundal/KLang"
-  url "https://github.com/k-kaundal/KLang/archive/refs/tags/v0.2.0.tar.gz"
+  url "https://github.com/k-kaundal/KLang/archive/refs/tags/v1.0.0-rc.tar.gz"
   sha256 "" # Will be generated during release
   license "MIT"
   head "https://github.com/k-kaundal/KLang.git", branch: "main"

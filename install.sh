@@ -14,7 +14,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # Configuration
-KLANG_VERSION="${KLANG_VERSION:-main}"
+KLANG_VERSION="${KLANG_VERSION:-v1.0.0-rc}"
 GITHUB_REPO="k-kaundal/KLang"
 INSTALL_DIR="${KLANG_INSTALL_DIR:-$HOME/.klang}"
 BIN_DIR="$INSTALL_DIR/bin"
@@ -275,6 +275,15 @@ verify_installation() {
         echo -e "${GREEN}✓ KLang installed successfully!${NC}"
         echo -e "${GREEN}  Version: $version${NC}"
         echo -e "${GREEN}  Location: $BIN_DIR/klang${NC}"
+        
+        # Validate version matches expected release
+        local expected_version="1.0.0-rc"
+        if echo "$version" | grep -q "$expected_version"; then
+            echo -e "${GREEN}✓ Version validation passed: $expected_version${NC}"
+        else
+            echo -e "${YELLOW}⚠ Warning: Installed version doesn't match expected version $expected_version${NC}"
+            echo -e "${YELLOW}  This might be expected if you're installing from a specific branch${NC}"
+        fi
     else
         echo -e "${RED}Installation verification failed${NC}"
         exit 1

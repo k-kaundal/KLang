@@ -1,9 +1,9 @@
 #ifndef KLANG_H
 #define KLANG_H
 
-#define KLANG_VERSION "0.1.0"
-#define KLANG_VERSION_MAJOR 0
-#define KLANG_VERSION_MINOR 1
+#define KLANG_VERSION "1.0.0-rc"
+#define KLANG_VERSION_MAJOR 1
+#define KLANG_VERSION_MINOR 0
 #define KLANG_VERSION_PATCH 0
 
 #include "lexer.h"

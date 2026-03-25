@@ -3,7 +3,7 @@
 #include "cli_help.h"
 #include "cli_colors.h"
 
-#define KLANG_VERSION "0.2.0"
+#define KLANG_VERSION "1.0.0-rc"
 #define KLANG_BUILD_DATE __DATE__
 
 void print_version(void) {
