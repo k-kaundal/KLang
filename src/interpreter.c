@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdint.h>
 
 static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env);
 
@@ -418,6 +419,14 @@ Value make_set(void) {
     return val;
 }
 
+Value make_pointer(void *ptr, const char *type_name) {
+    Value val;
+    val.type = VAL_POINTER;
+    val.as.pointer_val.ptr = ptr;
+    val.as.pointer_val.type_name = type_name ? strdup(type_name) : NULL;
+    return val;
+}
+
 Value make_generator(FunctionVal *func, Env *env) {
     Value v;
     v.type = VAL_GENERATOR;
@@ -606,6 +615,15 @@ void value_free(Value *v) {
             v->as.set_val = NULL;
         }
     }
+    if (v->type == VAL_POINTER) {
+        /* Free type name if allocated */
+        if (v->as.pointer_val.type_name) {
+            free(v->as.pointer_val.type_name);
+            v->as.pointer_val.type_name = NULL;
+        }
+        /* Note: We don't free the pointer itself as we don't own it */
+        v->as.pointer_val.ptr = NULL;
+    }
 }
 
 char *value_to_string(Value *v) {
@@ -793,6 +811,17 @@ char *value_to_string(Value *v) {
             strcat(result, "}");
             free(item_strs);
             return result;
+        }
+        case VAL_POINTER: {
+            // Print pointer with address and optional type
+            if (v->as.pointer_val.type_name) {
+                snprintf(buf, sizeof(buf), "*%s<%p>", 
+                    v->as.pointer_val.type_name, 
+                    v->as.pointer_val.ptr);
+            } else {
+                snprintf(buf, sizeof(buf), "<pointer %p>", v->as.pointer_val.ptr);
+            }
+            return strdup(buf);
         }
         default:
             return strdup("<unknown>");
@@ -3195,6 +3224,106 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             
             /* Otherwise return left */
             return left;
+        }
+        
+        case NODE_ADDRESS_OF: {
+            /* Handle address-of operator &variable */
+            ASTNode *operand = node->data.address_of.operand;
+            
+            /* For now, we can only take the address of identifiers */
+            if (operand->type == NODE_IDENT) {
+                Value *var_ref = env_get(env, operand->data.ident.name);
+                if (!var_ref) {
+                    fprintf(stderr, "Error at line %d: undefined variable '%s'\n", 
+                        node->line, operand->data.ident.name);
+                    interp->had_error = 1;
+                    return make_null();
+                }
+                /* Return a pointer to the variable's value */
+                return make_pointer((void*)var_ref, NULL);
+            } else {
+                fprintf(stderr, "Error at line %d: address-of operator requires a variable\n", node->line);
+                interp->had_error = 1;
+                return make_null();
+            }
+        }
+        
+        case NODE_DEREFERENCE: {
+            /* Handle dereference operator *pointer */
+            Value ptr_val = eval_node_env(interp, node->data.dereference.operand, env);
+            
+            if (ptr_val.type == VAL_POINTER) {
+                /* Dereference the pointer to get the value */
+                Value *pointed_value = (Value*)ptr_val.as.pointer_val.ptr;
+                
+                /* Make a copy of the pointed-to value */
+                Value result;
+                if (pointed_value->type == VAL_STRING) {
+                    result = make_string(pointed_value->as.str_val);
+                } else {
+                    result = *pointed_value;
+                    value_retain(&result);
+                }
+                value_free(&ptr_val);
+                return result;
+            } else if (ptr_val.type == VAL_INT) {
+                /* Handle pointers stored as integers (from malloc) */
+                void *ptr = (void*)(uintptr_t)ptr_val.as.int_val;
+                if (!ptr) {
+                    fprintf(stderr, "Error at line %d: attempt to dereference null pointer\n", node->line);
+                    interp->had_error = 1;
+                    value_free(&ptr_val);
+                    return make_null();
+                }
+                /* For raw pointers, we can't safely dereference without type info */
+                fprintf(stderr, "Error at line %d: cannot dereference raw pointer without type information\n", node->line);
+                interp->had_error = 1;
+                value_free(&ptr_val);
+                return make_null();
+            } else {
+                fprintf(stderr, "Error at line %d: dereference operator requires a pointer\n", node->line);
+                interp->had_error = 1;
+                value_free(&ptr_val);
+                return make_null();
+            }
+        }
+        
+        case NODE_POINTER_MEMBER: {
+            /* Handle ptr->member (equivalent to (*ptr).member) */
+            Value ptr_val = eval_node_env(interp, node->data.pointer_member.ptr, env);
+            
+            if (ptr_val.type == VAL_POINTER) {
+                /* Dereference the pointer */
+                Value *pointed_value = (Value*)ptr_val.as.pointer_val.ptr;
+                
+                /* Access the member */
+                if (pointed_value->type == VAL_OBJECT) {
+                    const char *member = node->data.pointer_member.member;
+                    Value *field = env_get(pointed_value->as.object_val->fields, member);
+                    if (field) {
+                        Value result = *field;
+                        value_retain(&result);
+                        value_free(&ptr_val);
+                        return result;
+                    } else {
+                        fprintf(stderr, "Error at line %d: object has no member '%s'\n", 
+                            node->line, member);
+                        interp->had_error = 1;
+                        value_free(&ptr_val);
+                        return make_null();
+                    }
+                } else {
+                    fprintf(stderr, "Error at line %d: pointer member access requires object pointer\n", node->line);
+                    interp->had_error = 1;
+                    value_free(&ptr_val);
+                    return make_null();
+                }
+            } else {
+                fprintf(stderr, "Error at line %d: arrow operator requires a pointer\n", node->line);
+                interp->had_error = 1;
+                value_free(&ptr_val);
+                return make_null();
+            }
         }
         
         default:

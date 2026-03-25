@@ -7,7 +7,7 @@
 typedef enum {
     VAL_INT, VAL_FLOAT, VAL_STRING, VAL_BOOL, VAL_NULL, VAL_FUNCTION, VAL_LIST, VAL_BUILTIN,
     VAL_CLASS, VAL_OBJECT, VAL_METHOD, VAL_PROMISE, VAL_MODULE, VAL_GENERATOR, VAL_TUPLE, VAL_FILE,
-    VAL_DICT, VAL_SET
+    VAL_DICT, VAL_SET, VAL_POINTER
 } ValueType;
 
 typedef struct Value Value;
@@ -121,6 +121,11 @@ typedef struct {
     int ref_count;             // Reference count for shared ownership
 } SetVal;
 
+typedef struct {
+    void *ptr;                 // The actual pointer address
+    char *type_name;           // Optional type name for debugging (e.g., "int", "struct Point")
+} PointerVal;
+
 struct Value {
     ValueType type;
     union {
@@ -141,6 +146,7 @@ struct Value {
         FileVal file_val;
         DictVal *dict_val;      // Pointer for reference semantics
         SetVal *set_val;        // Pointer for reference semantics
+        PointerVal pointer_val; // Pointer value (C/C++ compatibility)
     } as;
 };
 
@@ -210,6 +216,7 @@ Value make_promise(void);
 Value make_module(const char *module_path, Env *exports, Env *module_env);
 Value make_dict(void);
 Value make_set(void);
+Value make_pointer(void *ptr, const char *type_name);
 void value_free(Value *v);
 void value_print(Value *v);
 char *value_to_string(Value *v);
