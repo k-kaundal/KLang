@@ -235,6 +235,12 @@ void lsp_handle_text_document_completion(LSPServer *server, int id, const char *
     (void)params;  /* Would parse cursor position */
     lsp_log(server, "Completion requested");
     
+    /* 
+     * Note: Completion items are provided as a static JSON string for simplicity.
+     * In a production implementation, these should be built programmatically from
+     * a data structure to improve maintainability.
+     */
+    
     /* Enhanced completions with more keywords, types, and built-ins */
     const char *result = 
         "{"

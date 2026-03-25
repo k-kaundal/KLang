@@ -259,10 +259,10 @@ function setupProviders(context: vscode.ExtensionContext) {
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
 
-                    // Function declarations (including async)
-                    const fnMatch = line.match(/^\s*(async\s+)?(fn|function)\s+(\w+)\s*\(/);
+                    // Function declarations
+                    const fnMatch = line.match(/^\s*(async\s+)?fn\s+(\w+)\s*\(/);
                     if (fnMatch) {
-                        const name = fnMatch[3];
+                        const name = fnMatch[2];
                         const range = new vscode.Range(i, 0, i, line.length);
                         const symbol = new vscode.DocumentSymbol(
                             name,
@@ -727,9 +727,11 @@ function parseLintOutput(output: string, document: vscode.TextDocument): vscode.
                 const lineNum = parseInt(match[2]) - 1; // 0-indexed
                 const message = match[3];
                 
+                // Use actual line length instead of magic number
+                const line = document.lineAt(Math.max(0, Math.min(lineNum, document.lineCount - 1)));
                 const range = new vscode.Range(
                     new vscode.Position(Math.max(0, lineNum), 0),
-                    new vscode.Position(Math.max(0, lineNum), 1000)
+                    line.range.end
                 );
                 
                 const diagnostic = new vscode.Diagnostic(range, message, severity);
