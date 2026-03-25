@@ -9,6 +9,7 @@ static ASTNode *parse_block(Parser *parser);
 static ASTNode *parse_break(Parser *parser);
 static ASTNode *parse_continue(Parser *parser);
 static ASTNode *parse_class_def(Parser *parser);
+static ASTNode *parse_struct_def(Parser *parser, int is_union);
 static ASTNode *parse_import(Parser *parser);
 static ASTNode *parse_export(Parser *parser);
 static int check_ahead(Parser *parser, TokenType type);
@@ -180,9 +181,59 @@ static ASTNode *parse_primary(Parser *parser) {
     }
     if (check(parser, TOKEN_IDENT)) {
         Token t = advance(parser);
-        ASTNode *n = ast_new_ident(t.value, line);
+        char *ident_name = strdup(t.value);
         token_free(&t);
-        return n;
+        
+        /* Check if this is a struct literal (Identifier { ... }) */
+        if (check(parser, TOKEN_LBRACE)) {
+            Token lbrace = advance(parser);
+            ASTNode *struct_lit = ast_new_struct_literal(ident_name, line);
+            token_free(&lbrace);
+            free(ident_name);
+            
+            /* Parse field initializers */
+            while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+                char *field_name;
+                ASTNode *field_value;
+                Token field_tok;
+                
+                while (match(parser, TOKEN_COMMA)) {}
+                if (check(parser, TOKEN_RBRACE)) break;
+                
+                /* Parse field name */
+                field_tok = consume(parser, TOKEN_IDENT);
+                field_name = strdup(field_tok.value);
+                token_free(&field_tok);
+                
+                /* Expect colon */
+                {
+                    Token colon = consume(parser, TOKEN_COLON);
+                    token_free(&colon);
+                }
+                
+                /* Parse field value */
+                field_value = parse_expression(parser);
+                
+                /* Add field to struct literal */
+                ast_struct_literal_add_field(struct_lit, field_name, field_value);
+                free(field_name);
+                
+                /* Allow comma separator */
+                match(parser, TOKEN_COMMA);
+            }
+            
+            {
+                Token rbrace = consume(parser, TOKEN_RBRACE);
+                token_free(&rbrace);
+            }
+            
+            return struct_lit;
+        } else {
+            /* Regular identifier */
+            ASTNode *n = ast_new_ident(ident_name, line);
+            free(ident_name);
+            return n;
+        }
     }
     if (check(parser, TOKEN_LPAREN)) {
         Token t = advance(parser);
@@ -1735,6 +1786,8 @@ static ASTNode *parse_statement(Parser *parser) {
     }
     
     if (check(parser, TOKEN_CLASS)) return parse_class_def(parser);
+    if (check(parser, TOKEN_STRUCT)) return parse_struct_def(parser, 0);  // 0 = not union
+    if (check(parser, TOKEN_UNION)) return parse_struct_def(parser, 1);   // 1 = union
     if (check(parser, TOKEN_FN)) return parse_func_def(parser);
     if (check(parser, TOKEN_LET)) return parse_let(parser);
     if (check(parser, TOKEN_VAR)) return parse_var(parser);
@@ -1858,6 +1911,82 @@ static ASTNode *parse_continue(Parser *parser) {
     Token t = consume(parser, TOKEN_CONTINUE);
     token_free(&t);
     return ast_new_continue(line);
+}
+
+static ASTNode *parse_struct_def(Parser *parser, int is_union) {
+    int line = parser->current.line;
+    Token struct_tok = advance(parser);  // Consume struct or union keyword
+    Token name_tok;
+    char *struct_name;
+    ASTNode *struct_node;
+    token_free(&struct_tok);
+    
+    name_tok = consume(parser, TOKEN_IDENT);
+    struct_name = strdup(name_tok.value);
+    token_free(&name_tok);
+    
+    struct_node = ast_new_struct_def(struct_name, is_union, line);
+    free(struct_name);
+    
+    /* Parse struct body */
+    {
+        Token lbrace_tok = consume(parser, TOKEN_LBRACE);
+        token_free(&lbrace_tok);
+    }
+    
+    while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+        char *field_name;
+        char *field_type = NULL;
+        ASTNode *default_value = NULL;
+        Token field_tok;
+        
+        while (match(parser, TOKEN_SEMICOLON) || match(parser, TOKEN_COMMA)) {}
+        if (check(parser, TOKEN_RBRACE) || check(parser, TOKEN_EOF)) break;
+        
+        /* Parse field name */
+        field_tok = consume(parser, TOKEN_IDENT);
+        field_name = strdup(field_tok.value);
+        token_free(&field_tok);
+        
+        /* Parse optional type annotation */
+        if (match(parser, TOKEN_COLON)) {
+            Token type_tok = consume(parser, TOKEN_IDENT);
+            field_type = strdup(type_tok.value);
+            token_free(&type_tok);
+            
+            /* Handle pointer types (*type) */
+            while (match(parser, TOKEN_STAR)) {
+                char *ptr_type = malloc(strlen(field_type) + 2);
+                sprintf(ptr_type, "*%s", field_type);
+                free(field_type);
+                field_type = ptr_type;
+            }
+        }
+        
+        /* Parse optional default value */
+        if (match(parser, TOKEN_ASSIGN)) {
+            default_value = parse_expression(parser);
+        }
+        
+        /* Add field to struct */
+        ast_struct_add_field(struct_node, field_name, field_type, default_value);
+        free(field_name);
+        if (field_type) free(field_type);
+        
+        /* Allow comma or semicolon as field separator */
+        if (!check(parser, TOKEN_RBRACE)) {
+            if (!match(parser, TOKEN_COMMA) && !match(parser, TOKEN_SEMICOLON)) {
+                /* Optional separator - allow fields without separators */
+            }
+        }
+    }
+    
+    {
+        Token rbrace_tok = consume(parser, TOKEN_RBRACE);
+        token_free(&rbrace_tok);
+    }
+    
+    return struct_node;
 }
 
 static ASTNode *parse_class_def(Parser *parser) {
