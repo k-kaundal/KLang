@@ -308,9 +308,11 @@ Value make_class(const char *name, const char *parent_name) {
 Value make_object(const char *class_name, Env *methods) {
     Value val;
     val.type = VAL_OBJECT;
-    val.as.object_val.class_name = strdup(class_name);
-    val.as.object_val.fields = env_new(NULL);
-    val.as.object_val.methods = methods;
+    val.as.object_val = malloc(sizeof(ObjectVal));
+    val.as.object_val->class_name = strdup(class_name);
+    val.as.object_val->fields = env_new(NULL);
+    val.as.object_val->methods = methods;
+    val.as.object_val->ref_count = 1;  // Initialize reference count
     return val;
 }
 
@@ -320,6 +322,11 @@ Value make_method(Value receiver, Value method) {
     val.as.method_val.receiver = malloc(sizeof(Value));
     val.as.method_val.method = malloc(sizeof(Value));
     *val.as.method_val.receiver = receiver;
+    
+    // Increment ref_count for object receiver to track shared ownership
+    if (receiver.type == VAL_OBJECT && receiver.as.object_val) {
+        receiver.as.object_val->ref_count++;
+    }
     
     // Deep copy function if needed
     if (method.type == VAL_FUNCTION && method.as.func_val.param_names) {
@@ -447,23 +454,24 @@ void value_free(Value *v) {
         v->as.class_val.static_methods = NULL;
         v->as.class_val.static_fields = NULL;
     }
-    if (v->type == VAL_OBJECT) {
-        // Don't free anything to avoid double-free issues
-        // Memory will leak but program will be stable
-        // TODO: implement proper lifecycle management
-        if (v->as.object_val.class_name) {
-            // free(v->as.object_val.class_name);  // Disabled
-            v->as.object_val.class_name = NULL;
+    if (v->type == VAL_OBJECT && v->as.object_val) {
+        // Decrement reference count and only free when count reaches 0
+        v->as.object_val->ref_count--;
+        if (v->as.object_val->ref_count <= 0) {
+            if (v->as.object_val->class_name) {
+                free(v->as.object_val->class_name);
+            }
+            if (v->as.object_val->fields) {
+                env_free(v->as.object_val->fields);
+            }
+            free(v->as.object_val);
         }
-        if (v->as.object_val.fields) {
-            // env_free(v->as.object_val.fields);  // Disabled
-            v->as.object_val.fields = NULL;
-        }
+        v->as.object_val = NULL;
     }
     if (v->type == VAL_METHOD) {
         if (v->as.method_val.receiver) {
-            // Don't free anything in the receiver (all shared)
-            // Just free the allocated pointer itself
+            // Properly free the receiver value first (decrements ref_count)
+            value_free(v->as.method_val.receiver);
             free(v->as.method_val.receiver);
             v->as.method_val.receiver = NULL;
         }
@@ -647,7 +655,7 @@ char *value_to_string(Value *v) {
             snprintf(buf, sizeof(buf), "<class %s>", v->as.class_val.name);
             return strdup(buf);
         case VAL_OBJECT:
-            snprintf(buf, sizeof(buf), "<object %s>", v->as.object_val.class_name);
+            snprintf(buf, sizeof(buf), "<object %s>", v->as.object_val->class_name);
             return strdup(buf);
         case VAL_METHOD:
             return strdup("<method>");
@@ -899,6 +907,9 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             if (v->type == VAL_SET && v->as.set_val) {
                 v->as.set_val->ref_count++;
             }
+            if (v->type == VAL_OBJECT && v->as.object_val) {
+                v->as.object_val->ref_count++;
+            }
             if (v->type == VAL_FUNCTION) {
                 Value copy = *v;
                 /* Deep copy parameter names if they exist */
@@ -1023,7 +1034,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 
                 Value val = make_null();
                 /* Look up value from object fields */
-                Value *found = env_get(source.as.object_val.fields, key);
+                Value *found = env_get(source.as.object_val->fields, key);
                 if (found && found->type != VAL_NULL) {
                     val = *found;
                 } else if (elem->data.destructure_element.default_value) {
@@ -1122,7 +1133,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     if (field_val.type == VAL_STRING) {
                         field_val.as.str_val = strdup(field_entry->value.as.str_val);
                     }
-                    env_set_local(obj.as.object_val.fields, field_entry->name, field_val);
+                    env_set_local(obj.as.object_val->fields, field_entry->name, field_val);
                     field_entry = field_entry->next;
                 }
                 
@@ -1645,7 +1656,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
             } else if (iterable.type == VAL_OBJECT) {
                 // Iterate over object keys
-                Env *obj_env = iterable.as.object_val.fields;
+                Env *obj_env = iterable.as.object_val->fields;
                 EnvEntry *entry = obj_env->entries;
                 
                 while (entry) {
@@ -1866,9 +1877,9 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 Value obj = eval_node_env(interp, member_node->data.member_access.obj, env);
                 Value val = eval_node_env(interp, node->data.binop.right, env);
                 
-                if (obj.type == VAL_OBJECT) {
+                if (obj.type == VAL_OBJECT && obj.as.object_val && obj.as.object_val->fields) {
                     // Set the field on the object (env_set will take ownership of val)
-                    env_set(obj.as.object_val.fields, member_node->data.member_access.member, val);
+                    env_set(obj.as.object_val->fields, member_node->data.member_access.member, val);
                 }
                 
                 // Don't free val - it's now owned by the object's fields
@@ -2097,9 +2108,11 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             Value obj;
             int i;
             obj.type = VAL_OBJECT;
-            obj.as.object_val.class_name = strdup("Object");
-            obj.as.object_val.fields = env_new(NULL);
-            obj.as.object_val.methods = env_new(NULL);
+            obj.as.object_val = malloc(sizeof(ObjectVal));
+            obj.as.object_val->class_name = strdup("Object");
+            obj.as.object_val->fields = env_new(NULL);
+            obj.as.object_val->methods = env_new(NULL);
+            obj.as.object_val->ref_count = 1;
             
             for (i = 0; i < node->data.object.count; i++) {
                 ObjectProperty *prop = &node->data.object.props[i];
@@ -2112,7 +2125,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     Value spread_val = eval_node_env(interp, prop->value->data.spread.argument, env);
                     if (spread_val.type == VAL_OBJECT) {
                         /* Copy all fields from spread object */
-                        EnvEntry *entry = spread_val.as.object_val.fields->entries;
+                        EnvEntry *entry = spread_val.as.object_val->fields->entries;
                         while (entry) {
                             Value field_val = entry->value;
                             /* Deep copy strings */
@@ -2122,13 +2135,13 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                                 /* Retain dict/set values */
                                 value_retain(&field_val);
                             }
-                            env_set_local(obj.as.object_val.fields, entry->name, field_val);
+                            env_set_local(obj.as.object_val->fields, entry->name, field_val);
                             entry = entry->next;
                         }
                         /* Copy all methods from spread object */
-                        entry = spread_val.as.object_val.methods->entries;
+                        entry = spread_val.as.object_val->methods->entries;
                         while (entry) {
-                            env_set_local(obj.as.object_val.methods, entry->name, entry->value);
+                            env_set_local(obj.as.object_val->methods, entry->name, entry->value);
                             entry = entry->next;
                         }
                     }
@@ -2173,9 +2186,9 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 
                 /* Add to object */
                 if (prop->is_method || val.type == VAL_FUNCTION) {
-                    env_set_local(obj.as.object_val.methods, key_str, val);
+                    env_set_local(obj.as.object_val->methods, key_str, val);
                 } else {
-                    env_set_local(obj.as.object_val.fields, key_str, val);
+                    env_set_local(obj.as.object_val->fields, key_str, val);
                 }
                 
                 free(key_str);
@@ -2383,7 +2396,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 if (field_val.type == VAL_STRING) {
                     field_val.as.str_val = strdup(field_entry->value.as.str_val);
                 }
-                env_set_local(obj.as.object_val.fields, field_entry->name, field_val);
+                env_set_local(obj.as.object_val->fields, field_entry->name, field_val);
                 field_entry = field_entry->next;
             }
             
@@ -2405,20 +2418,6 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 Value init_result = eval_block(interp, init_method->as.func_val.body, call_env);
                 value_free(&init_result);
                 
-                // Get updated 'this' from call_env (in case fields were modified)
-                Value *updated_this = env_get(call_env, "this");
-                if (updated_this && updated_this->type == VAL_OBJECT) {
-                    // Copy updated fields back
-                    value_free(&obj);
-                    obj = *updated_this;
-                    obj.as.object_val.class_name = strdup(updated_this->as.object_val.class_name);
-                    obj.as.object_val.fields = env_new(NULL);
-                    EnvEntry *e = updated_this->as.object_val.fields->entries;
-                    while (e) {
-                        env_set_local(obj.as.object_val.fields, e->name, e->value);
-                        e = e->next;
-                    }
-                }
                 
                 env_release(call_env);
                 for (i = 0; i < argc; i++) value_free(&args[i]);
@@ -2689,10 +2688,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 // Determine if we're accessing our own object
                 int is_self_access = (is_inside_class && this_val && 
                                      this_val->type == VAL_OBJECT &&
-                                     strcmp(this_val->as.object_val.class_name, obj.as.object_val.class_name) == 0);
+                                     strcmp(this_val->as.object_val->class_name, obj.as.object_val->class_name) == 0);
                 
                 // Check fields first
-                EnvEntry *field_entry = env_get_entry(obj.as.object_val.fields, node->data.member_access.member);
+                EnvEntry *field_entry = env_get_entry(obj.as.object_val->fields, node->data.member_access.member);
                 if (field_entry) {
                     // Check access
                     if (field_entry->access == ACCESS_PRIVATE && !is_self_access) {
@@ -2705,7 +2704,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     else result = field_entry->value;
                 } else {
                     // Check methods
-                    EnvEntry *method_entry = env_get_entry(obj.as.object_val.methods, node->data.member_access.member);
+                    EnvEntry *method_entry = env_get_entry(obj.as.object_val->methods, node->data.member_access.member);
                     if (method_entry && method_entry->value.type == VAL_FUNCTION) {
                         // Check access
                         if (method_entry->access == ACCESS_PRIVATE && !is_self_access) {
@@ -2765,7 +2764,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             
             // Get the class definition
-            Value *class_val = env_get(env, this_val->as.object_val.class_name);
+            Value *class_val = env_get(env, this_val->as.object_val->class_name);
             if (!class_val || class_val->type != VAL_CLASS) {
                 fprintf(stderr, "Error at line %d: cannot find class definition\n", node->line);
                 interp->had_error = 1;
@@ -3053,7 +3052,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             } else if (operand_node->type == NODE_MEMBER_ACCESS) {
                 Value obj = eval_node_env(interp, operand_node->data.member_access.obj, env);
                 if (obj.type == VAL_OBJECT) {
-                    env_set(obj.as.object_val.fields, operand_node->data.member_access.member, new_val);
+                    env_set(obj.as.object_val->fields, operand_node->data.member_access.member, new_val);
                 }
                 value_free(&obj);
             } else if (operand_node->type == NODE_INDEX) {
@@ -3110,7 +3109,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             Value result = make_null();
             
             if (obj.type == VAL_OBJECT) {
-                Value *val = env_get(obj.as.object_val.fields, member);
+                Value *val = env_get(obj.as.object_val->fields, member);
                 if (val) {
                     if (val->type == VAL_STRING) {
                         result = make_string(val->as.str_val);
