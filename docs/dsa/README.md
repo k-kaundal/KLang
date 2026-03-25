@@ -10,7 +10,7 @@ This directory contains comprehensive documentation for Data Structures and Algo
 
 #### Phase 1: Basic Data Structures
 - **01_arrays.md** ✅ - Arrays, operations, algorithms
-- **02_strings.md** ⏳ - String manipulation, patterns
+- **02_strings.md** ✅ - String manipulation, patterns
 - **03_linked_lists.md** ⏳ - Singly, doubly, circular lists
 - **04_stacks.md** ⏳ - LIFO, operations, applications
 - **05_queues.md** ⏳ - FIFO, circular, priority queues
@@ -53,6 +53,18 @@ This directory contains comprehensive documentation for Data Structures and Algo
 | Insert at end | O(1) | O(1) | `arr.push(val)` |
 | Insert at start | O(n) | O(1) | `arr.unshift(val)` |
 | Delete from end | O(1) | O(1) | `arr.pop()` |
+
+### String Operations
+
+| Operation | Time | Space | Code |
+|-----------|------|-------|------|
+| Access char | O(1) | O(1) | `str[i]` |
+| Length | O(1) | O(1) | `len(str)` |
+| Concatenation | O(n+m) | O(n+m) | `str1 + str2` |
+| Substring | O(k) | O(k) | `str.slice(i, j)` |
+| Search | O(n*m) | O(1) | `str.indexOf(sub)` |
+| Split | O(n) | O(n) | `str.split(delim)` |
+| Join | O(n) | O(n) | `arr.join(sep)` |
 
 ### Common Algorithms
 
@@ -167,6 +179,14 @@ fn binarySearch(arr, target: int) -> int {
 - Merge Sorted Arrays
 - Rotate Array
 - Best Time to Buy and Sell Stock
+
+### Strings
+- Valid Palindrome
+- Reverse String
+- First Unique Character
+- Longest Substring Without Repeating Characters
+- Valid Anagram
+- Group Anagrams
 
 ### Linked Lists
 - Reverse Linked List
