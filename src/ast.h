@@ -5,7 +5,7 @@ typedef enum {
     NODE_NUMBER, NODE_STRING, NODE_BOOL, NODE_IDENT, NODE_NULL,
     NODE_BINOP, NODE_UNOP, NODE_CALL, NODE_INDEX,
     NODE_LET, NODE_ASSIGN, NODE_IF, NODE_WHILE, NODE_FOR, NODE_FOR_OF, NODE_FOR_C_STYLE,
-    NODE_RETURN, NODE_BREAK, NODE_CONTINUE, NODE_BLOCK, NODE_FUNC_DEF, NODE_STRUCT_DEF, NODE_IMPORT,
+    NODE_RETURN, NODE_BREAK, NODE_CONTINUE, NODE_BLOCK, NODE_FUNC_DEF, NODE_STRUCT_DEF, NODE_UNION_DEF, NODE_IMPORT,
     NODE_LIST, NODE_OBJECT, NODE_SPREAD, NODE_TUPLE,
     NODE_CLASS_DEF, NODE_NEW, NODE_MEMBER_ACCESS, NODE_THIS, NODE_SUPER,
     NODE_TEMPLATE_LITERAL, NODE_TERNARY, NODE_SWITCH, NODE_CASE,
@@ -14,7 +14,8 @@ typedef enum {
     NODE_DESTRUCTURE_ARRAY, NODE_DESTRUCTURE_OBJECT, NODE_DESTRUCTURE_ELEMENT,
     NODE_TRY_CATCH, NODE_THROW,
     NODE_POSTFIX, NODE_OPTIONAL_CHAIN, NODE_NULLISH_COALESCE,
-    NODE_ADDRESS_OF, NODE_DEREFERENCE, NODE_POINTER_MEMBER
+    NODE_ADDRESS_OF, NODE_DEREFERENCE, NODE_POINTER_MEMBER,
+    NODE_STRUCT_LITERAL
 } NodeType;
 
 typedef enum {
@@ -44,6 +45,12 @@ typedef struct {
     int is_shorthand;    // Property shorthand
     int is_method;       // Method shorthand
 } ObjectProperty;
+
+typedef struct {
+    char *name;          // Field name
+    char *type;          // Field type annotation (e.g., "int", "float", "*Point")
+    ASTNode *default_value; // Optional default value
+} StructField;
 
 struct ASTNode {
     NodeType type;
@@ -140,6 +147,18 @@ struct ASTNode {
         struct { ASTNode *operand; } address_of;      // &variable
         struct { ASTNode *operand; } dereference;     // *pointer
         struct { ASTNode *ptr; char *member; } pointer_member;  // ptr->member
+        /* Struct/Union support (C/C++ compatibility) */
+        struct {
+            char *name;                  // struct/union name
+            StructField *fields;         // Array of fields
+            int field_count;             // Number of fields
+            int is_union;                // true for union, false for struct
+        } struct_def;
+        struct {
+            char *struct_name;           // Name of struct/union type
+            ObjectProperty *fields;      // Field initializers (reuse ObjectProperty)
+            int field_count;             // Number of field initializers
+        } struct_literal;
     } data;
 };
 
@@ -199,6 +218,11 @@ ASTNode *ast_new_destructure_element(const char *name, const char *key, ASTNode 
 ASTNode *ast_new_address_of(ASTNode *operand, int line);
 ASTNode *ast_new_dereference(ASTNode *operand, int line);
 ASTNode *ast_new_pointer_member(ASTNode *ptr, const char *member, int line);
+/* Struct/Union constructors (C/C++ compatibility) */
+ASTNode *ast_new_struct_def(const char *name, int is_union, int line);
+void ast_struct_add_field(ASTNode *struct_node, const char *field_name, const char *field_type, ASTNode *default_value);
+ASTNode *ast_new_struct_literal(const char *struct_name, int line);
+void ast_struct_literal_add_field(ASTNode *literal, const char *field_name, ASTNode *value);
 void ast_free(ASTNode *node);
 
 #endif
