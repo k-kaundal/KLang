@@ -255,6 +255,8 @@ char* wasm_generate_js_wrapper(WasmModule *module) {
 /* Convert module to binary */
 uint8_t* wasm_module_to_binary(WasmModule *module, int *size) {
     /* Simplified binary generation - would need full implementation */
+    (void)module;  /* Parameter not used in stub implementation */
+    
     *size = 8;  /* Just magic + version for now */
     uint8_t *binary = malloc(*size);
     

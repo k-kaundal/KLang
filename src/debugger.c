@@ -266,6 +266,7 @@ Value debugger_evaluate_expression(Debugger *dbg, const char *expr) {
     }
     
     /* In a full implementation, would parse and evaluate the expression */
+    (void)expr;  /* Parameter not used in stub implementation */
     print_warning("Expression evaluation not yet fully implemented");
     
     return result;
