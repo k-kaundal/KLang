@@ -1,0 +1,70 @@
+// KLP Echo Server - Simple request/response server
+// This example demonstrates basic KLP server usage
+
+let server = klp.server(9000)
+
+// Register an echo route
+server.route("/echo", fn(stream) {
+    print("Client connected to /echo")
+    
+    // Read incoming message
+    let message = stream.read()
+    print("Received: " + message)
+    
+    // Echo it back
+    stream.write("Echo: " + message)
+    
+    print("Response sent")
+})
+
+// Register a greeting route
+server.route("/greet", fn(stream) {
+    print("Client connected to /greet")
+    
+    let name = stream.read()
+    let greeting = "Hello, " + name + "! Welcome to KLang KLP Server."
+    
+    stream.write(greeting)
+})
+
+// Register a compute route (demonstrates more complex logic)
+server.route("/compute", fn(stream) {
+    print("Client connected to /compute")
+    
+    // Read operation and numbers
+    let operation = stream.read()
+    let a = stream.read()
+    let b = stream.read()
+    
+    let result = 0
+    if operation == "add" {
+        result = a + b
+    } else if operation == "multiply" {
+        result = a * b
+    } else if operation == "subtract" {
+        result = a - b
+    } else if operation == "divide" {
+        if b != 0 {
+            result = a / b
+        } else {
+            stream.write("Error: Division by zero")
+            return
+        }
+    } else {
+        stream.write("Error: Unknown operation")
+        return
+    }
+    
+    stream.write("Result: " + result)
+})
+
+print("KLP Server starting on port 9000...")
+print("Available routes:")
+print("  /echo - Echo back messages")
+print("  /greet - Greet users by name")
+print("  /compute - Perform arithmetic operations")
+print("")
+print("Press Ctrl+C to stop")
+
+// Start the server (blocking call)
+server.start()

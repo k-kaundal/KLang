@@ -103,9 +103,23 @@ $(TARGET): $(OBJ)
 src/%.o: src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-TEST_SRC = tests/test_runner.c tests/test_lexer.c tests/test_parser.c tests/test_interpreter.c tests/test_arrow_functions.c tests/test_ternary.c tests/test_async_await.c src/lexer.c src/ast.c src/parser.c src/interpreter.c src/runtime.c src/gc.c src/vm_stack.c src/vm_register.c src/compiler.c
+# Base test sources (always needed)
+TEST_BASE_SRC = tests/test_runner.c tests/test_lexer.c tests/test_parser.c tests/test_interpreter.c tests/test_arrow_functions.c tests/test_ternary.c tests/test_async_await.c src/lexer.c src/ast.c src/parser.c src/interpreter.c src/runtime.c src/gc.c src/vm_stack.c src/vm_register.c src/compiler.c src/config.c src/error_reporter.c src/cli_colors.c
+
+# KLP sources (when ENABLE_KLP=1)
+ifeq ($(ENABLE_KLP),1)
+    TEST_KLP_SRC = src/klp_protocol.c src/klp_server.c src/klp_client.c src/klp_runtime.c src/klp_crypto.c src/klp_accel.c src/klp_rdma.c
+else
+    TEST_KLP_SRC =
+endif
+
+TEST_SRC = $(TEST_BASE_SRC) $(TEST_KLP_SRC)
+
+# Test-specific LDFLAGS (don't need readline for tests)
+TEST_LDFLAGS = $(LLVM_LDFLAGS) -lm -lpthread -ldl $(KLP_LDFLAGS) $(CRYPTO_LDFLAGS) $(RDMA_LDFLAGS) $(CUDA_LDFLAGS)
+
 test: $(TEST_SRC)
-	$(CC) $(CFLAGS) -Itests -o test_runner $(TEST_SRC) -lm
+	$(CC) $(CFLAGS) -Itests -o test_runner $(TEST_SRC) $(TEST_LDFLAGS)
 	./test_runner
 
 # Phase 2 Unit Tests

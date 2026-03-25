@@ -1,0 +1,47 @@
+// KLP Client - Connect to KLP server and make requests
+// This example demonstrates KLP client usage
+
+print("=== KLP Client Examples ===")
+print("")
+
+// Example 1: Echo Service
+print("1. Testing Echo Service...")
+let echo_client = klp.connect("localhost", 9000, "/echo")
+echo_client.write("Hello, KLP Protocol!")
+let echo_response = echo_client.read()
+print("   Server responded: " + echo_response)
+echo_client.close()
+print("")
+
+// Example 2: Greeting Service
+print("2. Testing Greeting Service...")
+let greet_client = klp.connect("localhost", 9000, "/greet")
+greet_client.write("Alice")
+let greet_response = greet_client.read()
+print("   Server responded: " + greet_response)
+greet_client.close()
+print("")
+
+// Example 3: Compute Service - Addition
+print("3. Testing Compute Service (addition)...")
+let compute_client1 = klp.connect("localhost", 9000, "/compute")
+compute_client1.write("add")
+compute_client1.write(42)
+compute_client1.write(58)
+let result1 = compute_client1.read()
+print("   Server responded: " + result1)
+compute_client1.close()
+print("")
+
+// Example 4: Compute Service - Multiplication
+print("4. Testing Compute Service (multiplication)...")
+let compute_client2 = klp.connect("localhost", 9000, "/compute")
+compute_client2.write("multiply")
+compute_client2.write(12)
+compute_client2.write(7)
+let result2 = compute_client2.read()
+print("   Server responded: " + result2)
+compute_client2.close()
+print("")
+
+print("All tests completed!")
