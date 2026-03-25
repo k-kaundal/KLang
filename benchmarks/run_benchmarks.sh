@@ -46,6 +46,11 @@ cd "$BENCHMARK_DIR"
 gcc -O3 -o "$LANGUAGE_DIR/arithmetic_bench" "$LANGUAGE_DIR/arithmetic_bench.c" -lm
 gcc -O3 -o "$LANGUAGE_DIR/loop_bench" "$LANGUAGE_DIR/loop_bench.c" -lm
 gcc -O3 -o "$LANGUAGE_DIR/function_bench" "$LANGUAGE_DIR/function_bench.c" -lm
+gcc -O3 -o "$LANGUAGE_DIR/string_bench" "$LANGUAGE_DIR/string_bench.c" -lm
+
+# Compile memory benchmarks
+MEMORY_DIR="$BENCHMARK_DIR/memory"
+gcc -O3 -o "$MEMORY_DIR/memory_bench" "$MEMORY_DIR/memory_bench.c" -lm
 
 echo -e "${GREEN}✓ Compilation complete${NC}"
 echo ""
@@ -66,6 +71,22 @@ echo -e "${CYAN}Running loop benchmarks...${NC}"
 
 echo -e "${CYAN}Running function benchmarks...${NC}"
 ./function_bench
+
+echo -e "${CYAN}Running string benchmarks...${NC}"
+./string_bench
+
+# Run memory benchmarks
+echo ""
+echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BOLD}${BLUE}  MEMORY BENCHMARKS${NC}"
+echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+cd "$MEMORY_DIR"
+echo -e "${CYAN}Running memory benchmarks...${NC}"
+./memory_bench
+
+cd "$LANGUAGE_DIR"
 
 # Run cross-language benchmarks if available
 if [ -x "$CROSS_LANG_DIR/fibonacci_compare.sh" ]; then

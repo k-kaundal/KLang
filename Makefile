@@ -90,6 +90,8 @@ benchmarks: $(TARGET)
 	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/arithmetic_bench benchmarks/language/arithmetic_bench.c $(BENCH_LDFLAGS)
 	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/loop_bench benchmarks/language/loop_bench.c $(BENCH_LDFLAGS)
 	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/function_bench benchmarks/language/function_bench.c $(BENCH_LDFLAGS)
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/string_bench benchmarks/language/string_bench.c $(BENCH_LDFLAGS)
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/memory/memory_bench benchmarks/memory/memory_bench.c $(BENCH_LDFLAGS)
 	@echo "✓ Benchmarks built"
 
 bench: benchmarks

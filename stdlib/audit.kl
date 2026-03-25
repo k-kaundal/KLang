@@ -1,0 +1,414 @@
+/**
+ * @module audit
+ * @description Audit logging for security and compliance
+ * 
+ * Features:
+ * - Security event tracking
+ * - Compliance logging
+ * - Tamper-resistant logs
+ * - Structured audit trail
+ * - Multiple output targets
+ */
+
+/**
+ * Audit event types
+ */
+const AuditEventType = {
+    // Authentication
+    AUTH_LOGIN: "auth.login",
+    AUTH_LOGOUT: "auth.logout",
+    AUTH_FAILED: "auth.failed",
+    AUTH_MFA: "auth.mfa",
+    AUTH_PASSWORD_CHANGE: "auth.password_change",
+    
+    // Authorization
+    AUTHZ_ACCESS_GRANTED: "authz.access_granted",
+    AUTHZ_ACCESS_DENIED: "authz.access_denied",
+    AUTHZ_PERMISSION_CHANGE: "authz.permission_change",
+    AUTHZ_ROLE_ASSIGNED: "authz.role_assigned",
+    
+    // Data Access
+    DATA_READ: "data.read",
+    DATA_WRITE: "data.write",
+    DATA_DELETE: "data.delete",
+    DATA_EXPORT: "data.export",
+    
+    // Configuration
+    CONFIG_CHANGE: "config.change",
+    CONFIG_RESET: "config.reset",
+    
+    // System
+    SYSTEM_START: "system.start",
+    SYSTEM_STOP: "system.stop",
+    SYSTEM_ERROR: "system.error",
+    
+    // Admin
+    ADMIN_ACTION: "admin.action",
+    ADMIN_USER_CREATE: "admin.user_create",
+    ADMIN_USER_DELETE: "admin.user_delete",
+    ADMIN_USER_MODIFY: "admin.user_modify",
+    
+    // Security
+    SECURITY_ALERT: "security.alert",
+    SECURITY_THREAT_DETECTED: "security.threat_detected",
+    SECURITY_BREACH_ATTEMPT: "security.breach_attempt"
+}
+
+/**
+ * Audit log entry
+ */
+class AuditEntry {
+    constructor(eventType, actor, action, resource, outcome) {
+        this.id = randomHex(16)
+        this.timestamp = Date.now()
+        this.eventType = eventType
+        this.actor = actor
+        this.action = action
+        this.resource = resource
+        this.outcome = outcome
+        this.metadata = {}
+        this.ip = null
+        this.userAgent = null
+        this.sessionId = null
+    }
+    
+    /**
+     * Add metadata
+     */
+    withMetadata(key, value) {
+        this.metadata[key] = value
+        return this
+    }
+    
+    /**
+     * Add multiple metadata fields
+     */
+    withFields(fields) {
+        this.metadata = { ...this.metadata, ...fields }
+        return this
+    }
+    
+    /**
+     * Set IP address
+     */
+    withIp(ip) {
+        this.ip = ip
+        return this
+    }
+    
+    /**
+     * Set user agent
+     */
+    withUserAgent(userAgent) {
+        this.userAgent = userAgent
+        return this
+    }
+    
+    /**
+     * Set session ID
+     */
+    withSession(sessionId) {
+        this.sessionId = sessionId
+        return this
+    }
+    
+    /**
+     * Convert to JSON
+     */
+    toJSON() {
+        return {
+            id: this.id,
+            timestamp: this.timestamp,
+            eventType: this.eventType,
+            actor: this.actor,
+            action: this.action,
+            resource: this.resource,
+            outcome: this.outcome,
+            metadata: this.metadata,
+            ip: this.ip,
+            userAgent: this.userAgent,
+            sessionId: this.sessionId
+        }
+    }
+    
+    /**
+     * Convert to string (for logging)
+     */
+    toString() {
+        return JSON.stringify(this.toJSON())
+    }
+}
+
+/**
+ * Audit logger
+ */
+class AuditLogger {
+    constructor(options = {}) {
+        this.serviceName = options.serviceName || "unknown"
+        this.outputs = options.outputs || ["console"]
+        this.enableEncryption = options.enableEncryption || false
+        this.rotationEnabled = options.rotationEnabled || false
+        this.maxFileSize = options.maxFileSize || 100 * 1024 * 1024  // 100MB
+        
+        this.stats = {
+            totalEvents: 0,
+            eventsByType: {}
+        }
+    }
+    
+    /**
+     * Log audit event
+     */
+    log(eventType, actor, action, resource, outcome = "success") {
+        const entry = new AuditEntry(eventType, actor, action, resource, outcome)
+        
+        // Add service name
+        entry.withMetadata("service", this.serviceName)
+        
+        // Update stats
+        this.stats.totalEvents++
+        if !this.stats.eventsByType[eventType] {
+            this.stats.eventsByType[eventType] = 0
+        }
+        this.stats.eventsByType[eventType]++
+        
+        // Output to targets
+        this._output(entry)
+        
+        return entry
+    }
+    
+    /**
+     * Log authentication event
+     */
+    logAuth(type, userId, outcome, metadata = {}) {
+        const entry = this.log(type, userId, "authenticate", "auth_system", outcome)
+        entry.withFields(metadata)
+        return entry
+    }
+    
+    /**
+     * Log authorization event
+     */
+    logAuthz(userId, resource, action, outcome, metadata = {}) {
+        const eventType = outcome == "success" 
+            ? AuditEventType.AUTHZ_ACCESS_GRANTED
+            : AuditEventType.AUTHZ_ACCESS_DENIED
+        
+        const entry = this.log(eventType, userId, action, resource, outcome)
+        entry.withFields(metadata)
+        return entry
+    }
+    
+    /**
+     * Log data access event
+     */
+    logDataAccess(userId, resource, action, outcome, metadata = {}) {
+        const eventType = `data.${action}`
+        const entry = this.log(eventType, userId, action, resource, outcome)
+        entry.withFields(metadata)
+        return entry
+    }
+    
+    /**
+     * Log configuration change
+     */
+    logConfigChange(adminId, configKey, oldValue, newValue, metadata = {}) {
+        const entry = this.log(
+            AuditEventType.CONFIG_CHANGE,
+            adminId,
+            "update_config",
+            configKey,
+            "success"
+        )
+        entry.withFields({
+            ...metadata,
+            oldValue: oldValue,
+            newValue: newValue
+        })
+        return entry
+    }
+    
+    /**
+     * Log admin action
+     */
+    logAdminAction(adminId, action, target, outcome, metadata = {}) {
+        const entry = this.log(
+            AuditEventType.ADMIN_ACTION,
+            adminId,
+            action,
+            target,
+            outcome
+        )
+        entry.withFields(metadata)
+        return entry
+    }
+    
+    /**
+     * Log security event
+     */
+    logSecurityEvent(type, actor, details) {
+        const entry = this.log(type, actor, "security_event", "system", "detected")
+        entry.withFields(details)
+        return entry
+    }
+    
+    /**
+     * Output audit entry
+     */
+    _output(entry) {
+        const output = entry.toString()
+        
+        for target in this.outputs {
+            if target == "console" {
+                this._outputConsole(output)
+            } else if target.startsWith("file:") {
+                this._outputFile(output, target.substring(5))
+            } else if target.startsWith("syslog:") {
+                this._outputSyslog(output, target.substring(7))
+            } else if target.startsWith("http:") || target.startsWith("https:") {
+                this._outputHttp(output, target)
+            }
+        }
+    }
+    
+    /**
+     * Output to console
+     */
+    _outputConsole(output) {
+        println("[AUDIT] " + output)
+    }
+    
+    /**
+     * Output to file (append mode)
+     */
+    _outputFile(output, filepath) {
+        try {
+            // Check file size for rotation
+            if this.rotationEnabled {
+                const stats = fs.stat(filepath)
+                if stats && stats.size >= this.maxFileSize {
+                    this._rotateFile(filepath)
+                }
+            }
+            
+            fs.appendFile(filepath, output + "\n")
+        } catch (err) {
+            println(`[AUDIT ERROR] Failed to write to file: ${err.message}`)
+        }
+    }
+    
+    /**
+     * Rotate log file
+     */
+    _rotateFile(filepath) {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
+        const rotatedPath = `${filepath}.${timestamp}`
+        
+        try {
+            fs.rename(filepath, rotatedPath)
+        } catch (err) {
+            println(`[AUDIT ERROR] Failed to rotate file: ${err.message}`)
+        }
+    }
+    
+    /**
+     * Output to syslog
+     */
+    _outputSyslog(output, server) {
+        // TODO: Implement syslog protocol
+        println(`[AUDIT] Would send to syslog: ${server}`)
+    }
+    
+    /**
+     * Output to HTTP endpoint
+     */
+    _outputHttp(output, endpoint) {
+        try {
+            http.post(endpoint, {
+                headers: { "Content-Type": "application/json" },
+                body: output
+            })
+        } catch (err) {
+            println(`[AUDIT ERROR] Failed to send to HTTP: ${err.message}`)
+        }
+    }
+    
+    /**
+     * Get statistics
+     */
+    getStats() {
+        return this.stats
+    }
+    
+    /**
+     * Reset statistics
+     */
+    resetStats() {
+        this.stats = {
+            totalEvents: 0,
+            eventsByType: {}
+        }
+    }
+}
+
+/**
+ * Global audit logger
+ */
+let globalAuditLogger = null
+
+/**
+ * Initialize global audit logger
+ */
+export fn initAudit(options = {}) {
+    globalAuditLogger = new AuditLogger(options)
+    return globalAuditLogger
+}
+
+/**
+ * Get global audit logger
+ */
+export fn getAuditLogger() {
+    if !globalAuditLogger {
+        globalAuditLogger = new AuditLogger()
+    }
+    return globalAuditLogger
+}
+
+/**
+ * Convenience functions using global logger
+ */
+export fn auditLog(eventType, actor, action, resource, outcome) {
+    return getAuditLogger().log(eventType, actor, action, resource, outcome)
+}
+
+export fn auditAuth(type, userId, outcome, metadata) {
+    return getAuditLogger().logAuth(type, userId, outcome, metadata)
+}
+
+export fn auditAuthz(userId, resource, action, outcome, metadata) {
+    return getAuditLogger().logAuthz(userId, resource, action, outcome, metadata)
+}
+
+export fn auditDataAccess(userId, resource, action, outcome, metadata) {
+    return getAuditLogger().logDataAccess(userId, resource, action, outcome, metadata)
+}
+
+export fn auditConfigChange(adminId, configKey, oldValue, newValue, metadata) {
+    return getAuditLogger().logConfigChange(adminId, configKey, oldValue, newValue, metadata)
+}
+
+export fn auditAdminAction(adminId, action, target, outcome, metadata) {
+    return getAuditLogger().logAdminAction(adminId, action, target, outcome, metadata)
+}
+
+export fn auditSecurityEvent(type, actor, details) {
+    return getAuditLogger().logSecurityEvent(type, actor, details)
+}
+
+// Export classes and constants
+export {
+    AuditEventType,
+    AuditEntry,
+    AuditLogger
+}
