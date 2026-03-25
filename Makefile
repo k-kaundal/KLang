@@ -1,8 +1,28 @@
 CC = gcc
 
-# Try to find llvm-config in order of preference
-# Check standard PATH first, then Homebrew paths (macOS), then fallback
-LLVM_CONFIG := $(shell which llvm-config-18 2>/dev/null || which llvm-config-17 2>/dev/null || which llvm-config-16 2>/dev/null || which llvm-config-15 2>/dev/null || which llvm-config-14 2>/dev/null || which llvm-config 2>/dev/null || (test -x /opt/homebrew/opt/llvm@18/bin/llvm-config && echo "/opt/homebrew/opt/llvm@18/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@17/bin/llvm-config && echo "/opt/homebrew/opt/llvm@17/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@16/bin/llvm-config && echo "/opt/homebrew/opt/llvm@16/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@15/bin/llvm-config && echo "/opt/homebrew/opt/llvm@15/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@14/bin/llvm-config && echo "/opt/homebrew/opt/llvm@14/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm/bin/llvm-config && echo "/opt/homebrew/opt/llvm/bin/llvm-config") || (test -x /usr/local/opt/llvm@18/bin/llvm-config && echo "/usr/local/opt/llvm@18/bin/llvm-config") || (test -x /usr/local/opt/llvm@17/bin/llvm-config && echo "/usr/local/opt/llvm@17/bin/llvm-config") || (test -x /usr/local/opt/llvm@16/bin/llvm-config && echo "/usr/local/opt/llvm@16/bin/llvm-config") || (test -x /usr/local/opt/llvm@15/bin/llvm-config && echo "/usr/local/opt/llvm@15/bin/llvm-config") || (test -x /usr/local/opt/llvm@14/bin/llvm-config && echo "/usr/local/opt/llvm@14/bin/llvm-config") || (test -x /usr/local/opt/llvm/bin/llvm-config && echo "/usr/local/opt/llvm/bin/llvm-config") || echo "llvm-config")
+# Try to find llvm-config with version-agnostic approach
+# Priority: Homebrew paths first (any version), then PATH, then specific versions
+LLVM_CONFIG := $(shell \
+	(test -x /opt/homebrew/opt/llvm/bin/llvm-config && echo "/opt/homebrew/opt/llvm/bin/llvm-config") || \
+	(test -x /usr/local/opt/llvm/bin/llvm-config && echo "/usr/local/opt/llvm/bin/llvm-config") || \
+	which llvm-config 2>/dev/null || \
+	which llvm-config-22 2>/dev/null || \
+	which llvm-config-21 2>/dev/null || \
+	which llvm-config-20 2>/dev/null || \
+	which llvm-config-19 2>/dev/null || \
+	which llvm-config-18 2>/dev/null || \
+	which llvm-config-17 2>/dev/null || \
+	which llvm-config-16 2>/dev/null || \
+	which llvm-config-15 2>/dev/null || \
+	which llvm-config-14 2>/dev/null || \
+	(test -x /opt/homebrew/opt/llvm@22/bin/llvm-config && echo "/opt/homebrew/opt/llvm@22/bin/llvm-config") || \
+	(test -x /opt/homebrew/opt/llvm@21/bin/llvm-config && echo "/opt/homebrew/opt/llvm@21/bin/llvm-config") || \
+	(test -x /opt/homebrew/opt/llvm@20/bin/llvm-config && echo "/opt/homebrew/opt/llvm@20/bin/llvm-config") || \
+	(test -x /opt/homebrew/opt/llvm@19/bin/llvm-config && echo "/opt/homebrew/opt/llvm@19/bin/llvm-config") || \
+	(test -x /opt/homebrew/opt/llvm@18/bin/llvm-config && echo "/opt/homebrew/opt/llvm@18/bin/llvm-config") || \
+	(test -x /usr/local/opt/llvm@22/bin/llvm-config && echo "/usr/local/opt/llvm@22/bin/llvm-config") || \
+	(test -x /usr/local/opt/llvm@21/bin/llvm-config && echo "/usr/local/opt/llvm@21/bin/llvm-config") || \
+	echo "llvm-config")
 
 LLVM_CFLAGS = $(shell $(LLVM_CONFIG) --cflags 2>/dev/null)
 LLVM_LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags --libs core executionengine mcjit native passes 2>/dev/null)

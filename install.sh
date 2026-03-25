@@ -18,9 +18,9 @@ NC='\033[0m'
 get_latest_version() {
     # Try GitHub API first
     if command -v curl &> /dev/null; then
-        local latest=$(curl -sS --max-time 5 https://api.github.com/repos/$GITHUB_REPO/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' 2>/dev/null)
-        # Check if we got a valid tag (not null, not empty, starts with v)
-        if [ -n "$latest" ] && [ "$latest" != "null" ] && [[ "$latest" == v* ]]; then
+        local latest=$(curl -sSL --max-time 5 https://api.github.com/repos/$GITHUB_REPO/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' 2>/dev/null)
+        # Check if we got a valid tag (not null, not empty, starts with v, no colons or HTML)
+        if [ -n "$latest" ] && [ "$latest" != "null" ] && [[ "$latest" == v* ]] && [[ ! "$latest" =~ [:] ]] && [[ ! "$latest" =~ \< ]]; then
             echo "$latest"
             return
         fi
@@ -28,9 +28,9 @@ get_latest_version() {
     
     # Try VERSION file from repo
     if command -v curl &> /dev/null; then
-        local version=$(curl -sS --max-time 5 https://raw.githubusercontent.com/$GITHUB_REPO/main/VERSION 2>/dev/null | tr -d '[:space:]')
-        # Check if we got a non-empty version
-        if [ -n "$version" ]; then
+        local version=$(curl -sSL --max-time 5 https://raw.githubusercontent.com/$GITHUB_REPO/main/VERSION 2>/dev/null | head -1 | tr -d '[:space:]')
+        # Check if we got a valid version (not empty, no HTML tags, no HTTP errors)
+        if [ -n "$version" ] && [[ ! "$version" =~ \<.*\> ]] && [[ ! "$version" =~ ^[0-9]+: ]] && [[ ! "$version" =~ [Ee]rror ]]; then
             echo "v$version"
             return
         fi
@@ -103,6 +103,21 @@ check_dependencies() {
         missing_deps+=("make")
     fi
     
+    # Check for LLVM (required for KLang compilation)
+    local llvm_found=false
+    if command -v llvm-config &> /dev/null || \
+       command -v llvm-config-18 &> /dev/null || \
+       command -v llvm-config-17 &> /dev/null || \
+       command -v llvm-config-16 &> /dev/null || \
+       [ -x "/opt/homebrew/opt/llvm/bin/llvm-config" ] || \
+       [ -x "/usr/local/opt/llvm/bin/llvm-config" ]; then
+        llvm_found=true
+    fi
+    
+    if [ "$llvm_found" = false ]; then
+        missing_deps+=("llvm")
+    fi
+    
     if [ ${#missing_deps[@]} -gt 0 ]; then
         echo -e "${YELLOW}Missing dependencies: ${missing_deps[*]}${NC}"
         echo ""
@@ -111,16 +126,16 @@ check_dependencies() {
         case "$OS" in
             linux)
                 if command -v apt-get &> /dev/null; then
-                    echo -e "  ${GREEN}sudo apt-get update && sudo apt-get install -y build-essential git libreadline-dev${NC}"
+                    echo -e "  ${GREEN}sudo apt-get update && sudo apt-get install -y build-essential git libreadline-dev llvm-dev${NC}"
                 elif command -v yum &> /dev/null; then
-                    echo -e "  ${GREEN}sudo yum groupinstall 'Development Tools' && sudo yum install -y git readline-devel${NC}"
+                    echo -e "  ${GREEN}sudo yum groupinstall 'Development Tools' && sudo yum install -y git readline-devel llvm-devel${NC}"
                 elif command -v pacman &> /dev/null; then
-                    echo -e "  ${GREEN}sudo pacman -S base-devel git readline${NC}"
+                    echo -e "  ${GREEN}sudo pacman -S base-devel git readline llvm${NC}"
                 fi
                 ;;
             macos)
-                echo -e "  ${GREEN}xcode-select --install${NC}"
-                echo -e "  ${GREEN}brew install readline${NC} (if you have Homebrew)"
+                echo -e "  ${GREEN}xcode-select --install${NC} (for basic build tools)"
+                echo -e "  ${GREEN}brew install llvm readline${NC} (required)"
                 ;;
         esac
         echo ""
@@ -143,12 +158,12 @@ install_dependencies() {
         linux)
             if command -v apt-get &> /dev/null; then
                 sudo apt-get update
-                sudo apt-get install -y build-essential git libreadline-dev
+                sudo apt-get install -y build-essential git libreadline-dev llvm-dev
             elif command -v yum &> /dev/null; then
                 sudo yum groupinstall -y 'Development Tools'
-                sudo yum install -y git readline-devel
+                sudo yum install -y git readline-devel llvm-devel
             elif command -v pacman &> /dev/null; then
-                sudo pacman -Sy --noconfirm base-devel git readline
+                sudo pacman -Sy --noconfirm base-devel git readline llvm
             fi
             ;;
         macos)
@@ -156,7 +171,17 @@ install_dependencies() {
                 echo -e "${YELLOW}Homebrew not found. Installing Homebrew...${NC}"
                 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
             fi
-            brew install readline
+            echo -e "${BLUE}Installing LLVM and readline...${NC}"
+            brew install llvm readline
+            
+            # Add LLVM to PATH for current session
+            if [ -d "/opt/homebrew/opt/llvm/bin" ]; then
+                export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+                echo -e "${GREEN}✓ Added LLVM to PATH for this session${NC}"
+            elif [ -d "/usr/local/opt/llvm/bin" ]; then
+                export PATH="/usr/local/opt/llvm/bin:$PATH"
+                echo -e "${GREEN}✓ Added LLVM to PATH for this session${NC}"
+            fi
             ;;
     esac
     
@@ -169,10 +194,14 @@ install_klang() {
     
     echo -e "${BLUE}Downloading KLang from GitHub...${NC}"
     
-    if ! git clone --depth 1 --branch "$KLANG_VERSION" "https://github.com/$GITHUB_REPO.git" "$temp_dir/klang" 2>&1; then
-        echo -e "${RED}Failed to clone repository${NC}"
-        rm -rf "$temp_dir"
-        exit 1
+    # Try cloning with version tag first, fallback to main branch
+    if ! git clone --depth 1 --branch "$KLANG_VERSION" "https://github.com/$GITHUB_REPO.git" "$temp_dir/klang" 2>/dev/null; then
+        echo -e "${YELLOW}Version $KLANG_VERSION not found, using main branch...${NC}"
+        if ! git clone --depth 1 "https://github.com/$GITHUB_REPO.git" "$temp_dir/klang" 2>&1; then
+            echo -e "${RED}Failed to clone repository${NC}"
+            rm -rf "$temp_dir"
+            exit 1
+        fi
     fi
     
     cd "$temp_dir/klang"
@@ -302,13 +331,19 @@ verify_installation() {
         echo -e "${GREEN}  Version: $version${NC}"
         echo -e "${GREEN}  Location: $BIN_DIR/klang${NC}"
         
-        # Validate version matches expected release
+        # Validate version matches expected release (only if we have a valid expected version)
         local expected_version=$(echo "$KLANG_VERSION" | sed 's/^v//')
-        if echo "$version" | grep -q "$expected_version"; then
-            echo -e "${GREEN}✓ Version validation passed: $expected_version${NC}"
-        else
-            echo -e "${YELLOW}⚠ Warning: Installed version doesn't match expected version $expected_version${NC}"
-            echo -e "${YELLOW}  This might be expected if you're installing from a specific branch${NC}"
+        # Only show warning if expected version looks valid (no errors, not the fallback)
+        if [[ "$expected_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] && [[ ! "$expected_version" =~ [Ee]rror ]]; then
+            if echo "$version" | grep -q "$expected_version"; then
+                echo -e "${GREEN}✓ Version validation passed: $expected_version${NC}"
+            else
+                # Only warn if versions are actually different and not installing from main
+                if [[ "$expected_version" != "1.0.0-rc" ]]; then
+                    echo -e "${YELLOW}⚠ Warning: Installed version doesn't match expected version $expected_version${NC}"
+                    echo -e "${YELLOW}  This might be expected if you're installing from a specific branch${NC}"
+                fi
+            fi
         fi
     else
         echo -e "${RED}Installation verification failed${NC}"

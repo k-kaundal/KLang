@@ -138,18 +138,18 @@ sudo pacman -S klang
 **Ubuntu/Debian:**
 ```bash
 sudo apt-get update
-sudo apt-get install -y build-essential git libreadline-dev
+sudo apt-get install -y build-essential git libreadline-dev llvm-dev
 ```
 
 **CentOS/RHEL:**
 ```bash
 sudo yum groupinstall -y 'Development Tools'
-sudo yum install -y git readline-devel
+sudo yum install -y git readline-devel llvm-devel
 ```
 
 **Arch Linux:**
 ```bash
-sudo pacman -S base-devel git readline
+sudo pacman -S base-devel git readline llvm
 ```
 
 ### macOS
@@ -161,18 +161,35 @@ xcode-select --install
 # Install Homebrew (if not already installed)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# Install readline
-brew install readline
+# Install required dependencies (includes LLVM)
+brew install readline llvm
+
+# Add LLVM to PATH (important!)
+echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
 ### Windows
 
-Use Windows Subsystem for Linux (WSL):
+**Option 1: Use Windows Subsystem for Linux (WSL) - Recommended:**
 ```bash
 # In PowerShell (as Administrator)
 wsl --install
 
 # Then follow Linux instructions
+```
+
+**Option 2: Native Windows (MSYS2):**
+```bash
+# Install MSYS2 from https://www.msys2.org/
+# Then in MSYS2 terminal:
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-llvm make git
+```
+
+**Option 3: Native Windows (Chocolatey):**
+```powershell
+# In PowerShell (as Administrator)
+choco install git mingw llvm make
 ```
 
 ---

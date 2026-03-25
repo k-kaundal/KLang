@@ -95,6 +95,31 @@ println(analysis)
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+Before installing KLang, ensure you have LLVM installed:
+
+**macOS:**
+```bash
+brew install llvm
+export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt-get install llvm-dev
+```
+
+**Linux (Fedora/RHEL):**
+```bash
+sudo dnf install llvm-devel
+```
+
+**Windows (MSYS2):**
+```bash
+pacman -S mingw-w64-x86_64-llvm
+```
+
 ### Installation
 
 **One-Line Install (Easiest):**

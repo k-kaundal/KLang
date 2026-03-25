@@ -163,6 +163,29 @@ build_from_source() {
         exit 1
     fi
     
+    # Check for LLVM
+    if ! command -v llvm-config &> /dev/null && \
+       ! command -v llvm-config-18 &> /dev/null && \
+       ! command -v llvm-config-17 &> /dev/null && \
+       ! command -v llvm-config-16 &> /dev/null && \
+       [ ! -x "/opt/homebrew/opt/llvm/bin/llvm-config" ] && \
+       [ ! -x "/usr/local/opt/llvm/bin/llvm-config" ]; then
+        echo -e "${RED}Error: LLVM is required to build KLang${NC}"
+        echo -e "Please install LLVM:"
+        case "$OS" in
+            linux)
+                echo -e "  sudo apt-get install llvm-dev  # Debian/Ubuntu"
+                echo -e "  sudo yum install llvm-devel     # CentOS/RHEL"
+                echo -e "  sudo pacman -S llvm             # Arch"
+                ;;
+            macos)
+                echo -e "  brew install llvm"
+                echo -e "  Then add to PATH: export PATH=\"/opt/homebrew/opt/llvm/bin:\$PATH\""
+                ;;
+        esac
+        exit 1
+    fi
+    
     # Build
     echo -e "${BLUE}Compiling...${NC}"
     make clean > /dev/null 2>&1 || true

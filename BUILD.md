@@ -52,32 +52,40 @@ sudo apt-get install -y llvm-16 llvm-16-dev
 
 ## Dependencies
 
-- **GCC**: C compiler
+- **GCC/Clang**: C compiler
 - **Make**: Build system
 - **libreadline-dev**: REPL interactive input
-- **llvm-16-dev**: LLVM backend for code generation
+- **LLVM** (versions 14-18 supported): LLVM backend for code generation and JIT compilation
 - **libm**: Math library (usually included)
 
 ## Platform-Specific Notes
 
 ### Ubuntu/Debian
 ```bash
+sudo apt-get install -y build-essential libreadline-dev llvm-dev
+# Or for specific version:
 sudo apt-get install -y build-essential libreadline-dev llvm-16-dev
 ```
 
 ### Fedora/RHEL
 ```bash
-sudo dnf install gcc make readline-devel llvm16-devel
+sudo dnf install gcc make readline-devel llvm-devel
+```
+
+### Arch Linux
+```bash
+sudo pacman -S base-devel readline llvm
 ```
 
 ### macOS (with Homebrew)
 ```bash
-brew install readline llvm@16
+brew install readline llvm
 ```
 
-You may need to set environment variables:
+You may need to add LLVM to your PATH:
 ```bash
-export LDFLAGS="-L/opt/homebrew/opt/readline/lib -L/opt/homebrew/opt/llvm@16/lib"
+export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+export LDFLAGS="-L/opt/homebrew/opt/readline/lib -L/opt/homebrew/opt/llvm/lib"
 export CPPFLAGS="-I/opt/homebrew/opt/readline/include -I/opt/homebrew/opt/llvm@16/include"
 export PATH="/opt/homebrew/opt/llvm@16/bin:$PATH"
 ```

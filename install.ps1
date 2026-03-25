@@ -64,15 +64,16 @@ function Test-Administrator {
 function Install-Dependencies {
     Write-ColorOutput Blue "Checking dependencies..."
     
+    $missingDeps = @()
+    
     # Check for Git
     try {
         $gitVersion = git --version 2>$null
         Write-ColorOutput Green "✓ Git is installed: $gitVersion"
     }
     catch {
+        $missingDeps += "Git"
         Write-ColorOutput Yellow "! Git not found"
-        Write-ColorOutput Yellow "  Please install Git from: https://git-scm.com/download/win"
-        exit 1
     }
     
     # Check for MinGW/MSYS2 or Visual Studio
@@ -88,10 +89,61 @@ function Install-Dependencies {
     catch {}
     
     if (-not $hasCompiler) {
+        $missingDeps += "C compiler (GCC/Clang)"
         Write-ColorOutput Yellow "! C compiler not found"
-        Write-ColorOutput Yellow "  Please install either:"
-        Write-ColorOutput Yellow "    - MSYS2: https://www.msys2.org/"
-        Write-ColorOutput Yellow "    - Visual Studio Build Tools"
+    }
+    
+    # Check for LLVM
+    $hasLLVM = $false
+    try {
+        $llvmVersion = llvm-config --version 2>$null
+        if ($?) {
+            Write-ColorOutput Green "✓ LLVM is installed: $llvmVersion"
+            $hasLLVM = $true
+        }
+    }
+    catch {}
+    
+    if (-not $hasLLVM) {
+        # Check common LLVM installation paths
+        $llvmPaths = @(
+            "C:\Program Files\LLVM\bin\llvm-config.exe",
+            "C:\msys64\mingw64\bin\llvm-config.exe",
+            "C:\msys64\usr\bin\llvm-config.exe"
+        )
+        foreach ($path in $llvmPaths) {
+            if (Test-Path $path) {
+                Write-ColorOutput Green "✓ LLVM found at: $path"
+                $hasLLVM = $true
+                break
+            }
+        }
+    }
+    
+    if (-not $hasLLVM) {
+        $missingDeps += "LLVM"
+        Write-ColorOutput Yellow "! LLVM not found"
+    }
+    
+    if ($missingDeps.Count -gt 0) {
+        Write-Host ""
+        Write-ColorOutput Red "Missing required dependencies:"
+        Write-Host ""
+        Write-ColorOutput Yellow "Please install the following:"
+        Write-Host ""
+        if ($missingDeps -contains "Git") {
+            Write-ColorOutput Cyan "  • Git: https://git-scm.com/download/win"
+        }
+        if ($missingDeps -contains "C compiler (GCC/Clang)") {
+            Write-ColorOutput Cyan "  • MSYS2 (includes GCC): https://www.msys2.org/"
+            Write-ColorOutput Yellow "    Then run: pacman -S mingw-w64-x86_64-gcc make"
+        }
+        if ($missingDeps -contains "LLVM") {
+            Write-ColorOutput Cyan "  • LLVM: https://releases.llvm.org/download.html"
+            Write-ColorOutput Yellow "    Or via MSYS2: pacman -S mingw-w64-x86_64-llvm"
+            Write-ColorOutput Yellow "    Or via Chocolatey: choco install llvm"
+        }
+        Write-Host ""
         exit 1
     }
 }
