@@ -2,9 +2,14 @@
 #include "cli_colors.h"
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
+
+#ifdef _WIN32
+#include <direct.h>  // For _mkdir on Windows
+#else
 #include <unistd.h>
 #include <dirent.h>
-#include <errno.h>
+#endif
 
 /* Platform-specific directory creation */
 static int create_directory(const char *path) {
