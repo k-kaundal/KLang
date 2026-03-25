@@ -1,0 +1,63 @@
+# Test manual memory management with malloc/free
+# Run with: KLANG_ENABLE_MANUAL_MEMORY=1 klang run tests/test_memory_manual.kl
+
+println("=== Manual Memory Allocation Test ===")
+println("")
+
+# Test malloc
+println("Test 1: malloc(1024)")
+let ptr = malloc(1024)
+if (ptr != null) {
+    println("  ✓ Successfully allocated 1024 bytes")
+    println("  Address: ", ptr)
+    
+    # Free the memory
+    free(ptr)
+    println("  ✓ Successfully freed memory")
+} else {
+    println("  ✗ malloc failed")
+}
+println("")
+
+# Test calloc
+println("Test 2: calloc(10, 64)")
+let ptr2 = calloc(10, 64)
+if (ptr2 != null) {
+    println("  ✓ Successfully allocated 640 bytes (zero-initialized)")
+    println("  Address: ", ptr2)
+    free(ptr2)
+    println("  ✓ Successfully freed memory")
+} else {
+    println("  ✗ calloc failed")
+}
+println("")
+
+# Test realloc
+println("Test 3: realloc()")
+let ptr3 = malloc(512)
+if (ptr3 != null) {
+    println("  ✓ Initially allocated 512 bytes")
+    println("  Address: ", ptr3)
+    
+    let ptr4 = realloc(ptr3, 2048)
+    if (ptr4 != null) {
+        println("  ✓ Reallocated to 2048 bytes")
+        println("  New address: ", ptr4)
+        free(ptr4)
+        println("  ✓ Successfully freed memory")
+    } else {
+        println("  ✗ realloc failed")
+        free(ptr3)
+    }
+} else {
+    println("  ✗ Initial malloc failed")
+}
+println("")
+
+# Test memory statistics (debug mode only)
+println("Test 4: Memory statistics (requires debug mode)")
+println("  Run with: KLANG_DEBUG=1 KLANG_ENABLE_MANUAL_MEMORY=1")
+# memstat()
+
+println("")
+println("All tests complete!")

@@ -1,0 +1,11 @@
+# Test sizeof function
+println("=== sizeof() tests ===")
+println("")
+
+println("Integer: ", sizeof(42), " bytes")
+println("Float: ", sizeof(3.14), " bytes")
+println("Bool: ", sizeof(true), " bytes")
+println("String 'hello': ", sizeof("hello"), " bytes")
+println("List [1,2,3]: ", sizeof([1,2,3]), " bytes")
+println("")
+println("sizeof() tests complete!")
