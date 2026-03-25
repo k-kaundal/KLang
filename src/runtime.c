@@ -1759,11 +1759,13 @@ static Value builtin_generator_next(Interpreter *interp, Value *args, int argc) 
         /* Return {value: null, done: true} */
         Value result;
         result.type = VAL_OBJECT;
-        result.as.object_val.class_name = strdup("IteratorResult");
-        result.as.object_val.fields = env_new(NULL);
-        result.as.object_val.methods = env_new(NULL);
-        env_set_local(result.as.object_val.fields, "value", make_null());
-        env_set_local(result.as.object_val.fields, "done", make_bool(1));
+        result.as.object_val = malloc(sizeof(ObjectVal));
+        result.as.object_val->class_name = strdup("IteratorResult");
+        result.as.object_val->fields = env_new(NULL);
+        result.as.object_val->methods = env_new(NULL);
+        result.as.object_val->ref_count = 1;
+        env_set_local(result.as.object_val->fields, "value", make_null());
+        env_set_local(result.as.object_val->fields, "done", make_bool(1));
         return result;
     }
     
@@ -1803,12 +1805,14 @@ static Value builtin_generator_next(Interpreter *interp, Value *args, int argc) 
     /* Create iterator result object {value: ..., done: ...} */
     Value result;
     result.type = VAL_OBJECT;
-    result.as.object_val.class_name = strdup("IteratorResult");
-    result.as.object_val.fields = env_new(NULL);
-    result.as.object_val.methods = env_new(NULL);
+    result.as.object_val = malloc(sizeof(ObjectVal));
+    result.as.object_val->class_name = strdup("IteratorResult");
+    result.as.object_val->fields = env_new(NULL);
+    result.as.object_val->methods = env_new(NULL);
+    result.as.object_val->ref_count = 1;
     
-    env_set_local(result.as.object_val.fields, "value", yielded_value);
-    env_set_local(result.as.object_val.fields, "done", make_bool(is_done));
+    env_set_local(result.as.object_val->fields, "value", yielded_value);
+    env_set_local(result.as.object_val->fields, "done", make_bool(is_done));
     
     return result;
 }
@@ -3053,80 +3057,80 @@ void runtime_init(Interpreter *interp) {
     
     // Math constants
     Value pi_val = make_float(3.14159265358979323846);
-    env_set_local(math_obj.as.object_val.fields, "PI", pi_val);
+    env_set_local(math_obj.as.object_val->fields, "PI", pi_val);
     
     Value e_val = make_float(2.71828182845904523536);
-    env_set_local(math_obj.as.object_val.fields, "E", e_val);
+    env_set_local(math_obj.as.object_val->fields, "E", e_val);
     
     Value tau_val = make_float(6.28318530717958647692);
-    env_set_local(math_obj.as.object_val.fields, "TAU", tau_val);
+    env_set_local(math_obj.as.object_val->fields, "TAU", tau_val);
     
     // Math functions as global (can also access via Math.func)
     v.as.builtin = builtin_math_abs;
     env_set_local(interp->global_env, "abs", v);
-    env_set_local(math_obj.as.object_val.fields, "abs", v);
+    env_set_local(math_obj.as.object_val->fields, "abs", v);
     
     v.as.builtin = builtin_math_ceil;
-    env_set_local(math_obj.as.object_val.fields, "ceil", v);
+    env_set_local(math_obj.as.object_val->fields, "ceil", v);
     
     v.as.builtin = builtin_math_floor;
-    env_set_local(math_obj.as.object_val.fields, "floor", v);
+    env_set_local(math_obj.as.object_val->fields, "floor", v);
     
     v.as.builtin = builtin_math_round;
-    env_set_local(math_obj.as.object_val.fields, "round", v);
+    env_set_local(math_obj.as.object_val->fields, "round", v);
     
     v.as.builtin = builtin_math_min;
     env_set_local(interp->global_env, "min", v);
-    env_set_local(math_obj.as.object_val.fields, "min", v);
+    env_set_local(math_obj.as.object_val->fields, "min", v);
     
     v.as.builtin = builtin_math_max;
     env_set_local(interp->global_env, "max", v);
-    env_set_local(math_obj.as.object_val.fields, "max", v);
+    env_set_local(math_obj.as.object_val->fields, "max", v);
     
     v.as.builtin = builtin_math_pow;
-    env_set_local(math_obj.as.object_val.fields, "pow", v);
+    env_set_local(math_obj.as.object_val->fields, "pow", v);
     
     v.as.builtin = builtin_math_sqrt;
-    env_set_local(math_obj.as.object_val.fields, "sqrt", v);
+    env_set_local(math_obj.as.object_val->fields, "sqrt", v);
     
     v.as.builtin = builtin_math_exp;
-    env_set_local(math_obj.as.object_val.fields, "exp", v);
+    env_set_local(math_obj.as.object_val->fields, "exp", v);
     
     v.as.builtin = builtin_math_log;
-    env_set_local(math_obj.as.object_val.fields, "log", v);
+    env_set_local(math_obj.as.object_val->fields, "log", v);
     
     v.as.builtin = builtin_math_log10;
-    env_set_local(math_obj.as.object_val.fields, "log10", v);
+    env_set_local(math_obj.as.object_val->fields, "log10", v);
     
     v.as.builtin = builtin_math_sin;
-    env_set_local(math_obj.as.object_val.fields, "sin", v);
+    env_set_local(math_obj.as.object_val->fields, "sin", v);
     
     v.as.builtin = builtin_math_cos;
-    env_set_local(math_obj.as.object_val.fields, "cos", v);
+    env_set_local(math_obj.as.object_val->fields, "cos", v);
     
     v.as.builtin = builtin_math_tan;
-    env_set_local(math_obj.as.object_val.fields, "tan", v);
+    env_set_local(math_obj.as.object_val->fields, "tan", v);
     
     v.as.builtin = builtin_math_asin;
-    env_set_local(math_obj.as.object_val.fields, "asin", v);
+    env_set_local(math_obj.as.object_val->fields, "asin", v);
     
     v.as.builtin = builtin_math_acos;
-    env_set_local(math_obj.as.object_val.fields, "acos", v);
+    env_set_local(math_obj.as.object_val->fields, "acos", v);
     
     v.as.builtin = builtin_math_atan;
-    env_set_local(math_obj.as.object_val.fields, "atan", v);
+    env_set_local(math_obj.as.object_val->fields, "atan", v);
     
     v.as.builtin = builtin_math_atan2;
-    env_set_local(math_obj.as.object_val.fields, "atan2", v);
+    env_set_local(math_obj.as.object_val->fields, "atan2", v);
     
     v.as.builtin = builtin_math_sinh;
-    env_set_local(math_obj.as.object_val.fields, "sinh", v);
+    env_set_local(math_obj.as.object_val->fields, "sinh", v);
     
     v.as.builtin = builtin_math_cosh;
-    env_set_local(math_obj.as.object_val.fields, "cosh", v);
+    env_set_local(math_obj.as.object_val->fields, "cosh", v);
     
     v.as.builtin = builtin_math_tanh;
-    env_set_local(math_obj.as.object_val.fields, "tanh", v);
+    env_set_local(math_obj.as.object_val->fields, "tanh", v);
     
     // Register Math object globally
     env_set_local(interp->global_env, "Math", math_obj);
@@ -3302,13 +3306,13 @@ void runtime_init(Interpreter *interp) {
     Value env_obj = make_object("env", NULL);
     
     v.as.builtin = builtin_env_get;
-    env_set_local(env_obj.as.object_val.fields, "get", v);
+    env_set_local(env_obj.as.object_val->fields, "get", v);
     
     v.as.builtin = builtin_env_set;
-    env_set_local(env_obj.as.object_val.fields, "set", v);
+    env_set_local(env_obj.as.object_val->fields, "set", v);
     
     v.as.builtin = builtin_env_has;
-    env_set_local(env_obj.as.object_val.fields, "has", v);
+    env_set_local(env_obj.as.object_val->fields, "has", v);
     
     env_set_local(interp->global_env, "env", env_obj);
     
@@ -3317,13 +3321,13 @@ void runtime_init(Interpreter *interp) {
     Value http_obj = make_object("http", NULL);
     
     v.as.builtin = builtin_http_get;
-    env_set_local(http_obj.as.object_val.fields, "get", v);
+    env_set_local(http_obj.as.object_val->fields, "get", v);
     
     v.as.builtin = builtin_http_post;
-    env_set_local(http_obj.as.object_val.fields, "post", v);
+    env_set_local(http_obj.as.object_val->fields, "post", v);
     
     v.as.builtin = builtin_http_request;
-    env_set_local(http_obj.as.object_val.fields, "request", v);
+    env_set_local(http_obj.as.object_val->fields, "request", v);
     
     env_set_local(interp->global_env, "http", http_obj);
     

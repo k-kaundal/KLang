@@ -52,6 +52,7 @@ typedef struct {
     char *class_name;
     Env *fields;       // Instance fields
     Env *methods;      // Reference to class methods (shared)
+    int ref_count;     // Reference count for shared ownership
 } ObjectVal;
 
 typedef struct {
@@ -132,7 +133,7 @@ struct Value {
         TupleVal tuple_val;
         BuiltinFn builtin;
         ClassVal class_val;
-        ObjectVal object_val;
+        ObjectVal *object_val;    // Pointer for reference semantics
         MethodVal method_val;
         PromiseVal promise_val;
         ModuleVal module_val;
