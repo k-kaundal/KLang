@@ -367,12 +367,8 @@ Token lexer_next_token(Lexer *lexer) {
                 lexer->pos++; lexer->col++;
                 return make_token(TOKEN_AND_AND, "&&", line, col);
             }
-            // Single & is not supported (bitwise operators not implemented)
-            fprintf(stderr, "Lexer error at line %d, col %d: unexpected character '&' (bitwise operators not supported yet)\n", line, col);
-            {
-                char buf[2] = {c, 0};
-                return make_token(TOKEN_EOF, buf, line, col);
-            }
+            // Single & for address-of operator (pointer support)
+            return make_token(TOKEN_AMP, "&", line, col);
         case '|':
             if (lexer->source[lexer->pos] == '|') {
                 lexer->pos++; lexer->col++;
@@ -459,6 +455,7 @@ const char *token_type_name(TokenType type) {
         case TOKEN_BANG: return "BANG";
         case TOKEN_AND_AND: return "AND_AND";
         case TOKEN_OR_OR: return "OR_OR";
+        case TOKEN_AMP: return "AMP";
         case TOKEN_PLUS_ASSIGN: return "PLUS_ASSIGN";
         case TOKEN_MINUS_ASSIGN: return "MINUS_ASSIGN";
         case TOKEN_STAR_ASSIGN: return "STAR_ASSIGN";

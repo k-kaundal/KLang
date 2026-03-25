@@ -388,6 +388,26 @@ ASTNode *ast_new_destructure_element(const char *name, const char *key, ASTNode 
     return n;
 }
 
+/* Pointer operation constructors (C/C++ compatibility) */
+ASTNode *ast_new_address_of(ASTNode *operand, int line) {
+    ASTNode *n = ast_alloc(NODE_ADDRESS_OF, line);
+    n->data.address_of.operand = operand;
+    return n;
+}
+
+ASTNode *ast_new_dereference(ASTNode *operand, int line) {
+    ASTNode *n = ast_alloc(NODE_DEREFERENCE, line);
+    n->data.dereference.operand = operand;
+    return n;
+}
+
+ASTNode *ast_new_pointer_member(ASTNode *ptr, const char *member, int line) {
+    ASTNode *n = ast_alloc(NODE_POINTER_MEMBER, line);
+    n->data.pointer_member.ptr = ptr;
+    n->data.pointer_member.member = member ? strdup(member) : NULL;
+    return n;
+}
+
 
 void ast_free(ASTNode *node) {
     int i;
@@ -630,6 +650,17 @@ void ast_free(ASTNode *node) {
             break;
         case NODE_THROW:
             ast_free(node->data.throw_stmt.expression);
+            break;
+        case NODE_ADDRESS_OF:
+            ast_free(node->data.address_of.operand);
+            break;
+        case NODE_DEREFERENCE:
+            ast_free(node->data.dereference.operand);
+            break;
+        case NODE_POINTER_MEMBER:
+            ast_free(node->data.pointer_member.ptr);
+            if (node->data.pointer_member.member)
+                free(node->data.pointer_member.member);
             break;
         default:
             break;

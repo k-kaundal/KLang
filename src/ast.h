@@ -13,7 +13,8 @@ typedef enum {
     NODE_EXPORT, NODE_IMPORT_NAMED, NODE_IMPORT_DEFAULT, NODE_IMPORT_NAMESPACE,
     NODE_DESTRUCTURE_ARRAY, NODE_DESTRUCTURE_OBJECT, NODE_DESTRUCTURE_ELEMENT,
     NODE_TRY_CATCH, NODE_THROW,
-    NODE_POSTFIX, NODE_OPTIONAL_CHAIN, NODE_NULLISH_COALESCE
+    NODE_POSTFIX, NODE_OPTIONAL_CHAIN, NODE_NULLISH_COALESCE,
+    NODE_ADDRESS_OF, NODE_DEREFERENCE, NODE_POINTER_MEMBER
 } NodeType;
 
 typedef enum {
@@ -135,6 +136,10 @@ struct ASTNode {
         struct { char op[4]; ASTNode *operand; int is_postfix; } postfix;
         struct { ASTNode *obj; char *member; } optional_chain;
         struct { ASTNode *left; ASTNode *right; } nullish_coalesce;
+        /* Pointer operations (C/C++ compatibility) */
+        struct { ASTNode *operand; } address_of;      // &variable
+        struct { ASTNode *operand; } dereference;     // *pointer
+        struct { ASTNode *ptr; char *member; } pointer_member;  // ptr->member
     } data;
 };
 
@@ -190,6 +195,10 @@ ASTNode *ast_new_export(int is_default, ASTNode *declaration, char **names, int 
 ASTNode *ast_new_destructure_array(ASTNode *source, DeclType decl_type, int line);
 ASTNode *ast_new_destructure_object(ASTNode *source, DeclType decl_type, int line);
 ASTNode *ast_new_destructure_element(const char *name, const char *key, ASTNode *default_value, int is_rest, int is_hole, int line);
+/* Pointer operation constructors (C/C++ compatibility) */
+ASTNode *ast_new_address_of(ASTNode *operand, int line);
+ASTNode *ast_new_dereference(ASTNode *operand, int line);
+ASTNode *ast_new_pointer_member(ASTNode *ptr, const char *member, int line);
 void ast_free(ASTNode *node);
 
 #endif
