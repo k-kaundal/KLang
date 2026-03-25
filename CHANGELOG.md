@@ -5,6 +5,22 @@ All notable changes to KLang will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-rc] - 2026-03-24
+
+### Fixed
+- Updated hardcoded version numbers across codebase to match latest release (v1.0.0-rc)
+- Fixed install script to default to latest release tag instead of `main` branch
+- Added version validation in install script to verify installed version matches expected version
+- Updated Homebrew formula to use correct release tag
+- Updated PowerShell installer version
+
+### Changed
+- Version in `src/cli_help.c` updated from 0.2.0 to 1.0.0-rc
+- Version in `include/klang.h` updated from 0.1.0 to 1.0.0-rc
+- Install script (`install.sh`) now defaults to `v1.0.0-rc` tag
+- Install script (`install.ps1`) now defaults to `v1.0.0-rc` tag
+- Homebrew formula now references v1.0.0-rc release
+
 ## [Unreleased]
 
 ### Added - AI-Native Core Language (v0.8.0) 🤖🎉

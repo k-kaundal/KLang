@@ -1,0 +1,72 @@
+// Basic Print Test - Using only core features
+println("=== Basic Print Tests ===");
+
+// Test 1: Simple strings
+println("Test 1: Hello World");
+print("Test 1b: ");
+println("Print without newline first");
+
+// Test 2: Numbers
+println("Test 2: Number 42");
+println(42);
+println(0);
+println(-10);
+println(3.14);
+
+// Test 3: Booleans
+println("Test 3: Booleans");
+println(true);
+println(false);
+
+// Test 4: Null and undefined
+println("Test 4: Null");
+println(null);
+// Note: undefined not available as literal
+
+// Test 5: Variables
+println("Test 5: Variables");
+let myStr = "Variable string";
+println(myStr);
+let myNum = 100;
+println(myNum);
+let myFlag = true;
+println(myFlag);
+
+// Test 6: Expressions
+println("Test 6: Expressions");
+println(5 + 5);
+println(10 - 3);
+println(4 * 5);
+println(20 / 4);
+
+// Test 7: String concatenation
+println("Test 7: String Concatenation");
+let hello = "Hello";
+let world = "World";
+println(hello + " " + world);
+
+// Test 8: Loop printing
+println("Test 8: Loop");
+let i = 0;
+while (i < 10) {
+    print(i);
+    print(" ");
+    i = i + 1;
+}
+println("");
+
+// Test 9: Function return value
+println("Test 9: Function");
+function greet() {
+    return "Greetings";
+}
+println(greet());
+
+// Test 10: Multiple prints on same line
+println("Test 10: Multiple prints");
+print("A");
+print("B");
+print("C");
+println("D");
+
+println("=== Basic Tests Complete ===");

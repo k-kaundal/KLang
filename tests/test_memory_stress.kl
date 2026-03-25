@@ -1,0 +1,243 @@
+// Memory Stress Test Suite
+println("=== Memory Stress Test Suite ===\n");
+
+// Test 1: Create and destroy many objects
+println("Test 1: Create/Destroy Many Objects");
+function testObjectCreation() {
+    let count = 0;
+    for (let i = 0; i < 1000; i++) {
+        let obj = {
+            id: i,
+            name: "Object" + i,
+            data: "Some data for object " + i,
+            nested: {
+                value: i * 2,
+                description: "Nested object " + i
+            }
+        };
+        count++;
+        // Object should be garbage collected when out of scope
+    }
+    return count;
+}
+let objCount = testObjectCreation();
+println("Created " + objCount + " objects");
+
+// Test 2: Large array allocations
+println("\nTest 2: Large Array Allocations");
+function testLargeArrays() {
+    let arr1 = [];
+    for (let i = 0; i < 10000; i++) {
+        arr1.push(i);
+    }
+    println("Array 1 size: " + arr1.length);
+    
+    let arr2 = [];
+    for (let i = 0; i < 10000; i++) {
+        arr2.push("String" + i);
+    }
+    println("Array 2 size: " + arr2.length);
+    
+    let arr3 = [];
+    for (let i = 0; i < 5000; i++) {
+        arr3.push({id: i, value: i * 2});
+    }
+    println("Array 3 size: " + arr3.length);
+    
+    return arr1.length + arr2.length + arr3.length;
+}
+let totalElements = testLargeArrays();
+println("Total elements created: " + totalElements);
+
+// Test 3: Recursive functions (not too deep to avoid stack overflow)
+println("\nTest 3: Recursive Functions");
+function factorial(n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+
+function fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+println("Factorial(10): " + factorial(10));
+println("Factorial(15): " + factorial(15));
+println("Fibonacci(10): " + fibonacci(10));
+println("Fibonacci(15): " + fibonacci(15));
+
+// Test 4: Deep recursion (carefully)
+println("\nTest 4: Deep Recursion Test");
+function deepRecursion(n, max) {
+    if (n >= max) return n;
+    return deepRecursion(n + 1, max);
+}
+let deepResult = deepRecursion(0, 500);
+println("Deep recursion result: " + deepResult);
+
+// Test 5: String concatenation in loops
+println("\nTest 5: String Concatenation in Loops");
+function testStringConcat() {
+    let str = "";
+    for (let i = 0; i < 1000; i++) {
+        str += "A";
+    }
+    return str.length;
+}
+let strLen = testStringConcat();
+println("Concatenated string length: " + strLen);
+
+// Test 6: Multiple string concatenations
+println("\nTest 6: Multiple String Operations");
+function testMultipleStrings() {
+    let strings = [];
+    for (let i = 0; i < 1000; i++) {
+        strings.push("String number " + i + " with some additional text");
+    }
+    return strings.length;
+}
+let stringCount = testMultipleStrings();
+println("Created " + stringCount + " strings");
+
+// Test 7: Nested arrays and objects
+println("\nTest 7: Nested Data Structures");
+function createNestedStructure(depth, breadth) {
+    if (depth === 0) {
+        return {value: "leaf"};
+    }
+    let obj = {level: depth, children: []};
+    for (let i = 0; i < breadth; i++) {
+        obj.children.push(createNestedStructure(depth - 1, breadth));
+    }
+    return obj;
+}
+let nested = createNestedStructure(5, 3);
+println("Created nested structure with depth 5 and breadth 3");
+
+// Test 8: Memory churn (allocate and release)
+println("\nTest 8: Memory Churn Test");
+function memoryChurn() {
+    for (let i = 0; i < 100; i++) {
+        let tempArray = [];
+        for (let j = 0; j < 100; j++) {
+            tempArray.push({id: j, data: "Data" + j});
+        }
+        // tempArray goes out of scope
+    }
+    return "Complete";
+}
+println("Memory churn: " + memoryChurn());
+
+// Test 9: Array operations
+println("\nTest 9: Array Operations");
+function testArrayOperations() {
+    let arr = [];
+    
+    // Push operations
+    for (let i = 0; i < 1000; i++) {
+        arr.push(i);
+    }
+    
+    // Pop operations
+    for (let i = 0; i < 500; i++) {
+        arr.pop();
+    }
+    
+    // More pushes
+    for (let i = 0; i < 500; i++) {
+        arr.push(i * 2);
+    }
+    
+    return arr.length;
+}
+let finalSize = testArrayOperations();
+println("Final array size: " + finalSize);
+
+// Test 10: String repeat operations
+println("\nTest 10: String Repeat Operations");
+let smallRepeat = "ABC".repeat(100);
+println("Small repeat length: " + smallRepeat.length);
+
+let mediumRepeat = "XYZ".repeat(1000);
+println("Medium repeat length: " + mediumRepeat.length);
+
+let largeRepeat = "123".repeat(10000);
+println("Large repeat length: " + largeRepeat.length);
+
+// Test 11: Object property access patterns
+println("\nTest 11: Object Property Access");
+function testPropertyAccess() {
+    let obj = {};
+    for (let i = 0; i < 1000; i++) {
+        obj["prop" + i] = "value" + i;
+    }
+    
+    let sum = 0;
+    for (let i = 0; i < 1000; i++) {
+        if (obj["prop" + i]) {
+            sum++;
+        }
+    }
+    return sum;
+}
+let propCount = testPropertyAccess();
+println("Properties accessed: " + propCount);
+
+// Test 12: Function closure memory
+println("\nTest 12: Closure Memory Test");
+function createClosures() {
+    let closures = [];
+    for (let i = 0; i < 100; i++) {
+        let captured = i;
+        closures.push(function() {
+            return captured * 2;
+        });
+    }
+    return closures.length;
+}
+let closureCount = createClosures();
+println("Created " + closureCount + " closures");
+
+// Test 13: Mixed operations
+println("\nTest 13: Mixed Operations");
+function mixedOperations() {
+    let result = 0;
+    for (let i = 0; i < 100; i++) {
+        let obj = {id: i};
+        let arr = [i, i+1, i+2];
+        let str = "Test" + i;
+        result += obj.id + arr.length + str.length;
+    }
+    return result;
+}
+let mixedResult = mixedOperations();
+println("Mixed operations result: " + mixedResult);
+
+// Test 14: Rapid allocation/deallocation
+println("\nTest 14: Rapid Allocation/Deallocation");
+for (let iteration = 0; iteration < 10; iteration++) {
+    let tempData = [];
+    for (let i = 0; i < 1000; i++) {
+        tempData.push({
+            id: i,
+            name: "Item" + i,
+            value: i * 1.5
+        });
+    }
+    // tempData goes out of scope
+}
+println("Completed 10 iterations of rapid allocation");
+
+// Test 15: String split and join operations
+println("\nTest 15: String Split/Join Operations");
+let longString = "";
+for (let i = 0; i < 100; i++) {
+    longString += "word" + i + " ";
+}
+let words = longString.split(" ");
+println("Split into " + words.length + " words");
+let rejoined = words.join("-");
+println("Rejoined length: " + rejoined.length);
+
+println("\n=== Memory Stress Tests Complete ===");
+println("If you're seeing this, basic memory management is working!");

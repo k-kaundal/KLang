@@ -1,0 +1,120 @@
+// Basic Memory Test - Using only core features
+println("=== Basic Memory Tests ===");
+
+// Test 1: Variable creation in loop
+println("Test 1: Variable Creation Loop");
+let count = 0;
+while (count < 100) {
+    let temp = count;
+    count = count + 1;
+}
+println("Created 100 variables in loop");
+
+// Test 2: String concatenation
+println("Test 2: String Concatenation");
+let str = "";
+let i = 0;
+while (i < 100) {
+    str = str + "A";
+    i = i + 1;
+}
+println("String length: should be 100");
+
+// Test 3: Function calls
+println("Test 3: Function Calls");
+function testFunc(n) {
+    return n * 2;
+}
+let j = 0;
+let result = 0;
+while (j < 100) {
+    result = testFunc(j);
+    j = j + 1;
+}
+println("Called function 100 times");
+
+// Test 4: Nested function calls
+println("Test 4: Nested Functions");
+function outer(x) {
+    function inner(y) {
+        return y + 1;
+    }
+    return inner(x);
+}
+let k = 0;
+while (k < 50) {
+    let val = outer(k);
+    k = k + 1;
+}
+println("Nested function calls complete");
+
+// Test 5: Recursion
+println("Test 5: Recursion");
+function factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+let fact5 = factorial(5);
+let fact10 = factorial(10);
+println("Factorial(5) calculated");
+println("Factorial(10) calculated");
+
+// Test 6: Multiple variables
+println("Test 6: Multiple Variables");
+let a = 1;
+let b = 2;
+let c = 3;
+let d = 4;
+let e = 5;
+let f = 6;
+let g = 7;
+let h = 8;
+let total = a + b + c + d + e + f + g + h;
+println("Sum of 8 variables");
+
+// Test 7: String operations
+println("Test 7: String Operations");
+let base = "Hello";
+let greeting1 = base + " World";
+let greeting2 = base + " There";
+let greeting3 = base + " Everyone";
+println("Created multiple string combinations");
+
+// Test 8: Scope tests
+println("Test 8: Scope Test");
+let outer_var = "outer";
+function scopeTest() {
+    let inner_var = "inner";
+    return inner_var;
+}
+let m = 0;
+while (m < 50) {
+    let temp_result = scopeTest();
+    m = m + 1;
+}
+println("Scope test complete");
+
+// Test 9: Boolean operations
+println("Test 9: Boolean Operations");
+let n = 0;
+while (n < 100) {
+    let isEven = (n % 2) == 0;
+    let isOdd = !isEven;
+    n = n + 1;
+}
+println("Boolean operations complete");
+
+// Test 10: Large number of operations
+println("Test 10: Large Operation Count");
+let p = 0;
+while (p < 1000) {
+    let temp1 = p;
+    let temp2 = temp1 + 1;
+    let temp3 = temp2 * 2;
+    p = p + 1;
+}
+println("1000 iterations complete");
+
+println("=== Basic Memory Tests Complete ===");

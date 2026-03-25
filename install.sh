@@ -14,7 +14,33 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # Configuration
-KLANG_VERSION="${KLANG_VERSION:-main}"
+# Auto-detect latest version from GitHub API, fallback to VERSION file, then v1.0.0-rc
+get_latest_version() {
+    # Try GitHub API first
+    if command -v curl &> /dev/null; then
+        local latest=$(curl -sS --max-time 5 https://api.github.com/repos/$GITHUB_REPO/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' 2>/dev/null)
+        # Check if we got a valid tag (not null, not empty, starts with v)
+        if [ -n "$latest" ] && [ "$latest" != "null" ] && [[ "$latest" == v* ]]; then
+            echo "$latest"
+            return
+        fi
+    fi
+    
+    # Try VERSION file from repo
+    if command -v curl &> /dev/null; then
+        local version=$(curl -sS --max-time 5 https://raw.githubusercontent.com/$GITHUB_REPO/main/VERSION 2>/dev/null | tr -d '[:space:]')
+        # Check if we got a non-empty version
+        if [ -n "$version" ]; then
+            echo "v$version"
+            return
+        fi
+    fi
+    
+    # Fallback to hardcoded version
+    echo "v1.0.0-rc"
+}
+
+KLANG_VERSION="${KLANG_VERSION:-$(get_latest_version)}"
 GITHUB_REPO="k-kaundal/KLang"
 INSTALL_DIR="${KLANG_INSTALL_DIR:-$HOME/.klang}"
 BIN_DIR="$INSTALL_DIR/bin"
@@ -275,6 +301,15 @@ verify_installation() {
         echo -e "${GREEN}✓ KLang installed successfully!${NC}"
         echo -e "${GREEN}  Version: $version${NC}"
         echo -e "${GREEN}  Location: $BIN_DIR/klang${NC}"
+        
+        # Validate version matches expected release
+        local expected_version=$(echo "$KLANG_VERSION" | sed 's/^v//')
+        if echo "$version" | grep -q "$expected_version"; then
+            echo -e "${GREEN}✓ Version validation passed: $expected_version${NC}"
+        else
+            echo -e "${YELLOW}⚠ Warning: Installed version doesn't match expected version $expected_version${NC}"
+            echo -e "${YELLOW}  This might be expected if you're installing from a specific branch${NC}"
+        fi
     else
         echo -e "${RED}Installation verification failed${NC}"
         exit 1

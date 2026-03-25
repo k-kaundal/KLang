@@ -1,0 +1,156 @@
+// Edge Case Tests for Print and Memory
+println("=== EDGE CASE TESTS ===")
+
+// Test 1: Empty string
+println("\nTest 1: Empty String")
+let empty = ""
+println(empty)
+println("Empty string printed")
+
+// Test 2: Very long single print
+println("\nTest 2: Long Single Print")
+let longLine = ""
+let i = 0
+while (i < 500) {
+    longLine = longLine + "ABCDEFGH"
+    i = i + 1
+}
+println("About to print 4000 character line...")
+println(longLine)
+println("Long line printed successfully")
+
+// Test 3: Print with only newlines
+println("\nTest 3: Multiple Newlines")
+print("\n\n\n")
+println("Newlines printed")
+
+// Test 4: Zero values
+println("\nTest 4: Zero Values")
+println(0)
+println(0.0)
+let zero = 0
+println(zero)
+
+// Test 5: Negative numbers
+println("\nTest 5: Negative Numbers")
+println(-1)
+println(-999)
+println(-3.14159)
+
+// Test 6: Boolean edge cases
+println("\nTest 6: Boolean Edge Cases")
+let t = true
+let f = false
+println(t)
+println(f)
+println(!t)
+println(!f)
+
+// Test 7: String with special characters
+println("\nTest 7: Special Characters")
+println("Tab\tSpace Quote\" Slash\\")
+
+// Test 8: Recursive edge - minimum depth
+println("\nTest 8: Minimal Recursion")
+fn minRecurse(n: int) -> int {
+    if (n <= 0) {
+        return 0
+    }
+    return n
+}
+println(minRecurse(0))
+println(minRecurse(1))
+
+// Test 9: Function returning nothing used
+println("\nTest 9: Expression Results")
+fn noReturn() -> int {
+    return 0
+}
+println(noReturn())
+
+// Test 10: Loop with zero iterations
+println("\nTest 10: Zero Iteration Loop")
+let j = 0
+while (j < 0) {
+    println("Should not print")
+    j = j + 1
+}
+println("Zero iteration loop handled")
+
+// Test 11: Single character strings
+println("\nTest 11: Single Characters")
+println("A")
+println("1")
+println(" ")
+println("_")
+
+// Test 12: Arithmetic edge cases
+println("\nTest 12: Arithmetic Edge Cases")
+println(1 + 0)
+println(1 * 0)
+println(0 * 999)
+println(5 - 5)
+
+// Test 13: String concatenation with empty
+println("\nTest 13: Empty String Concat")
+let str1 = "Hello"
+let str2 = ""
+println(str1 + str2)
+println(str2 + str1)
+
+// Test 14: Multiple print calls with no arguments spacing
+println("\nTest 14: Rapid Print Calls")
+print("A")
+print("B")
+print("C")
+print("D")
+print("E")
+println("F")
+
+// Test 15: Large number
+println("\nTest 15: Large Numbers")
+println(999999)
+println(1000000)
+
+// Test 16: Decimal precision
+println("\nTest 16: Decimal Numbers")
+println(0.1)
+println(0.01)
+println(0.001)
+println(3.14159265)
+
+// Test 17: Variable shadowing in scopes
+println("\nTest 17: Variable Scoping")
+let x = 10
+fn testScope() -> int {
+    let x = 20
+    return x
+}
+println(x)
+println(testScope())
+println(x)
+
+// Test 18: String with numbers
+println("\nTest 18: String with Numbers")
+println("123")
+println("456.789")
+
+// Test 19: Consecutive function calls
+println("\nTest 19: Consecutive Calls")
+fn getId(val: int) -> int {
+    return val
+}
+println(getId(1))
+println(getId(2))
+println(getId(3))
+
+// Test 20: Mixed operations
+println("\nTest 20: Mixed Operations")
+let a = 5
+let b = 10
+let c = a + b
+println(c)
+let d = "Result: " + c
+println(d)
+
+println("\n=== ALL EDGE CASES COMPLETE ===")

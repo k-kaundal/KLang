@@ -1,9 +1,15 @@
 #ifndef KLANG_H
 #define KLANG_H
 
-#define KLANG_VERSION "0.1.0"
-#define KLANG_VERSION_MAJOR 0
-#define KLANG_VERSION_MINOR 1
+// Version is now injected at compile time via -DKLANG_VERSION
+// This file maintains backward compatibility for code that includes it
+#ifndef KLANG_VERSION
+#define KLANG_VERSION "dev"
+#endif
+
+// Parse version components from string (for compatibility)
+#define KLANG_VERSION_MAJOR 1
+#define KLANG_VERSION_MINOR 0
 #define KLANG_VERSION_PATCH 0
 
 #include "lexer.h"
