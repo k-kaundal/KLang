@@ -4,24 +4,198 @@
   "scopeName": "source.klang",
   "patterns": [
     { "include": "#comments" },
-    { "include": "#keywords" },
     { "include": "#strings" },
-    { "include": "#numbers" }
+    { "include": "#template-literals" },
+    { "include": "#keywords" },
+    { "include": "#storage-modifiers" },
+    { "include": "#function-declaration" },
+    { "include": "#class-declaration" },
+    { "include": "#constants" },
+    { "include": "#numbers" },
+    { "include": "#operators" },
+    { "include": "#punctuation" },
+    { "include": "#variables" },
+    { "include": "#support" }
   ],
   "repository": {
     "comments": {
       "patterns": [
         {
-          "name": "comment.line.klang",
+          "name": "comment.line.number-sign.klang",
           "match": "#.*$"
+        },
+        {
+          "name": "comment.line.double-slash.klang",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.klang",
+          "begin": "/\\*",
+          "end": "\\*/"
+        },
+        {
+          "name": "comment.block.documentation.klang",
+          "begin": "///",
+          "end": "$"
         }
       ]
     },
     "keywords": {
       "patterns": [
         {
-          "name": "keyword.control.klang",
-          "match": "\\b(if|else|for|while|return|fn|let|const|class)\\b"
+          "name": "keyword.control.flow.klang",
+          "match": "\\b(if|else|switch|case|default|break|continue|return|throw|try|catch|finally)\\b"
+        },
+        {
+          "name": "keyword.control.loop.klang",
+          "match": "\\b(for|while|do|of|in)\\b"
+        },
+        {
+          "name": "keyword.control.async.klang",
+          "match": "\\b(async|await|yield)\\b"
+        },
+        {
+          "name": "keyword.control.module.klang",
+          "match": "\\b(import|export|from|as|default)\\b"
+        },
+        {
+          "name": "storage.type.function.klang",
+          "match": "\\b(fn|function)\\b"
+        },
+        {
+          "name": "storage.type.class.klang",
+          "match": "\\b(class|extends|implements|interface|abstract)\\b"
+        },
+        {
+          "name": "storage.type.variable.klang",
+          "match": "\\b(let|const|var)\\b"
+        },
+        {
+          "name": "storage.modifier.klang",
+          "match": "\\b(static|public|private|protected|readonly)\\b"
+        },
+        {
+          "name": "keyword.operator.new.klang",
+          "match": "\\b(new|delete|typeof|instanceof)\\b"
+        },
+        {
+          "name": "variable.language.this.klang",
+          "match": "\\bthis\\b"
+        },
+        {
+          "name": "variable.language.super.klang",
+          "match": "\\bsuper\\b"
+        }
+      ]
+    },
+    "storage-modifiers": {
+      "patterns": [
+        {
+          "name": "storage.modifier.access.klang",
+          "match": "\\b(public|private|protected)\\b"
+        },
+        {
+          "name": "storage.modifier.static.klang",
+          "match": "\\bstatic\\b"
+        },
+        {
+          "name": "storage.modifier.abstract.klang",
+          "match": "\\babstract\\b"
+        }
+      ]
+    },
+    "function-declaration": {
+      "patterns": [
+        {
+          "name": "meta.function.klang",
+          "begin": "\\b(async\\s+)?(fn|function)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.async.klang" },
+            "2": { "name": "storage.type.function.klang" },
+            "3": { "name": "entity.name.function.klang" }
+          },
+          "end": "\\)",
+          "patterns": [
+            { "include": "#function-parameters" }
+          ]
+        },
+        {
+          "name": "meta.arrow-function.klang",
+          "match": "\\b(async\\s+)?([a-zA-Z_][a-zA-Z0-9_]*)\\s*=>",
+          "captures": {
+            "1": { "name": "keyword.control.async.klang" },
+            "2": { "name": "variable.parameter.klang" }
+          }
+        }
+      ]
+    },
+    "function-parameters": {
+      "patterns": [
+        {
+          "name": "variable.parameter.klang",
+          "match": "[a-zA-Z_][a-zA-Z0-9_]*"
+        },
+        {
+          "name": "storage.type.klang",
+          "match": ":\\s*([a-zA-Z_][a-zA-Z0-9_]*)"
+        }
+      ]
+    },
+    "class-declaration": {
+      "patterns": [
+        {
+          "name": "meta.class.klang",
+          "match": "\\b(class)\\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\\s+(extends)\\s+([a-zA-Z_][a-zA-Z0-9_]*))?",
+          "captures": {
+            "1": { "name": "storage.type.class.klang" },
+            "2": { "name": "entity.name.class.klang" },
+            "3": { "name": "storage.type.class.klang" },
+            "4": { "name": "entity.other.inherited-class.klang" }
+          }
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.klang",
+          "match": "\\b(true|false)\\b"
+        },
+        {
+          "name": "constant.language.null.klang",
+          "match": "\\b(null|undefined|nil)\\b"
+        },
+        {
+          "name": "constant.language.nan.klang",
+          "match": "\\bNaN\\b"
+        },
+        {
+          "name": "constant.language.infinity.klang",
+          "match": "\\bInfinity\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.klang",
+          "match": "\\b0[xX][0-9a-fA-F]+\\b"
+        },
+        {
+          "name": "constant.numeric.binary.klang",
+          "match": "\\b0[bB][01]+\\b"
+        },
+        {
+          "name": "constant.numeric.octal.klang",
+          "match": "\\b0[oO][0-7]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.klang",
+          "match": "\\b\\d+\\.\\d+([eE][+-]?\\d+)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.klang",
+          "match": "\\b\\d+\\b"
         }
       ]
     },
@@ -30,15 +204,139 @@
         {
           "name": "string.quoted.double.klang",
           "begin": "\"",
-          "end": "\""
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.klang",
+              "match": "\\\\(n|t|r|\\\\|\"|'|b|f|v|0|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4})"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.klang",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.klang",
+              "match": "\\\\(n|t|r|\\\\|\"|'|b|f|v|0|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4})"
+            }
+          ]
         }
       ]
     },
-    "numbers": {
+    "template-literals": {
       "patterns": [
         {
-          "name": "constant.numeric.klang",
-          "match": "\\b\\d+\\b"
+          "name": "string.template.klang",
+          "begin": "`",
+          "end": "`",
+          "patterns": [
+            {
+              "name": "meta.template.expression.klang",
+              "begin": "\\$\\{",
+              "end": "\\}",
+              "patterns": [
+                { "include": "$self" }
+              ]
+            },
+            {
+              "name": "constant.character.escape.klang",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arithmetic.klang",
+          "match": "\\+\\+|--|\\*\\*|\\+|\\-|\\*|/|%"
+        },
+        {
+          "name": "keyword.operator.comparison.klang",
+          "match": "===|!==|==|!=|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.logical.klang",
+          "match": "&&|\\|\\||!"
+        },
+        {
+          "name": "keyword.operator.bitwise.klang",
+          "match": "&|\\||\\^|~|<<|>>|>>>"
+        },
+        {
+          "name": "keyword.operator.assignment.klang",
+          "match": "=|\\+=|-=|\\*=|/=|%=|&=|\\|=|\\^=|<<=|>>=|>>>=|\\*\\*="
+        },
+        {
+          "name": "keyword.operator.ternary.klang",
+          "match": "\\?|:"
+        },
+        {
+          "name": "keyword.operator.spread.klang",
+          "match": "\\.\\.\\."
+        },
+        {
+          "name": "keyword.operator.arrow.klang",
+          "match": "=>"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.terminator.statement.klang",
+          "match": ";"
+        },
+        {
+          "name": "punctuation.separator.comma.klang",
+          "match": ","
+        },
+        {
+          "name": "punctuation.accessor.klang",
+          "match": "\\."
+        },
+        {
+          "name": "meta.brace.curly.klang",
+          "match": "[{}]"
+        },
+        {
+          "name": "meta.brace.round.klang",
+          "match": "[()]"
+        },
+        {
+          "name": "meta.brace.square.klang",
+          "match": "[\\[\\]]"
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.other.constant.klang",
+          "match": "\\b[A-Z][A-Z0-9_]*\\b"
+        },
+        {
+          "name": "variable.other.readwrite.klang",
+          "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        }
+      ]
+    },
+    "support": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.klang",
+          "match": "\\b(println|print|len|range|map|filter|reduce|forEach|find|some|every|push|pop|shift|unshift|slice|splice|concat|join|split|indexOf|includes|keys|values|entries|Object|Array|String|Number|Boolean|Math|Date|JSON|Promise|setTimeout|setInterval|clearTimeout|clearInterval)\\b"
+        },
+        {
+          "name": "support.class.builtin.klang",
+          "match": "\\b(Array|Object|String|Number|Boolean|Function|Promise|Map|Set|WeakMap|WeakSet|Symbol|Error|RegExp|Date|Math|JSON)\\b"
+        },
+        {
+          "name": "support.type.primitive.klang",
+          "match": "\\b(int|float|string|bool|void|any)\\b"
         }
       ]
     }

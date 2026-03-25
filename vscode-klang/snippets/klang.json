@@ -1,7 +1,282 @@
 {
-  "KLang Function": {
+  "Function Declaration": {
     "prefix": "fn",
     "body": ["fn ${1:name}(${2:params}) {", "\t$0", "}"],
-    "description": "Function"
+    "description": "Function declaration"
+  },
+  "Async Function": {
+    "prefix": "afn",
+    "body": ["async fn ${1:name}(${2:params}) {", "\t$0", "}"],
+    "description": "Async function declaration"
+  },
+  "Arrow Function": {
+    "prefix": "arrow",
+    "body": ["const ${1:name} = (${2:params}) => {", "\t$0", "}"],
+    "description": "Arrow function"
+  },
+  "Async Arrow Function": {
+    "prefix": "aarrow",
+    "body": ["const ${1:name} = async (${2:params}) => {", "\t$0", "}"],
+    "description": "Async arrow function"
+  },
+  "Class Declaration": {
+    "prefix": "class",
+    "body": [
+      "class ${1:ClassName} {",
+      "\tlet ${2:field}: ${3:type} = ${4:value}",
+      "\t",
+      "\tfn init(${5:params}) {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Class declaration"
+  },
+  "Class with Inheritance": {
+    "prefix": "classext",
+    "body": [
+      "class ${1:ClassName} extends ${2:ParentClass} {",
+      "\tlet ${3:field}: ${4:type} = ${5:value}",
+      "\t",
+      "\tfn init(${6:params}) {",
+      "\t\tsuper.init(${7:args})",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Class with inheritance"
+  },
+  "Abstract Class": {
+    "prefix": "abstract",
+    "body": [
+      "abstract class ${1:ClassName} {",
+      "\tabstract fn ${2:methodName}(${3:params}): ${4:returnType}",
+      "\t",
+      "\tfn ${5:concreteMethod}() {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Abstract class"
+  },
+  "Constructor": {
+    "prefix": "init",
+    "body": ["fn init(${1:params}) {", "\t$0", "}"],
+    "description": "Constructor method"
+  },
+  "Method": {
+    "prefix": "method",
+    "body": ["fn ${1:methodName}(${2:params}): ${3:returnType} {", "\t$0", "}"],
+    "description": "Class method"
+  },
+  "Static Method": {
+    "prefix": "static",
+    "body": ["static fn ${1:methodName}(${2:params}): ${3:returnType} {", "\t$0", "}"],
+    "description": "Static method"
+  },
+  "If Statement": {
+    "prefix": "if",
+    "body": ["if (${1:condition}) {", "\t$0", "}"],
+    "description": "If statement"
+  },
+  "If-Else Statement": {
+    "prefix": "ifelse",
+    "body": ["if (${1:condition}) {", "\t${2}", "} else {", "\t$0", "}"],
+    "description": "If-else statement"
+  },
+  "For Loop": {
+    "prefix": "for",
+    "body": ["for (${1:item} of ${2:array}) {", "\t$0", "}"],
+    "description": "For-of loop"
+  },
+  "For Range Loop": {
+    "prefix": "forrange",
+    "body": ["for (let ${1:i} = ${2:0}; ${1:i} < ${3:length}; ${1:i}++) {", "\t$0", "}"],
+    "description": "For range loop"
+  },
+  "While Loop": {
+    "prefix": "while",
+    "body": ["while (${1:condition}) {", "\t$0", "}"],
+    "description": "While loop"
+  },
+  "Try-Catch": {
+    "prefix": "try",
+    "body": [
+      "try {",
+      "\t${1}",
+      "} catch (${2:error}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Try-catch block"
+  },
+  "Promise": {
+    "prefix": "promise",
+    "body": [
+      "const ${1:promise} = new Promise((resolve, reject) => {",
+      "\t${2:// async operation}",
+      "\tif (${3:success}) {",
+      "\t\tresolve(${4:value})",
+      "\t} else {",
+      "\t\treject(${5:error})",
+      "\t}",
+      "})"
+    ],
+    "description": "Promise"
+  },
+  "Promise Then": {
+    "prefix": "then",
+    "body": [".then((${1:result}) => {", "\t$0", "})"],
+    "description": "Promise then"
+  },
+  "Promise Catch": {
+    "prefix": "catch",
+    "body": [".catch((${1:error}) => {", "\t$0", "})"],
+    "description": "Promise catch"
+  },
+  "Async/Await": {
+    "prefix": "await",
+    "body": ["const ${1:result} = await ${2:promise}"],
+    "description": "Await expression"
+  },
+  "Generator Function": {
+    "prefix": "gen",
+    "body": ["fn* ${1:generator}(${2:params}) {", "\tyield ${3:value}", "\t$0", "}"],
+    "description": "Generator function"
+  },
+  "Import": {
+    "prefix": "import",
+    "body": ["import { ${1:members} } from '${2:module}'"],
+    "description": "Import statement"
+  },
+  "Import Default": {
+    "prefix": "importd",
+    "body": ["import ${1:name} from '${2:module}'"],
+    "description": "Import default"
+  },
+  "Export": {
+    "prefix": "export",
+    "body": ["export ${1:declaration}"],
+    "description": "Export statement"
+  },
+  "Export Default": {
+    "prefix": "exportd",
+    "body": ["export default ${1:value}"],
+    "description": "Export default"
+  },
+  "Variable Declaration": {
+    "prefix": "let",
+    "body": ["let ${1:name} = ${2:value}"],
+    "description": "Variable declaration"
+  },
+  "Constant Declaration": {
+    "prefix": "const",
+    "body": ["const ${1:name} = ${2:value}"],
+    "description": "Constant declaration"
+  },
+  "Console Log": {
+    "prefix": "log",
+    "body": ["println(${1:message})"],
+    "description": "Print to console"
+  },
+  "Array Map": {
+    "prefix": "map",
+    "body": ["${1:array}.map((${2:item}) => ${3:item})"],
+    "description": "Array map"
+  },
+  "Array Filter": {
+    "prefix": "filter",
+    "body": ["${1:array}.filter((${2:item}) => ${3:condition})"],
+    "description": "Array filter"
+  },
+  "Array Reduce": {
+    "prefix": "reduce",
+    "body": [
+      "${1:array}.reduce((${2:acc}, ${3:item}) => {",
+      "\t$0",
+      "\treturn ${2:acc}",
+      "}, ${4:initial})"
+    ],
+    "description": "Array reduce"
+  },
+  "Array ForEach": {
+    "prefix": "foreach",
+    "body": ["${1:array}.forEach((${2:item}) => {", "\t$0", "})"],
+    "description": "Array forEach"
+  },
+  "Destructuring Array": {
+    "prefix": "darray",
+    "body": ["const [${1:first}, ${2:second}] = ${3:array}"],
+    "description": "Array destructuring"
+  },
+  "Destructuring Object": {
+    "prefix": "dobj",
+    "body": ["const { ${1:prop1}, ${2:prop2} } = ${3:object}"],
+    "description": "Object destructuring"
+  },
+  "Spread Array": {
+    "prefix": "spread",
+    "body": ["[...${1:array}]"],
+    "description": "Spread array"
+  },
+  "Rest Parameters": {
+    "prefix": "rest",
+    "body": ["...${1:args}"],
+    "description": "Rest parameters"
+  },
+  "Template Literal": {
+    "prefix": "template",
+    "body": ["`${1:text} \\${${2:variable}}`"],
+    "description": "Template literal"
+  },
+  "Object Literal": {
+    "prefix": "obj",
+    "body": ["{", "\t${1:key}: ${2:value},$0", "}"],
+    "description": "Object literal"
+  },
+  "Ternary Operator": {
+    "prefix": "ternary",
+    "body": ["${1:condition} ? ${2:trueValue} : ${3:falseValue}"],
+    "description": "Ternary operator"
+  },
+  "Switch Statement": {
+    "prefix": "switch",
+    "body": [
+      "switch (${1:expression}) {",
+      "\tcase ${2:value}:",
+      "\t\t${3}",
+      "\t\tbreak",
+      "\tdefault:",
+      "\t\t$0",
+      "}"
+    ],
+    "description": "Switch statement"
+  },
+  "Comment Block": {
+    "prefix": "comment",
+    "body": ["/*", " * ${1:description}", " */"],
+    "description": "Block comment"
+  },
+  "AI Prompt": {
+    "prefix": "ai",
+    "body": [
+      "const ${1:result} = llm(\"${2:prompt}\", {",
+      "\tmodel: \"${3:gpt-4}\",",
+      "\ttemperature: ${4:0.7}",
+      "})"
+    ],
+    "description": "AI LLM call"
+  },
+  "HTTP Request": {
+    "prefix": "http",
+    "body": [
+      "const ${1:response} = await fetch(\"${2:url}\", {",
+      "\tmethod: \"${3:GET}\",",
+      "\theaders: {",
+      "\t\t\"Content-Type\": \"application/json\"",
+      "\t}",
+      "})"
+    ],
+    "description": "HTTP request"
   }
 }

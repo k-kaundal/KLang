@@ -1,0 +1,19 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#4A90E2"/>
+  
+  <!-- K letter -->
+  <g fill="#FFFFFF">
+    <!-- Vertical line of K -->
+    <rect x="35" y="30" width="12" height="68" rx="2"/>
+    
+    <!-- Upper diagonal of K -->
+    <path d="M 47 50 L 85 30 L 90 35 L 52 55 Z"/>
+    
+    <!-- Lower diagonal of K -->
+    <path d="M 52 73 L 90 98 L 85 103 L 47 78 Z"/>
+  </g>
+  
+  <!-- Small accent dot (representing AI/modern touch) -->
+  <circle cx="95" cy="33" r="6" fill="#FFD700"/>
+</svg>

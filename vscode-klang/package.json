@@ -1,13 +1,19 @@
 {
   "name": "klang",
-  "displayName": "KLang Language Support",
-  "description": "Language support for KLang - The AI-Native Programming Language",
+  "displayName": "KLang - AI-Native Programming Language",
+  "description": "Complete language support for KLang with syntax highlighting, snippets, and intelligent code editing",
   "version": "1.0.0",
-  "publisher": "klang-team",
+  "publisher": "KaundalVIP",
+  "icon": "icon.png",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/k-kaundal/KLang"
   },
+  "bugs": {
+    "url": "https://github.com/k-kaundal/KLang/issues"
+  },
+  "homepage": "https://github.com/k-kaundal/KLang#readme",
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -15,16 +21,21 @@
     "Programming Languages",
     "Debuggers",
     "Formatters",
-    "Linters"
+    "Linters",
+    "Snippets"
   ],
   "keywords": [
     "klang",
     "programming language",
     "ai-native",
-    "syntax highlighting"
+    "syntax highlighting",
+    "async",
+    "await",
+    "javascript"
   ],
   "activationEvents": [
-    "onLanguage:klang"
+    "onLanguage:klang",
+    "workspaceContains:**/*.{kl,k,klang}"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -40,7 +51,11 @@
           ".k",
           ".klang"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icon.png",
+          "dark": "./icon.png"
+        }
       }
     ],
     "grammars": [
@@ -63,24 +78,132 @@
         "klang.languageServer.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable KLang Language Server"
+          "description": "Enable KLang Language Server (when available)"
         },
         "klang.languageServer.path": {
           "type": "string",
           "default": "klang",
           "description": "Path to the KLang executable"
+        },
+        "klang.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the KLang language server"
+        },
+        "klang.format.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic formatting"
+        },
+        "klang.lint.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable linting"
         }
       }
     },
     "commands": [
       {
         "command": "klang.run",
-        "title": "KLang: Run Current File"
+        "title": "KLang: Run Current File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "klang.build",
+        "title": "KLang: Build Current File",
+        "icon": "$(package)"
+      },
+      {
+        "command": "klang.check",
+        "title": "KLang: Check Syntax",
+        "icon": "$(check)"
+      },
+      {
+        "command": "klang.format",
+        "title": "KLang: Format Document",
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "klang.repl",
+        "title": "KLang: Open REPL",
+        "icon": "$(terminal)"
       }
-    ]
+    ],
+    "keybindings": [
+      {
+        "command": "klang.run",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorLangId == klang"
+      },
+      {
+        "command": "klang.build",
+        "key": "ctrl+shift+b",
+        "mac": "cmd+shift+b",
+        "when": "editorLangId == klang"
+      },
+      {
+        "command": "klang.check",
+        "key": "ctrl+shift+c",
+        "mac": "cmd+shift+c",
+        "when": "editorLangId == klang"
+      },
+      {
+        "command": "klang.format",
+        "key": "ctrl+shift+f",
+        "mac": "cmd+shift+f",
+        "when": "editorLangId == klang"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorLangId == klang",
+          "command": "klang.run",
+          "group": "navigation@1"
+        },
+        {
+          "when": "editorLangId == klang",
+          "command": "klang.build",
+          "group": "navigation@2"
+        },
+        {
+          "when": "editorLangId == klang",
+          "command": "klang.check",
+          "group": "navigation@3"
+        }
+      ],
+      "editor/title/run": [
+        {
+          "when": "editorLangId == klang",
+          "command": "klang.run",
+          "group": "navigation@1"
+        }
+      ]
+    }
   },
   "scripts": {
-    "compile": "echo 'Extension ready'",
-    "package": "echo 'Run: vsce package'"
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.75.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "eslint": "^8.40.0",
+    "typescript": "^5.0.0",
+    "@vscode/vsce": "^2.19.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.0"
   }
 }
