@@ -1,0 +1,419 @@
+/**
+ * @module rate_limiter
+ * @description Rate limiting for API and resource protection
+ * 
+ * Algorithms:
+ * - Token Bucket: Allows bursts but smooths average rate
+ * - Leaky Bucket: Smooths traffic at fixed rate
+ * - Fixed Window: Simple counter per time window
+ * - Sliding Window: More accurate than fixed window
+ */
+
+/**
+ * TokenBucket rate limiter
+ * 
+ * Tokens are added at a fixed rate. Each request consumes a token.
+ * Allows bursts up to bucket capacity.
+ */
+class TokenBucket {
+    constructor(capacity, refillRate) {
+        this.capacity = capacity          // Maximum tokens
+        this.tokens = capacity            // Current tokens
+        this.refillRate = refillRate      // Tokens per second
+        this.lastRefill = Date.now()
+    }
+    
+    /**
+     * Try to consume tokens
+     */
+    tryConsume(tokens = 1) {
+        this._refill()
+        
+        if this.tokens >= tokens {
+            this.tokens -= tokens
+            return true
+        }
+        
+        return false
+    }
+    
+    /**
+     * Wait until tokens are available (async)
+     */
+    async consume(tokens = 1) {
+        while !this.tryConsume(tokens) {
+            const waitTime = (tokens - this.tokens) / this.refillRate * 1000
+            await sleep(Math.max(10, waitTime))
+        }
+        return true
+    }
+    
+    /**
+     * Refill tokens based on elapsed time
+     */
+    _refill() {
+        const now = Date.now()
+        const elapsed = (now - this.lastRefill) / 1000
+        const tokensToAdd = elapsed * this.refillRate
+        
+        this.tokens = Math.min(this.capacity, this.tokens + tokensToAdd)
+        this.lastRefill = now
+    }
+    
+    /**
+     * Get current token count
+     */
+    getTokens() {
+        this._refill()
+        return this.tokens
+    }
+    
+    /**
+     * Get capacity
+     */
+    getCapacity() {
+        return this.capacity
+    }
+    
+    /**
+     * Reset bucket to full capacity
+     */
+    reset() {
+        this.tokens = this.capacity
+        this.lastRefill = Date.now()
+    }
+}
+
+/**
+ * FixedWindow rate limiter
+ * 
+ * Counts requests in fixed time windows
+ */
+class FixedWindow {
+    constructor(maxRequests, windowMs) {
+        this.maxRequests = maxRequests
+        this.windowMs = windowMs
+        this.requests = 0
+        this.windowStart = Date.now()
+    }
+    
+    /**
+     * Try to allow request
+     */
+    tryAllow() {
+        const now = Date.now()
+        
+        // Reset if window expired
+        if now - this.windowStart >= this.windowMs {
+            this.requests = 0
+            this.windowStart = now
+        }
+        
+        if this.requests < this.maxRequests {
+            this.requests++
+            return true
+        }
+        
+        return false
+    }
+    
+    /**
+     * Get remaining requests in current window
+     */
+    getRemaining() {
+        const now = Date.now()
+        
+        if now - this.windowStart >= this.windowMs {
+            return this.maxRequests
+        }
+        
+        return this.maxRequests - this.requests
+    }
+    
+    /**
+     * Get time until window resets (ms)
+     */
+    getResetTime() {
+        const now = Date.now()
+        const elapsed = now - this.windowStart
+        
+        if elapsed >= this.windowMs {
+            return 0
+        }
+        
+        return this.windowMs - elapsed
+    }
+    
+    /**
+     * Reset limiter
+     */
+    reset() {
+        this.requests = 0
+        this.windowStart = Date.now()
+    }
+}
+
+/**
+ * SlidingWindow rate limiter
+ * 
+ * More accurate than fixed window, counts requests in sliding time window
+ */
+class SlidingWindow {
+    constructor(maxRequests, windowMs) {
+        this.maxRequests = maxRequests
+        this.windowMs = windowMs
+        this.requests = []  // Array of timestamps
+    }
+    
+    /**
+     * Try to allow request
+     */
+    tryAllow() {
+        const now = Date.now()
+        
+        // Remove expired requests
+        this._cleanup(now)
+        
+        if this.requests.length < this.maxRequests {
+            this.requests.push(now)
+            return true
+        }
+        
+        return false
+    }
+    
+    /**
+     * Remove expired timestamps
+     */
+    _cleanup(now) {
+        const cutoff = now - this.windowMs
+        this.requests = this.requests.filter(ts => ts > cutoff)
+    }
+    
+    /**
+     * Get remaining requests
+     */
+    getRemaining() {
+        this._cleanup(Date.now())
+        return this.maxRequests - this.requests.length
+    }
+    
+    /**
+     * Get oldest request age (for retry-after calculation)
+     */
+    getOldestRequestAge() {
+        if this.requests.length == 0 {
+            return 0
+        }
+        return Date.now() - this.requests[0]
+    }
+    
+    /**
+     * Reset limiter
+     */
+    reset() {
+        this.requests = []
+    }
+}
+
+/**
+ * LeakyBucket rate limiter
+ * 
+ * Requests leak out at a constant rate
+ */
+class LeakyBucket {
+    constructor(capacity, leakRate) {
+        this.capacity = capacity          // Maximum queue size
+        this.leakRate = leakRate          // Requests per second
+        this.queue = []
+        this.lastLeak = Date.now()
+    }
+    
+    /**
+     * Try to add request to bucket
+     */
+    tryAdd() {
+        this._leak()
+        
+        if this.queue.length < this.capacity {
+            this.queue.push(Date.now())
+            return true
+        }
+        
+        return false
+    }
+    
+    /**
+     * Leak requests at configured rate
+     */
+    _leak() {
+        const now = Date.now()
+        const elapsed = (now - this.lastLeak) / 1000
+        const toRemove = Math.floor(elapsed * this.leakRate)
+        
+        if toRemove > 0 {
+            this.queue = this.queue.slice(toRemove)
+            this.lastLeak = now
+        }
+    }
+    
+    /**
+     * Get current queue size
+     */
+    getSize() {
+        this._leak()
+        return this.queue.length
+    }
+    
+    /**
+     * Reset bucket
+     */
+    reset() {
+        this.queue = []
+        this.lastLeak = Date.now()
+    }
+}
+
+/**
+ * RateLimiter - High-level rate limiter with multiple algorithms
+ */
+class RateLimiter {
+    constructor(algorithm, ...args) {
+        switch (algorithm) {
+            case "token_bucket":
+                this.limiter = new TokenBucket(...args)
+                this.type = "token_bucket"
+                break
+            case "fixed_window":
+                this.limiter = new FixedWindow(...args)
+                this.type = "fixed_window"
+                break
+            case "sliding_window":
+                this.limiter = new SlidingWindow(...args)
+                this.type = "sliding_window"
+                break
+            case "leaky_bucket":
+                this.limiter = new LeakyBucket(...args)
+                this.type = "leaky_bucket"
+                break
+            default:
+                throw new Error(`Unknown algorithm: ${algorithm}`)
+        }
+        
+        this.stats = {
+            allowed: 0,
+            rejected: 0,
+            total: 0
+        }
+    }
+    
+    /**
+     * Try to allow request
+     */
+    tryAllow() {
+        this.stats.total++
+        
+        let allowed = false
+        
+        if this.type == "token_bucket" {
+            allowed = this.limiter.tryConsume()
+        } else if this.type == "leaky_bucket" {
+            allowed = this.limiter.tryAdd()
+        } else {
+            allowed = this.limiter.tryAllow()
+        }
+        
+        if allowed {
+            this.stats.allowed++
+        } else {
+            this.stats.rejected++
+        }
+        
+        return allowed
+    }
+    
+    /**
+     * Execute function with rate limiting
+     */
+    async execute(fn) {
+        if this.tryAllow() {
+            return await fn()
+        } else {
+            throw new Error("Rate limit exceeded")
+        }
+    }
+    
+    /**
+     * Get statistics
+     */
+    getStats() {
+        return {
+            ...this.stats,
+            rejectionRate: this.stats.total > 0
+                ? this.stats.rejected / this.stats.total
+                : 0
+        }
+    }
+    
+    /**
+     * Reset limiter
+     */
+    reset() {
+        this.limiter.reset()
+        this.stats = {
+            allowed: 0,
+            rejected: 0,
+            total: 0
+        }
+    }
+}
+
+/**
+ * Create token bucket rate limiter
+ */
+export fn tokenBucket(capacity, refillRate) {
+    return new RateLimiter("token_bucket", capacity, refillRate)
+}
+
+/**
+ * Create fixed window rate limiter
+ */
+export fn fixedWindow(maxRequests, windowMs) {
+    return new RateLimiter("fixed_window", maxRequests, windowMs)
+}
+
+/**
+ * Create sliding window rate limiter
+ */
+export fn slidingWindow(maxRequests, windowMs) {
+    return new RateLimiter("sliding_window", maxRequests, windowMs)
+}
+
+/**
+ * Create leaky bucket rate limiter
+ */
+export fn leakyBucket(capacity, leakRate) {
+    return new RateLimiter("leaky_bucket", capacity, leakRate)
+}
+
+/**
+ * Rate limiter decorator
+ */
+export fn rateLimit(limiter) {
+    return fn => {
+        return async (...args) => {
+            return await limiter.execute(async () => {
+                return await fn(...args)
+            })
+        }
+    }
+}
+
+// Export classes
+export {
+    TokenBucket,
+    FixedWindow,
+    SlidingWindow,
+    LeakyBucket,
+    RateLimiter
+}

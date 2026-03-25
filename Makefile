@@ -80,7 +80,34 @@ uninstall-user:
 	@rm -rf $(HOME)/.local/share/klang
 	@echo "✓ KLang uninstalled"
 
+# Benchmarking
+BENCH_CFLAGS = -O3 -Ibenchmarks/framework
+BENCH_LDFLAGS = -lm
+
+benchmarks: $(TARGET)
+	@echo "Building benchmarks..."
+	@mkdir -p benchmarks/reports
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/arithmetic_bench benchmarks/language/arithmetic_bench.c $(BENCH_LDFLAGS)
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/loop_bench benchmarks/language/loop_bench.c $(BENCH_LDFLAGS)
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/function_bench benchmarks/language/function_bench.c $(BENCH_LDFLAGS)
+	@echo "✓ Benchmarks built"
+
+bench: benchmarks
+	@./benchmarks/run_benchmarks.sh
+
+bench-quick: benchmarks
+	@echo "Running quick benchmarks..."
+	@./benchmarks/language/arithmetic_bench
+	@echo "✓ Quick benchmark complete"
+
 clean:
 	rm -f src/*.o $(TARGET) test_runner
+	rm -f benchmarks/language/*_bench
+	rm -f benchmarks/reports/*.json
 
-.PHONY: all test run clean install install-user uninstall uninstall-user
+clean-bench:
+	rm -f benchmarks/language/*_bench
+	rm -f benchmarks/reports/*.json
+	rm -f benchmarks/reports/*.md
+
+.PHONY: all test run clean install install-user uninstall uninstall-user benchmarks bench bench-quick clean-bench
