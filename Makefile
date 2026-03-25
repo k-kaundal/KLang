@@ -47,15 +47,51 @@ else
     PLATFORM_LDFLAGS = -lm -lreadline -lpthread -ldl
 endif
 
+# KLP Protocol Support (Phase 2-4)
+ENABLE_KLP ?= 1
+ifeq ($(ENABLE_KLP),1)
+    PLATFORM_CFLAGS += -DENABLE_KLP
+    KLP_LDFLAGS = -lz
+else
+    KLP_LDFLAGS =
+endif
+
+# Quantum-Resistant Crypto (Phase 3)
+ENABLE_LIBOQS ?= 0
+ifeq ($(ENABLE_LIBOQS),1)
+    PLATFORM_CFLAGS += -DENABLE_LIBOQS
+    CRYPTO_LDFLAGS = -loqs -lcrypto
+else
+    CRYPTO_LDFLAGS =
+endif
+
+# RDMA Support (Phase 4)
+ENABLE_RDMA ?= 0
+ifeq ($(ENABLE_RDMA),1)
+    PLATFORM_CFLAGS += -DENABLE_RDMA
+    RDMA_LDFLAGS = -libverbs -lrdmacm
+else
+    RDMA_LDFLAGS =
+endif
+
+# Hardware Acceleration (Phase 4)
+ENABLE_CUDA ?= 0
+ifeq ($(ENABLE_CUDA),1)
+    PLATFORM_CFLAGS += -DENABLE_CUDA
+    CUDA_LDFLAGS = -lcuda -lcudart
+else
+    CUDA_LDFLAGS =
+endif
+
 # Dynamic version from git or VERSION file
 GIT_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null)
 FILE_VERSION := $(shell cat VERSION 2>/dev/null || echo "dev")
 VERSION := $(or $(GIT_VERSION),$(FILE_VERSION))
 
 CFLAGS = -Wall -Wextra -std=c99 $(PLATFORM_CFLAGS) -Isrc -Iinclude -g $(LLVM_CFLAGS) -DKLANG_VERSION=\"$(VERSION)\"
-LDFLAGS = $(LLVM_LDFLAGS) $(PLATFORM_LDFLAGS)
+LDFLAGS = $(LLVM_LDFLAGS) $(PLATFORM_LDFLAGS) $(KLP_LDFLAGS) $(CRYPTO_LDFLAGS) $(RDMA_LDFLAGS) $(CUDA_LDFLAGS)
 
-SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/vm_stack.c src/vm_register.c src/ssa_ir.c src/compiler.c src/gc.c src/runtime.c src/repl.c src/cli.c src/cli_colors.c src/cli_help.c src/cli_commands.c src/formatter.c src/error_reporter.c src/config.c src/test_runner.c src/project_init.c src/llvm_backend.c src/type_checker.c src/package_manager.c src/lsp_server.c src/debugger.c src/type_system.c src/parallel.c src/wasm_backend.c src/plugin_system.c src/cloud_native.c src/http_server.c src/klp_protocol.c src/klp_server.c src/klp_client.c src/klp_runtime.c
+SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/vm_stack.c src/vm_register.c src/ssa_ir.c src/compiler.c src/gc.c src/runtime.c src/repl.c src/cli.c src/cli_colors.c src/cli_help.c src/cli_commands.c src/formatter.c src/error_reporter.c src/config.c src/test_runner.c src/project_init.c src/llvm_backend.c src/type_checker.c src/package_manager.c src/lsp_server.c src/debugger.c src/type_system.c src/parallel.c src/wasm_backend.c src/plugin_system.c src/cloud_native.c src/http_server.c src/klp_protocol.c src/klp_server.c src/klp_client.c src/klp_runtime.c src/klp_crypto.c
 OBJ = $(SRC:.c=.o)
 TARGET = klang
 
@@ -168,10 +204,34 @@ bench-quick: benchmarks
 	@./benchmarks/language/arithmetic_bench
 	@echo "✓ Quick benchmark complete"
 
+# KLP Protocol Benchmarks
+klp-benchmark: $(TARGET)
+	@echo "Building KLP benchmark..."
+	@$(CC) $(CFLAGS) -o benchmarks/klp_benchmark benchmarks/klp_benchmark.c \
+		src/klp_protocol.o src/klp_server.o src/klp_client.o \
+		-lz -lpthread -lm
+	@echo "✓ KLP benchmark built"
+	@echo "Running KLP benchmark..."
+	@./benchmarks/klp_benchmark
+
+# KLP Examples
+klp-examples:
+	@echo "Building KLP examples..."
+	@$(CC) $(CFLAGS) -o examples/klp_echo_server examples/klp_echo_server.c \
+		src/klp_protocol.o src/klp_server.o -lz -lpthread
+	@$(CC) $(CFLAGS) -o examples/klp_test_client examples/klp_test_client.c \
+		src/klp_protocol.o src/klp_client.o -lz
+	@echo "✓ KLP examples built"
+	@echo ""
+	@echo "Run server: ./examples/klp_echo_server 9000"
+	@echo "Run client: ./examples/klp_test_client 127.0.0.1 9000"
+
 clean:
 	rm -f src/*.o $(TARGET) test_runner
 	rm -f benchmarks/language/*_bench
 	rm -f benchmarks/reports/*.json
+	rm -f benchmarks/klp_benchmark
+	rm -f examples/klp_echo_server examples/klp_test_client
 	rm -f test_pointers_unit test_structs_unit test_memory_unit
 
 clean-bench:
@@ -179,4 +239,4 @@ clean-bench:
 	rm -f benchmarks/reports/*.json
 	rm -f benchmarks/reports/*.md
 
-.PHONY: all test run clean install install-user uninstall uninstall-user benchmarks bench bench-quick clean-bench test-pointers test-structs test-memory test-phase2
+.PHONY: all test run clean install install-user uninstall uninstall-user benchmarks bench bench-quick clean-bench test-pointers test-structs test-memory test-phase2 klp-benchmark klp-examples

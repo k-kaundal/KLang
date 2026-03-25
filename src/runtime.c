@@ -9,6 +9,11 @@
 #include <regex.h>
 #endif
 
+/* KLP Protocol Support */
+#ifdef ENABLE_KLP
+#include "klp_runtime.h"
+#endif
+
 /* Forward declarations for helper functions */
 extern Value eval_block(Interpreter *interp, ASTNode *block, Env *env);
 extern char *value_to_string(Value *v);
@@ -3638,6 +3643,26 @@ void runtime_init(Interpreter *interp) {
     
     v.as.builtin = builtin_memstat;
     env_set_local(interp->global_env, "memstat", v);
+    
+    /* KLP Protocol Module */
+#ifdef ENABLE_KLP
+    // Create klp module object
+    Value klp_obj = make_object("KLP", NULL);
+    
+    // Server functions
+    v.as.builtin = builtin_klp_server;
+    env_set_local(klp_obj.as.object_val->fields, "server", v);
+    
+    // Client functions
+    v.as.builtin = builtin_klp_connect;
+    env_set_local(klp_obj.as.object_val->fields, "connect", v);
+    
+    // Add klp module to global namespace
+    env_set_local(interp->global_env, "klp", klp_obj);
+    
+    // Initialize KLP runtime
+    klp_runtime_init(interp);
+#endif
 }
 
 void runtime_free(Interpreter *interp) {
