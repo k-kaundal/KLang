@@ -12,7 +12,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env);
 extern Value builtin_Promise_constructor(Interpreter *interp, Value *args, int argc);
 
 // Debug flag for tracking object reference counting
-#define DEBUG_REFCOUNT 0
+#define DEBUG_REFCOUNT 1
 
 #if DEBUG_REFCOUNT
 #define REFCOUNT_LOG(fmt, ...) fprintf(stderr, "[REFCOUNT] " fmt "\n", ##__VA_ARGS__)
@@ -950,7 +950,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             if (v->type == VAL_OBJECT && v->as.object_val) {
                 v->as.object_val->ref_count++;
-                REFCOUNT_LOG("NODE_RETURN: ptr=%p ref_count=%d (after increment)", 
+                REFCOUNT_LOG("NODE_IDENT: ptr=%p ref_count=%d (after increment)", 
                              (void*)v->as.object_val, v->as.object_val->ref_count);
             }
             if (v->type == VAL_FUNCTION) {
@@ -2398,6 +2398,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     } else {
                         env_set_local_with_access(class_val.as.class_val.fields, member->data.let_stmt.name, field_val, member->data.let_stmt.access);
                     }
+                    // Free the local copy after storing (env_set_local_with_access makes its own copy)
+                    if (field_val.type == VAL_STRING && field_val.as.str_val) {
+                        free(field_val.as.str_val);
+                    }
                 }
             }
             
@@ -2617,6 +2621,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 if (builtin && builtin->type == VAL_BUILTIN) {
                     // Create a bound method with the dict as receiver
                     result = make_method(obj, *builtin);
+                    // make_method takes ownership, balance NODE_IDENT's increment
+                    if (obj.type == VAL_DICT && obj.as.dict_val) {
+                        obj.as.dict_val->ref_count--;
+                    }
                     return result;
                 }
                 
@@ -2661,6 +2669,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 if (builtin && builtin->type == VAL_BUILTIN) {
                     // Create a bound method with the set as receiver
                     result = make_method(obj, *builtin);
+                    // make_method takes ownership, balance NODE_IDENT's increment
+                    if (obj.type == VAL_SET && obj.as.set_val) {
+                        obj.as.set_val->ref_count--;
+                    }
                     return result;
                 }
                 
@@ -2750,7 +2762,12 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         }
                         // Return bound method
                         result = make_method(obj, method_entry->value);
-                        return result; // Don't free obj since it's part of method
+                        // make_method incremented ref_count, but NODE_IDENT also incremented it
+                        // We need to decrement once to balance NODE_IDENT's increment
+                        if (obj.type == VAL_OBJECT && obj.as.object_val) {
+                            obj.as.object_val->ref_count--;
+                        }
+                        return result;
                     }
                 }
             } else if (obj.type == VAL_CLASS) {
