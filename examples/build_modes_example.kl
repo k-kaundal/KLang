@@ -1,0 +1,112 @@
+# Build Modes Example
+# This example demonstrates different build modes and their effects
+
+println("=== KLang Build Modes Example ===")
+println("")
+
+# Get current build configuration
+let config = getConfig()
+
+println("Current Build Configuration:")
+println("  Mode: ${config.buildMode}")
+println("  Optimization: ${config.optLevel}")
+println("  LTO: ${config.enableLTO}")
+println("  Debug Symbols: ${!config.stripDebug}")
+println("  Assertions: ${config.enableAssertions}")
+println("  Bounds Checking: ${config.enableBoundsCheck}")
+println("")
+
+# Demonstrate assertions (only active in debug/dev/release modes)
+fn testAssertions() {
+    println("Testing assertions...")
+    let x = 10
+    
+    # This assertion will be checked in debug/dev/release modes
+    # but compiled out in production mode for performance
+    assert(x > 0, "x must be positive")
+    println("  ✓ Assertion passed")
+}
+
+# Demonstrate bounds checking
+fn testBoundsChecking() {
+    println("Testing bounds checking...")
+    let arr = [1, 2, 3, 4, 5]
+    
+    # This will be checked in debug/dev/release modes
+    # but may be unchecked in production mode for performance
+    try {
+        let value = arr[10]  # Out of bounds
+        println("  ✗ No bounds check (production mode)")
+    } catch (e) {
+        println("  ✓ Bounds check caught error: ${e}")
+    }
+}
+
+# Performance-critical function (benefits from optimization)
+fn fibonacci(n: int) -> int {
+    if (n <= 1) return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+fn testPerformance() {
+    println("Testing performance (fibonacci(30))...")
+    let start = Date.now()
+    let result = fibonacci(30)
+    let end = Date.now()
+    let duration = end - start
+    
+    println("  Result: ${result}")
+    println("  Time: ${duration}ms")
+    println("  Note: Faster in release/production modes with optimization")
+}
+
+# Run tests
+testAssertions()
+println("")
+testBoundsChecking()
+println("")
+testPerformance()
+println("")
+
+# Build mode recommendations
+println("=== Build Mode Recommendations ===")
+println("")
+println("Debug Mode (--mode=debug):")
+println("  • Maximum debugging information")
+println("  • No optimization (O0)")
+println("  • Use for: Finding bugs, debugging")
+println("")
+println("Development Mode (--mode=dev) [DEFAULT]:")
+println("  • Basic optimization (O1)")
+println("  • Debug symbols included")
+println("  • Hot reload enabled")
+println("  • Use for: Day-to-day development")
+println("")
+println("Release Mode (--mode=release):")
+println("  • Default optimization (O2)")
+println("  • Safety checks enabled")
+println("  • LTO enabled")
+println("  • Use for: Testing, staging")
+println("")
+println("Production Mode (--mode=production):")
+println("  • Aggressive optimization (O3)")
+println("  • Safety checks disabled")
+println("  • Debug symbols stripped")
+println("  • LTO enabled")
+println("  • Use for: Production deployment")
+println("")
+
+# Example compilation commands
+println("=== Example Commands ===")
+println("")
+println("# Compile with different modes:")
+println("klang compile --mode=debug app.kl")
+println("klang compile --mode=dev app.kl")
+println("klang compile --mode=release app.kl")
+println("klang compile --mode=production app.kl")
+println("")
+println("# Custom optimization:")
+println("klang compile --mode=release --opt=O3 --lto app.kl")
+println("")
+println("# View configuration:")
+println("klang config")
