@@ -446,6 +446,17 @@ static ASTNode *parse_postfix(Parser *parser) {
                 expr = ast_new_member_access(expr, member_name, line);
             }
             free(member_name);
+        } else if (check(parser, TOKEN_ARROW)) {
+            /* Handle pointer member access ptr->member (equivalent to (*ptr).member) */
+            Token t = advance(parser);
+            Token member_tok;
+            char *member_name;
+            token_free(&t);
+            member_tok = consume(parser, TOKEN_IDENT);
+            member_name = strdup(member_tok.value);
+            token_free(&member_tok);
+            expr = ast_new_pointer_member(expr, member_name, line);
+            free(member_name);
         } else if (check(parser, TOKEN_PLUS_PLUS) || check(parser, TOKEN_MINUS_MINUS)) {
             /* Postfix increment/decrement */
             Token t = advance(parser);
@@ -510,6 +521,24 @@ static ASTNode *parse_unary(Parser *parser) {
         node->data.postfix.op[3] = '\0';
         node->data.postfix.is_postfix = 0;  // Prefix
         return node;
+    }
+    
+    /* Handle address-of operator & */
+    if (check(parser, TOKEN_AMP)) {
+        Token t = advance(parser);
+        token_free(&t);
+        ASTNode *operand = parse_unary(parser);
+        return ast_new_address_of(operand, line);
+    }
+    
+    /* Handle dereference operator * */
+    /* Note: We need to be careful here - * can be either dereference or multiplication
+     * In a unary context (here), it's dereference. In binary context, it's multiplication. */
+    if (check(parser, TOKEN_STAR)) {
+        Token t = advance(parser);
+        token_free(&t);
+        ASTNode *operand = parse_unary(parser);
+        return ast_new_dereference(operand, line);
     }
     
     if (check(parser, TOKEN_MINUS)) {
