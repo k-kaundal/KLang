@@ -41,8 +41,8 @@ void env_free(Env *env) {
     while (e) {
         EnvEntry *next = e->next;
         REFCOUNT_LOG("env_free: freeing entry '%s'", e->name);
-        free(e->name);
         value_free(&e->value);
+        free(e->name);
         free(e);
         e = next;
     }
@@ -512,6 +512,7 @@ void value_free(Value *v) {
             // Properly free the receiver value first (decrements ref_count)
             REFCOUNT_LOG("value_free(METHOD): freeing receiver");
             value_free(v->as.method_val.receiver);
+            // The pointer is already freed by value_free if needed, just free the container
             free(v->as.method_val.receiver);
             v->as.method_val.receiver = NULL;
         }
@@ -844,7 +845,10 @@ void interpreter_free(Interpreter *interp) {
     }
     free(interp->loaded_modules);
     if (interp->current_module_dir) free(interp->current_module_dir);
-    env_release(interp->global_env);
+    // Only release global_env if it hasn't been freed already
+    if (interp->global_env && interp->global_env->ref_count > 0) {
+        env_release(interp->global_env);
+    }
     free(interp);
 }
 
@@ -949,7 +953,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             }
             if (v->type == VAL_OBJECT && v->as.object_val) {
                 v->as.object_val->ref_count++;
-                REFCOUNT_LOG("NODE_RETURN: ptr=%p ref_count=%d (after increment)", 
+                REFCOUNT_LOG("NODE_IDENT: ptr=%p ref_count=%d (after increment)", 
                              (void*)v->as.object_val, v->as.object_val->ref_count);
             }
             if (v->type == VAL_FUNCTION) {
@@ -2170,10 +2174,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         EnvEntry *entry = spread_val.as.object_val->fields->entries;
                         while (entry) {
                             Value field_val = entry->value;
-                            /* Deep copy strings */
-                            if (field_val.type == VAL_STRING) {
-                                field_val = make_string(entry->value.as.str_val);
-                            } else {
+                            /* Don't duplicate strings here - env_set_local will handle it */
+                            if (field_val.type != VAL_STRING) {
                                 /* Retain dict/set values */
                                 value_retain(&field_val);
                             }
@@ -2333,13 +2335,11 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         env_set_local(class_val.as.class_val.methods, e->name, method_copy);
                         e = e->next;
                     }
-                    // Copy parent fields (deep copy strings)
+                    // Copy parent fields (env_set_local will duplicate strings)
                     e = parent->as.class_val.fields->entries;
                     while (e) {
                         Value field_copy = e->value;
-                        if (field_copy.type == VAL_STRING) {
-                            field_copy.as.str_val = strdup(e->value.as.str_val);
-                        }
+                        // Don't duplicate strings here - env_set_local will handle it
                         env_set_local(class_val.as.class_val.fields, e->name, field_copy);
                         e = e->next;
                     }
@@ -2356,13 +2356,11 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         env_set_local(class_val.as.class_val.static_methods, e->name, method_copy);
                         e = e->next;
                     }
-                    // Copy parent static fields
+                    // Copy parent static fields (env_set_local will duplicate strings)
                     e = parent->as.class_val.static_fields->entries;
                     while (e) {
                         Value field_copy = e->value;
-                        if (field_copy.type == VAL_STRING) {
-                            field_copy.as.str_val = strdup(e->value.as.str_val);
-                        }
+                        // Don't duplicate strings here - env_set_local will handle it
                         env_set_local(class_val.as.class_val.static_fields, e->name, field_copy);
                         e = e->next;
                     }
@@ -2379,6 +2377,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     func.type = VAL_FUNCTION;
                     func.as.func_val.param_count = member->data.func_def.params.count;
                     func.as.func_val.param_names = NULL;
+                    func.as.func_val.default_values = member->data.func_def.default_values;
+                    func.as.func_val.is_async = member->data.func_def.is_async;
+                    func.as.func_val.is_generator = member->data.func_def.is_generator;
+                    func.as.func_val.has_rest_param = member->data.func_def.has_rest_param;
                     if (func.as.func_val.param_count > 0) {
                         int j;
                         func.as.func_val.param_names = malloc(func.as.func_val.param_count * sizeof(char *));
@@ -2402,6 +2404,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         env_set_local_with_access(class_val.as.class_val.static_fields, member->data.let_stmt.name, field_val, member->data.let_stmt.access);
                     } else {
                         env_set_local_with_access(class_val.as.class_val.fields, member->data.let_stmt.name, field_val, member->data.let_stmt.access);
+                    }
+                    // Free the local copy after storing (env_set_local_with_access makes its own copy)
+                    if (field_val.type == VAL_STRING && field_val.as.str_val) {
+                        free(field_val.as.str_val);
                     }
                 }
             }
@@ -2431,13 +2437,11 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
             // Create object
             Value obj = make_object(node->data.new_expr.class_name, class_val->as.class_val.methods);
             
-            // Initialize fields with default values from class (deep copy strings)
+            // Initialize fields with default values from class (env_set_local will duplicate strings)
             EnvEntry *field_entry = class_val->as.class_val.fields->entries;
             while (field_entry) {
                 Value field_val = field_entry->value;
-                if (field_val.type == VAL_STRING) {
-                    field_val.as.str_val = strdup(field_entry->value.as.str_val);
-                }
+                // Don't duplicate here - env_set_local will handle it
                 env_set_local(obj.as.object_val->fields, field_entry->name, field_val);
                 field_entry = field_entry->next;
             }
@@ -2624,6 +2628,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 if (builtin && builtin->type == VAL_BUILTIN) {
                     // Create a bound method with the dict as receiver
                     result = make_method(obj, *builtin);
+                    // make_method takes ownership, balance NODE_IDENT's increment
+                    if (obj.type == VAL_DICT && obj.as.dict_val) {
+                        obj.as.dict_val->ref_count--;
+                    }
                     return result;
                 }
                 
@@ -2668,6 +2676,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 if (builtin && builtin->type == VAL_BUILTIN) {
                     // Create a bound method with the set as receiver
                     result = make_method(obj, *builtin);
+                    // make_method takes ownership, balance NODE_IDENT's increment
+                    if (obj.type == VAL_SET && obj.as.set_val) {
+                        obj.as.set_val->ref_count--;
+                    }
                     return result;
                 }
                 
@@ -2757,7 +2769,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         }
                         // Return bound method
                         result = make_method(obj, method_entry->value);
-                        return result; // Don't free obj since it's part of method
+                        // Don't decrement here - we'll call value_free(&obj) at the end
+                        // to properly release the temporary reference from NODE_IDENT
                     }
                 }
             } else if (obj.type == VAL_CLASS) {
@@ -2780,8 +2793,12 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
             }
             
-            // Don't free obj if it's an object, class, or module - they share Env pointers
-            if (obj.type != VAL_OBJECT && obj.type != VAL_CLASS && obj.type != VAL_MODULE) {
+            // Free obj to properly decrement reference counts
+            // For objects with reference counting, value_free will only decrement ref_count
+            // For class/module, we still skip to avoid double-free of shared Env pointers
+            // For NODE_THIS, don't decrement because it didn't increment (it's already owned by env)
+            if (obj.type != VAL_CLASS && obj.type != VAL_MODULE && 
+                node->data.member_access.obj->type != NODE_THIS) {
                 value_free(&obj);
             }
             return result;
@@ -2794,6 +2811,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 return make_null();
             }
             // Return the value directly (share Env pointers, don't deep copy)
+            // Don't increment ref_count - 'this' is already owned by the environment
             return *this_val;
         }
         case NODE_SUPER: {
