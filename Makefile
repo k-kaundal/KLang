@@ -7,8 +7,28 @@ LLVM_CONFIG := $(shell which llvm-config-18 2>/dev/null || which llvm-config-17 
 LLVM_CFLAGS = $(shell $(LLVM_CONFIG) --cflags 2>/dev/null)
 LLVM_LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags --libs core executionengine mcjit native passes 2>/dev/null)
 
-CFLAGS = -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200809L -Isrc -Iinclude -g $(LLVM_CFLAGS)
-LDFLAGS = $(LLVM_LDFLAGS) -lm -lreadline -lpthread -ldl
+# Platform detection for conditional linking
+UNAME_S := $(shell uname -s 2>/dev/null || echo Windows)
+ifeq ($(OS),Windows_NT)
+    # Windows (native or MinGW)
+    PLATFORM_CFLAGS = -D_GNU_SOURCE
+    PLATFORM_LDFLAGS = -lm -lreadline
+else ifeq ($(UNAME_S),Linux)
+    # Linux
+    PLATFORM_CFLAGS = -D_POSIX_C_SOURCE=200809L
+    PLATFORM_LDFLAGS = -lm -lreadline -lpthread -ldl
+else ifeq ($(UNAME_S),Darwin)
+    # macOS
+    PLATFORM_CFLAGS = -D_POSIX_C_SOURCE=200809L
+    PLATFORM_LDFLAGS = -lm -lreadline -lpthread
+else
+    # Other Unix-like (BSD, etc.)
+    PLATFORM_CFLAGS = -D_POSIX_C_SOURCE=200809L
+    PLATFORM_LDFLAGS = -lm -lreadline -lpthread -ldl
+endif
+
+CFLAGS = -Wall -Wextra -std=c99 $(PLATFORM_CFLAGS) -Isrc -Iinclude -g $(LLVM_CFLAGS)
+LDFLAGS = $(LLVM_LDFLAGS) $(PLATFORM_LDFLAGS)
 
 SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/vm_stack.c src/vm_register.c src/ssa_ir.c src/compiler.c src/gc.c src/runtime.c src/repl.c src/cli.c src/cli_colors.c src/cli_help.c src/cli_commands.c src/formatter.c src/error_reporter.c src/config.c src/test_runner.c src/project_init.c src/llvm_backend.c src/type_checker.c src/package_manager.c src/lsp_server.c src/debugger.c src/type_system.c src/parallel.c src/wasm_backend.c src/plugin_system.c src/cloud_native.c
 OBJ = $(SRC:.c=.o)
