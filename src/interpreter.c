@@ -12,7 +12,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env);
 extern Value builtin_Promise_constructor(Interpreter *interp, Value *args, int argc);
 
 // Debug flag for tracking object reference counting
-#define DEBUG_REFCOUNT 1
+#define DEBUG_REFCOUNT 0
 
 #if DEBUG_REFCOUNT
 #define REFCOUNT_LOG(fmt, ...) fprintf(stderr, "[REFCOUNT] " fmt "\n", ##__VA_ARGS__)
@@ -2762,12 +2762,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         }
                         // Return bound method
                         result = make_method(obj, method_entry->value);
-                        // make_method incremented ref_count, but NODE_IDENT also incremented it
-                        // We need to decrement once to balance NODE_IDENT's increment
-                        if (obj.type == VAL_OBJECT && obj.as.object_val) {
-                            obj.as.object_val->ref_count--;
-                        }
-                        return result;
+                        // Don't decrement here - we'll call value_free(&obj) at the end
+                        // to properly release the temporary reference from NODE_IDENT
                     }
                 }
             } else if (obj.type == VAL_CLASS) {
@@ -2790,8 +2786,12 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 }
             }
             
-            // Don't free obj if it's an object, class, or module - they share Env pointers
-            if (obj.type != VAL_OBJECT && obj.type != VAL_CLASS && obj.type != VAL_MODULE) {
+            // Free obj to properly decrement reference counts
+            // For objects with reference counting, value_free will only decrement ref_count
+            // For class/module, we still skip to avoid double-free of shared Env pointers
+            // For NODE_THIS, don't decrement because it didn't increment (it's already owned by env)
+            if (obj.type != VAL_CLASS && obj.type != VAL_MODULE && 
+                node->data.member_access.obj->type != NODE_THIS) {
                 value_free(&obj);
             }
             return result;
@@ -2804,6 +2804,7 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                 return make_null();
             }
             // Return the value directly (share Env pointers, don't deep copy)
+            // Don't increment ref_count - 'this' is already owned by the environment
             return *this_val;
         }
         case NODE_SUPER: {
