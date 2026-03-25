@@ -4,7 +4,7 @@
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$KLANG_VERSION = "0.2.0"
+$KLANG_VERSION = "v1.0.0-rc"
 $GITHUB_REPO = "k-kaundal/KLang"
 $INSTALL_DIR = "$env:LOCALAPPDATA\KLang"
 $BIN_DIR = "$INSTALL_DIR\bin"
