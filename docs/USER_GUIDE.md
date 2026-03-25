@@ -43,6 +43,114 @@ Run it:
 ./klang run hello.kl
 ```
 
+## Basic Syntax
+
+### Comments
+
+KLang supports three types of comments:
+
+```klang
+# Single-line comment (Python style)
+// Single-line comment (C style)
+
+/*
+Multi-line comment
+Can span multiple lines
+*/
+
+/// Documentation comment
+/// Used for documenting code
+fn myFunction() {
+    // Implementation
+}
+```
+
+**Comment Features:**
+- `#` - Hash comments (Python-style)
+- `//` - Double-slash comments (C-style)
+- `/* */` - Multi-line block comments
+- `///` - Documentation comments
+
+All comment styles can be used inline or at the beginning of lines.
+
+### Print Statements
+
+KLang provides two main output functions:
+
+```klang
+# println - prints with newline
+println("Hello, World!")
+println("Value:", 42)
+
+# print - prints without newline
+print("Hello ")
+print("World")
+println("!")  # Outputs: Hello World!
+```
+
+**Printing Data Types:**
+
+```klang
+# Strings
+println("Hello, KLang!")
+
+# Numbers (integers and floats)
+println(42)
+println(3.14159)
+
+# Booleans
+println(true)
+println(false)
+
+# Null
+println(null)
+
+# Variables
+let name = "Alice"
+let age = 30
+println("Name:", name, "Age:", age)
+```
+
+**Arithmetic in Print:**
+
+You can perform calculations directly in print statements:
+
+```klang
+# Basic arithmetic
+println(2 + 3)        # 5
+println(10 - 4)       # 6
+println(5 * 6)        # 30
+println(20 / 4)       # 5
+println(17 % 5)       # 2
+
+# Complex expressions
+println((2 + 3) * 4)  # 20
+
+# Power operations (use Math.pow)
+println(Math.pow(2, 8))  # 256
+
+# Comparisons
+println(5 > 3)        # true
+println(10 == 10)     # true
+
+# Logical operations
+println(true && false)  # false
+println(true || false)  # true
+```
+
+**String Concatenation:**
+
+```klang
+let name = "World"
+println("Hello, " + name + "!")
+
+# Convert numbers to strings
+let result = 42
+println("The answer is: " + str(result))
+```
+
+> **Note:** KLang does not support the `**` operator for exponentiation. Use `Math.pow(base, exponent)` instead.
+
 ## Core Features
 
 ### Variables and Types

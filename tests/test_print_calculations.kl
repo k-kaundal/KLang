@@ -1,0 +1,116 @@
+# Test Print Statement with Calculations
+# This test validates that KLang supports printing expressions and calculations
+
+println("=== Print Statement with Calculations Test ===")
+println()
+
+# Test 1: Basic arithmetic operations in print
+println("Test 1: Basic Arithmetic Operations")
+println("2 + 3 = ", 2 + 3)
+println("10 - 4 = ", 10 - 4)
+println("5 * 6 = ", 5 * 6)
+println("20 / 4 = ", 20 / 4)
+println("17 % 5 = ", 17 % 5)
+println()
+
+# Test 2: Power operator (exponentiation)
+# Note: KLang does not support ** operator yet, using Math.pow() instead
+println("Test 2: Power Operator (Math.pow)") 
+println("Math.pow(2, 4) = ", Math.pow(2, 4))
+println("Math.pow(3, 3) = ", Math.pow(3, 3))
+println("Math.pow(5, 2) = ", Math.pow(5, 2))
+println("Math.pow(10, 0) = ", Math.pow(10, 0))
+println("Math.pow(2, 10) = ", Math.pow(2, 10))
+println()
+
+# Test 3: Complex expressions
+println("Test 3: Complex Expressions")
+println("(2 + 3) * 4 = ", (2 + 3) * 4)
+println("2 + (3 * 4) = ", 2 + (3 * 4))
+println("Math.pow(10 - 5, 2) = ", Math.pow(10 - 5, 2))
+println("Math.pow(2, 3) + 1 = ", Math.pow(2, 3) + 1)
+println("(2 + 3) * (4 - 1) = ", (2 + 3) * (4 - 1))
+println()
+
+# Test 4: Floating point calculations
+println("Test 4: Floating Point Calculations")
+println("3.14 + 2.86 = ", 3.14 + 2.86)
+println("10.5 - 3.2 = ", 10.5 - 3.2)
+println("2.5 * 4.0 = ", 2.5 * 4.0)
+println("15.0 / 3.0 = ", 15.0 / 3.0)
+println("Math.pow(2.5, 2) = ", Math.pow(2.5, 2))
+println()
+
+# Test 5: Negative numbers
+println("Test 5: Negative Numbers")
+println("-5 + 3 = ", -5 + 3)
+println("10 + (-3) = ", 10 + (-3))
+println("-2 * -3 = ", -2 * -3)
+println("-10 / 2 = ", -10 / 2)
+println("Math.pow(-2, 3) = ", Math.pow(-2, 3))
+println()
+
+# Test 6: Mixed operations
+println("Test 6: Mixed Operations")
+println("2 + 3 * 4 - 1 = ", 2 + 3 * 4 - 1)
+println("10 / 2 + 3 * 2 = ", 10 / 2 + 3 * 2)
+println("Math.pow(2, 3) * 3 = ", Math.pow(2, 3) * 3)
+println("100 / 10 / 2 = ", 100 / 10 / 2)
+println("5 + 3 * Math.pow(2, 2) = ", 5 + 3 * Math.pow(2, 2))
+println()
+
+# Test 7: Large calculations
+println("Test 7: Large Calculations")
+println("1000 + 2000 + 3000 = ", 1000 + 2000 + 3000)
+println("100 * 100 = ", 100 * 100)
+println("Math.pow(10, 5) = ", Math.pow(10, 5))
+println("999999 + 1 = ", 999999 + 1)
+println()
+
+# Test 8: Variables in calculations
+println("Test 8: Variables in Calculations")
+let a = 5
+let b = 3
+println("a = ", a, ", b = ", b)
+println("a + b = ", a + b)
+println("a - b = ", a - b)
+println("a * b = ", a * b)
+println("a / b = ", a / b)
+println("Math.pow(a, b) = ", Math.pow(a, b))
+println()
+
+# Test 9: String concatenation with calculations
+println("Test 9: String Concatenation with Calculations")
+println("Result: " + str(2 + 2))
+println("Power of 2^8: " + str(Math.pow(2, 8)))
+let result = 10 * 5
+println("10 times 5 equals: " + str(result))
+println()
+
+# Test 10: Comparison operations in print
+println("Test 10: Comparison Operations")
+println("5 > 3 = ", 5 > 3)
+println("2 < 10 = ", 2 < 10)
+println("5 == 5 = ", 5 == 5)
+println("3 != 4 = ", 3 != 4)
+println("7 >= 7 = ", 7 >= 7)
+println("4 <= 9 = ", 4 <= 9)
+println()
+
+# Test 11: Logical operations in print
+println("Test 11: Logical Operations")
+println("true && true = ", true && true)
+println("true && false = ", true && false)
+println("false || true = ", false || true)
+println("!true = ", !true)
+println("!false = ", !false)
+println()
+
+# Test 12: Combined logical and arithmetic
+println("Test 12: Combined Operations")
+println("(5 > 3) && (2 < 4) = ", (5 > 3) && (2 < 4))
+println("(10 == 10) || (5 > 10) = ", (10 == 10) || (5 > 10))
+println("!(5 < 3) = ", !(5 < 3))
+println()
+
+println("=== All Print Calculation Tests Complete ===")

@@ -1,0 +1,140 @@
+# Test Comment Syntax
+# This test validates all comment styles supported by KLang
+
+println("=== Comment Syntax Test ===")
+println()
+
+# Test 1: Single-line comments with #
+println("Test 1: Hash (#) Comments")
+# This is a comment
+println("This line should print") # This is an inline comment
+# Another comment
+println("Test 1 passed")
+println()
+
+// Test 2: Single-line comments with //
+println("Test 2: Double-slash (//) Comments")
+// This is a C-style comment
+println("This line should print") // Inline C-style comment
+// Another comment
+println("Test 2 passed")
+println()
+
+/* Test 3: Multi-line comments */
+println("Test 3: Multi-line Comments")
+/*
+This is a multi-line comment
+It spans multiple lines
+And should be completely ignored
+*/
+println("After multi-line comment")
+/* Inline multi-line */ println("Inline multi-line test")
+println("Test 3 passed")
+println()
+
+# Test 4: Nested comment scenarios
+println("Test 4: Mixed Comment Styles")
+# Hash comment
+// Double-slash comment
+/* Multi-line comment */
+println("All comment styles work")
+println()
+
+# Test 5: Comments with special characters
+println("Test 5: Comments with Special Characters")
+# Comment with !@#$%^&*()
+// Comment with special chars: <>?:{}[]|\
+/* Multi-line with special chars !@#$%^&*() */
+println("Special characters in comments work")
+println()
+
+# Test 6: Comments with code-like content
+println("Test 6: Comments with Code-like Content")
+# let x = 10
+# println("This should not execute")
+// function test() { return 42; }
+/* 
+   if (true) {
+       println("This should not print")
+   }
+*/
+println("Code in comments is ignored")
+println()
+
+# Test 7: Consecutive comments
+println("Test 7: Consecutive Comments")
+# Comment 1
+# Comment 2
+# Comment 3
+println("After consecutive comments")
+//Comment 1
+//Comment 2
+//Comment 3
+println("After consecutive // comments")
+println()
+
+# Test 8: Empty comments
+println("Test 8: Empty Comments")
+#
+//
+/**/
+println("Empty comments work")
+println()
+
+# Test 9: Comments at end of file
+println("Test 9: Comments in Various Positions")
+println("Start of line") # End of line comment
+// Beginning of line comment
+/* Middle of */ println("Middle of line") /* another middle */
+println()
+
+# Test 10: Long comments
+println("Test 10: Long Comments")
+# This is a very long comment that goes on and on and on and on and on and on and on and on and on and on and on and on and on and on
+println("Long comments work")
+println()
+
+# Test 11: Comments with numbers
+println("Test 11: Comments with Numbers and Math")
+# 1 + 1 = 2
+# 2 ** 10 = 1024
+let x = 5 # Set x to 5
+let y = 3 # Set y to 3
+println("x = ", x, ", y = ", y) # Print values
+println("x + y = ", x + y) # 5 + 3 = 8
+println()
+
+# Test 12: Comments with strings
+println("Test 12: Comments with Strings")
+# "This string is in a comment"
+let message = "Hello" # This is a real string
+println(message) # Print the message
+println()
+
+# Test 13: Unicode in comments
+println("Test 13: Unicode in Comments")
+# Comment with unicode: 你好世界 🌍 🚀
+// Unicode comment: Привет мир ★ ♥
+/* Multi-line unicode: こんにちは世界 ☀️ */
+println("Unicode in comments works")
+println()
+
+/// Test 14: Doc comments (triple slash)
+println("Test 14: Documentation Comments")
+/// This is a documentation comment
+/// It describes the following code
+let documentedVar = 42
+println("documentedVar = ", documentedVar)
+println()
+
+# Test 15: Comments with URLs
+println("Test 15: Comments with URLs")
+# https://github.com/k-kaundal/KLang
+# http://example.com/test?param=value
+// https://klang.dev/docs
+println("URLs in comments work")
+println()
+
+println("=== All Comment Tests Complete ===")
+
+# Final comment at end of file
