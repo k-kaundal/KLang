@@ -146,6 +146,7 @@ void lsp_handle_text_document_hover(LSPServer *server, int id, const char *param
 void lsp_handle_text_document_definition(LSPServer *server, int id, const char *params);
 void lsp_handle_text_document_references(LSPServer *server, int id, const char *params);
 void lsp_handle_text_document_formatting(LSPServer *server, int id, const char *params);
+void lsp_handle_text_document_document_symbol(LSPServer *server, int id, const char *params);
 
 /* Utility functions */
 char* lsp_read_message(void);

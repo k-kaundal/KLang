@@ -5,7 +5,7 @@ All notable changes to the KLang VS Code extension will be documented in this fi
 ## [1.0.0] - 2026-03-25
 
 ### Added
-- Initial release of KLang VS Code extension
+- Initial release of KLang VS Code extension with comprehensive features
 - **Syntax Highlighting**
   - Complete TextMate grammar for KLang
   - Support for all keywords: fn, class, async, await, let, const, var, etc.
@@ -31,7 +31,7 @@ All notable changes to the KLang VS Code extension will be documented in this fi
   - `KLang: Run Current File` - Execute current KLang file
   - `KLang: Build Current File` - Build with KLang compiler
   - `KLang: Check Syntax` - Syntax checking
-  - `KLang: Format Document` - Document formatting (prepared)
+  - `KLang: Format Document` - Document formatting with KLang formatter
   - `KLang: Open REPL` - Launch interactive REPL
   
 - **Keyboard Shortcuts**
@@ -40,17 +40,53 @@ All notable changes to the KLang VS Code extension will be documented in this fi
   - Check: Ctrl+Shift+C (Cmd+Shift+C on Mac)
   - Format: Ctrl+Shift+F (Cmd+Shift+F on Mac)
   
-- **Editor Features**
-  - Document symbol provider (outline view)
-  - Hover provider for keyword documentation
+- **Advanced Editor Features**
+  - Enhanced document symbol provider with support for:
+    - Functions (regular and async)
+    - Classes
+    - Interfaces
+    - Enums
+    - Variables (let, const, var)
+  - Improved hover provider with rich markdown documentation
+  - Definition provider for symbol navigation
+  - Range formatting support
   - Context menu integration
   - Editor title run button
   - File association for .kl, .k, .klang files
   
-- **Language Server Protocol**
-  - LSP client implementation ready
-  - Prepared for future KLang LSP server integration
-  - Configuration options for LSP
+- **Language Server Protocol (Full Integration)**
+  - LSP client fully integrated with KLang LSP server
+  - Smart code completion with:
+    - 40+ keyword snippets with placeholders
+    - Built-in function suggestions
+    - Type completions
+    - Trigger characters (`.`, `:`)
+  - Real-time diagnostics and linting:
+    - Syntax error detection
+    - Warning messages
+    - Debounced validation (500ms)
+    - Inline error display
+  - Document formatting integration
+  - Document symbol support
+  - Enhanced completion items with:
+    - Detailed documentation
+    - Snippet support (insertTextFormat: 2)
+    - Kind icons
+  
+- **Linting and Diagnostics**
+  - Automatic linting on:
+    - Document open
+    - Document save
+    - Document change (debounced)
+  - Parse error messages from KLang compiler
+  - Inline error display with severity levels
+  - Diagnostic collection management
+  
+- **Code Formatting**
+  - Document formatting provider
+  - Range formatting provider
+  - Integration with `klang fmt` command
+  - Configurable via settings
   
 - **Configuration Settings**
   - `klang.languageServer.enabled` - Enable/disable LSP
@@ -70,29 +106,37 @@ All notable changes to the KLang VS Code extension will be documented in this fi
   - Language quick reference
   - Installation instructions
   - Usage guide
+  - Updated with new features
   
 - **Branding**
   - Custom KLang icon (SVG)
   - Extension metadata and descriptions
 
+### Enhanced
+- **LSP Server (C Implementation)**
+  - Added comprehensive completion items with snippets
+  - Enhanced hover documentation
+  - Document symbol handler
+  - Improved message type parsing
+  - Support for more LSP methods
+
+### Fixed
+- Language Server client initialization
+- Formatter command usage (`fmt` instead of `format`)
+- Proper disposable pattern for LSP client
+
 ### Notes
-- Language Server features require KLang LSP implementation
-- Code formatter is prepared but needs KLang formatter implementation
-- Debugger support planned for future releases
+- All features are fully functional with KLang compiler installed
+- LSP server provides real-time language intelligence
+- Linting and diagnostics work out of the box
 
 ## [Unreleased]
 
 ### Planned Features
-- Full Language Server Protocol support
 - Debug Adapter Protocol (DAP) integration
-- Code formatter implementation
-- Linter integration
-- Refactoring support
+- Advanced refactoring support
 - Test explorer integration
 - Problem matcher for build tasks
-- IntelliSense improvements
-- Code actions and quick fixes
-- Go to definition/references
 - Workspace symbol search
 - Call hierarchy
 - Type hierarchy
@@ -103,6 +147,8 @@ All notable changes to the KLang VS Code extension will be documented in this fi
 - Code lens provider
 - Signature help provider
 - Rename provider
+- Inline hints
+- Code actions and quick fixes
 
 ---
 
