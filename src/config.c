@@ -6,6 +6,9 @@
 static Config global_config;
 static int config_initialized = 0;
 
+/* Forward declaration for internal helper */
+static void config_apply_build_mode_settings(BuildMode mode);
+
 void config_init(void) {
     if (config_initialized) return;
     
@@ -39,6 +42,14 @@ void config_init(void) {
     config_load_from_env();
     
     config_initialized = 1;
+    
+    /* Apply build mode settings if mode was set from environment */
+    /* This ensures mode-specific settings are applied */
+    BuildMode mode = global_config.build_mode;
+    if (mode == BUILD_MODE_DEBUG || mode == BUILD_MODE_RELEASE || mode == BUILD_MODE_PRODUCTION) {
+        /* Only apply if not default dev mode, meaning it was explicitly set */
+        config_apply_build_mode_settings(mode);
+    }
 }
 
 void config_load_from_env(void) {
@@ -59,13 +70,13 @@ void config_load_from_env(void) {
     /* KLANG_BUILD_MODE - Set build mode (debug, dev, release, production) */
     env_val = getenv("KLANG_BUILD_MODE");
     if (env_val) {
-        config_set_build_mode(config_parse_build_mode(env_val));
+        global_config.build_mode = config_parse_build_mode(env_val);
     }
     
     /* KLANG_OPT_LEVEL - Set optimization level (0, 1, 2, 3) */
     env_val = getenv("KLANG_OPT_LEVEL");
     if (env_val) {
-        config_set_opt_level(config_parse_opt_level(env_val));
+        global_config.opt_level = config_parse_opt_level(env_val);
     }
     
     /* KLANG_ENABLE_LTO - Enable link-time optimization */
@@ -190,7 +201,10 @@ void config_set_indent(int size, int use_tabs) {
 void config_set_build_mode(BuildMode mode) {
     if (!config_initialized) config_init();
     global_config.build_mode = mode;
-    
+    config_apply_build_mode_settings(mode);
+}
+
+static void config_apply_build_mode_settings(BuildMode mode) {
     /* Auto-adjust settings based on build mode */
     switch (mode) {
         case BUILD_MODE_DEBUG:
