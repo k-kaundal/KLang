@@ -1,4 +1,3 @@
-#define _GNU_SOURCE  /* For asprintf() */
 #include "lsp_server.h"
 #include "lexer.h"
 #include "parser.h"
@@ -8,6 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* Forward declaration for asprintf (may not be in headers with strict C99) */
+int asprintf(char **strp, const char *fmt, ...);
 
 /* Initialize LSP server */
 LSPServer* lsp_server_init(void) {

@@ -29,8 +29,8 @@ void type_system_cleanup(void) {
     type_free(BUILTIN_TYPE_STRING);
     type_free(BUILTIN_TYPE_BOOL);
     type_free(BUILTIN_TYPE_NULL);
-    type_free(TYPE_KIND_VOID_T);
-    type_free(TYPE_KIND_ANY_T);
+    type_free(BUILTIN_TYPE_VOID_T);
+    type_free(BUILTIN_TYPE_ANY_T);
 }
 
 /* Create primitive type */

@@ -1,8 +1,6 @@
 #ifndef LSP_SERVER_H
 #define LSP_SERVER_H
 
-#define _GNU_SOURCE  /* For asprintf() */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

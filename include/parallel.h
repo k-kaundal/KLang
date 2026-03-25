@@ -100,9 +100,20 @@ typedef struct {
     pthread_rwlock_t rwlock;
 } RWLock;
 
+/* Barrier implementation (macOS doesn't have pthread_barrier) */
+#ifdef __APPLE__
+typedef struct {
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    int count;
+    int threshold;
+    int generation;
+} Barrier;
+#else
 typedef struct {
     pthread_barrier_t barrier;
 } Barrier;
+#endif
 
 Mutex* mutex_create(void);
 void mutex_lock(Mutex *m);

@@ -1,6 +1,7 @@
 #include "parallel.h"
 #include <stdlib.h>
 #include <string.h>
+#include <sched.h>
 
 /* Thread pool worker function */
 static void* thread_pool_worker(void *arg) {
@@ -139,7 +140,7 @@ int thread_pool_submit(ThreadPool *pool, void (*function)(void *), void *arg) {
 void thread_pool_wait(ThreadPool *pool) {
     while (atomic_load(&pool->tasks_completed) < atomic_load(&pool->tasks_submitted)) {
         /* Busy wait - could be improved with condition variable */
-        pthread_yield();
+        sched_yield();
     }
 }
 
@@ -240,16 +241,47 @@ void rwlock_destroy(RWLock *rw) {
 /* Barrier operations */
 Barrier* barrier_create(int count) {
     Barrier *b = malloc(sizeof(Barrier));
+#ifdef __APPLE__
+    pthread_mutex_init(&b->mutex, NULL);
+    pthread_cond_init(&b->cond, NULL);
+    b->count = 0;
+    b->threshold = count;
+    b->generation = 0;
+#else
     pthread_barrier_init(&b->barrier, NULL, count);
+#endif
     return b;
 }
 
 void barrier_wait(Barrier *b) {
+#ifdef __APPLE__
+    pthread_mutex_lock(&b->mutex);
+    int my_generation = b->generation;
+    b->count++;
+    
+    if (b->count >= b->threshold) {
+        b->generation++;
+        b->count = 0;
+        pthread_cond_broadcast(&b->cond);
+        pthread_mutex_unlock(&b->mutex);
+    } else {
+        while (my_generation == b->generation) {
+            pthread_cond_wait(&b->cond, &b->mutex);
+        }
+        pthread_mutex_unlock(&b->mutex);
+    }
+#else
     pthread_barrier_wait(&b->barrier);
+#endif
 }
 
 void barrier_destroy(Barrier *b) {
+#ifdef __APPLE__
+    pthread_mutex_destroy(&b->mutex);
+    pthread_cond_destroy(&b->cond);
+#else
     pthread_barrier_destroy(&b->barrier);
+#endif
     free(b);
 }
 
