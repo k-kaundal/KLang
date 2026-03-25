@@ -44,19 +44,25 @@ Over 40 comprehensive code snippets for:
 - **Open REPL**
   - Launch an interactive KLang REPL session
 
-### 🔍 Editor Features
-- Document symbol outline (functions, classes, variables)
-- Hover documentation for keywords
-- Context menu integration
-- Editor title run button
+### 🔍 Advanced Editor Features
+- **Document Symbol Outline** - Navigate functions, classes, interfaces, enums, and variables
+- **Hover Documentation** - Rich markdown documentation with examples for all keywords
+- **Context Menu Integration** - Quick access to common commands
+- **Editor Title Run Button** - One-click execution
+- **Auto-formatting** on save or on-demand
+- **Intelligent Linting** with real-time error detection
+- **Definition Provider** to jump to symbol definitions
+- **Range Formatting** to format selected code
 
 ### 🎯 Language Server Protocol (LSP)
-Ready for Language Server integration when KLang LSP is implemented:
-- Code completion
-- Go to definition
-- Find references
-- Hover information
-- Diagnostics (errors and warnings)
+Fully integrated Language Server with advanced features:
+- **Smart Code Completion** - 40+ snippets with trigger characters (`.`, `:`)
+- **Go to Definition** - Jump to function, class, and variable definitions
+- **Find References** - Find all usages across your codebase
+- **Hover Information** - Detailed documentation with syntax examples
+- **Real-time Diagnostics** - Inline errors and warnings as you type
+- **Document Symbols** - Quick navigation and outline view
+- **Code Formatting** - Consistent code style with KLang formatter
 
 ## Installation
 
@@ -206,9 +212,9 @@ let sum = numbers.reduce((acc, x) => acc + x, 0)
 
 ## Known Issues
 
-- Language Server Protocol (LSP) integration is prepared but requires KLang LSP implementation
-- Code formatter is a placeholder and needs implementation
+- Some LSP features require the KLang compiler to be installed and available in PATH
 - Debugger support is planned for future releases
+- Some advanced refactoring features are in development
 
 ## Contributing
 
@@ -234,12 +240,21 @@ This will create a `.vsix` file you can install.
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
 ### 1.0.0
-- Initial release
-- Full syntax highlighting
-- 40+ code snippets
-- Commands for run, build, check
-- Document symbols and hover support
-- LSP client ready for future integration
+- Initial release with comprehensive features
+- Full syntax highlighting for all KLang constructs
+- 40+ intelligent code snippets with placeholders
+- Commands for run, build, check, and format
+- **Language Server Protocol (LSP) integration**
+  - Smart code completion with snippets
+  - Real-time diagnostics and linting
+  - Go to definition support
+  - Hover documentation with examples
+  - Document symbols and outline
+- **Advanced formatting** with KLang formatter
+- **Real-time linting** with debounced diagnostics
+- Enhanced document symbol provider (functions, classes, interfaces, enums)
+- Definition provider for navigation
+- Range formatting support
 
 ## License
 
