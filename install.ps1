@@ -4,7 +4,27 @@
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$KLANG_VERSION = "v1.0.0-rc"
+# Configuration
+# Auto-detect latest version from GitHub API or fallback
+function Get-LatestVersion {
+    try {
+        $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$GITHUB_REPO/releases/latest" -ErrorAction SilentlyContinue
+        if ($release.tag_name) {
+            return $release.tag_name
+        }
+    } catch {}
+    
+    try {
+        $version = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/$GITHUB_REPO/main/VERSION" -ErrorAction SilentlyContinue
+        if ($version) {
+            return "v$version".Trim()
+        }
+    } catch {}
+    
+    return "v1.0.0-rc"
+}
+
+$KLANG_VERSION = if ($env:KLANG_VERSION) { $env:KLANG_VERSION } else { Get-LatestVersion }
 $GITHUB_REPO = "k-kaundal/KLang"
 $INSTALL_DIR = "$env:LOCALAPPDATA\KLang"
 $BIN_DIR = "$INSTALL_DIR\bin"

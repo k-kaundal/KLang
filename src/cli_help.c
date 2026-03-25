@@ -3,7 +3,10 @@
 #include "cli_help.h"
 #include "cli_colors.h"
 
-#define KLANG_VERSION "1.0.0-rc"
+// Version is now injected at compile time via -DKLANG_VERSION
+#ifndef KLANG_VERSION
+#define KLANG_VERSION "dev"
+#endif
 #define KLANG_BUILD_DATE __DATE__
 
 void print_version(void) {
