@@ -155,7 +155,14 @@ function activateLanguageServer(context: vscode.ExtensionContext) {
 
     try {
         client = new LanguageClient('klang', 'KLang Language Server', serverOptions, clientOptions);
-        context.subscriptions.push(client.start());
+        client.start();
+        context.subscriptions.push({
+            dispose: () => {
+                if (client) {
+                    client.stop();
+                }
+            }
+        });
         console.log('KLang Language Server started successfully');
     } catch (error) {
         console.error('Failed to start KLang Language Server:', error);
@@ -468,22 +475,20 @@ function formatDocument(document: vscode.TextDocument): vscode.TextEdit[] {
         const os = require('os');
         const tmpDir = os.tmpdir();
         const tmpFile = path.join(tmpDir, `klang-format-${Date.now()}.kl`);
-        const tmpOutFile = path.join(tmpDir, `klang-format-out-${Date.now()}.kl`);
 
         // Write current document to temp file
         fs.writeFileSync(tmpFile, document.getText());
 
-        // Run formatter
-        execSync(`${klangPath} format "${tmpFile}" -o "${tmpOutFile}"`, {
+        // Run formatter (formats in-place)
+        execSync(`${klangPath} fmt "${tmpFile}"`, {
             timeout: 5000
         });
 
         // Read formatted content
-        const formatted = fs.readFileSync(tmpOutFile, 'utf8');
+        const formatted = fs.readFileSync(tmpFile, 'utf8');
 
         // Clean up
         fs.unlinkSync(tmpFile);
-        fs.unlinkSync(tmpOutFile);
 
         // Create edit for the entire document
         const firstLine = document.lineAt(0);
