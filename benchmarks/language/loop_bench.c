@@ -71,23 +71,23 @@ int main() {
     
     result = benchmark_run("Simple For Loop (10000 iterations)", 10000, bench_for_loop_simple);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/loop_for_simple.json");
+    benchmark_save_json(&result, "../reports/loop_for_simple.json");
     
     result = benchmark_run("Nested For Loops (100x100)", 1000, bench_for_loop_nested);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/loop_for_nested.json");
+    benchmark_save_json(&result, "../reports/loop_for_nested.json");
     
     result = benchmark_run("While Loop (10000 iterations)", 10000, bench_while_loop);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/loop_while.json");
+    benchmark_save_json(&result, "../reports/loop_while.json");
     
     result = benchmark_run("Loop with Break", 10000, bench_loop_with_break);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/loop_break.json");
+    benchmark_save_json(&result, "../reports/loop_break.json");
     
     result = benchmark_run("Loop with Continue", 10000, bench_loop_with_continue);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/loop_continue.json");
+    benchmark_save_json(&result, "../reports/loop_continue.json");
     
     printf("%s✓ All loop benchmarks completed!%s\n\n", COLOR_GREEN COLOR_BOLD, COLOR_RESET);
     

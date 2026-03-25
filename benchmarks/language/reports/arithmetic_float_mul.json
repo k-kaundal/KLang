@@ -1,0 +1,21 @@
+{
+  "name": "Float Multiplication (100 ops)",
+  "iterations": 528719,
+  "total_time_ms": 100.00,
+  "throughput_mops": 5.29,
+  "timing": {
+    "min_ns": 110,
+    "max_ns": 130,
+    "mean_ns": 119,
+    "median_ns": 120,
+    "p95_ns": 121,
+    "p99_ns": 121,
+    "stddev_ns": 3
+  },
+  "memory": {
+    "peak_bytes": 0,
+    "allocations": 0,
+    "deallocations": 0,
+    "bytes_allocated": 0
+  }
+}

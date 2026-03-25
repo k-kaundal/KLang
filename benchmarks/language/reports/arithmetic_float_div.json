@@ -1,0 +1,21 @@
+{
+  "name": "Float Division (100 ops)",
+  "iterations": 184873,
+  "total_time_ms": 100.00,
+  "throughput_mops": 1.85,
+  "timing": {
+    "min_ns": 460,
+    "max_ns": 10926,
+    "mean_ns": 475,
+    "median_ns": 471,
+    "p95_ns": 471,
+    "p99_ns": 481,
+    "stddev_ns": 192
+  },
+  "memory": {
+    "peak_bytes": 0,
+    "allocations": 0,
+    "deallocations": 0,
+    "bytes_allocated": 0
+  }
+}

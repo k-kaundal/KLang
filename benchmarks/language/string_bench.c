@@ -88,27 +88,27 @@ int main() {
     
     result = benchmark_run("String Concatenation (100 ops)", 10000, bench_string_concat);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/string_concat.json");
+    benchmark_save_json(&result, "../reports/string_concat.json");
     
     result = benchmark_run("String Comparison (1000 ops)", 10000, bench_string_compare);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/string_compare.json");
+    benchmark_save_json(&result, "../reports/string_compare.json");
     
     result = benchmark_run("String Copy (1000 ops)", 10000, bench_string_copy);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/string_copy.json");
+    benchmark_save_json(&result, "../reports/string_copy.json");
     
     result = benchmark_run("String Length (1000 ops)", 10000, bench_string_length);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/string_length.json");
+    benchmark_save_json(&result, "../reports/string_length.json");
     
     result = benchmark_run("String Search (1000 ops)", 10000, bench_string_search);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/string_search.json");
+    benchmark_save_json(&result, "../reports/string_search.json");
     
     result = benchmark_run("Character Search (1000 ops)", 10000, bench_char_search);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/string_char_search.json");
+    benchmark_save_json(&result, "../reports/string_char_search.json");
     
     printf("%s✓ All string benchmarks completed!%s\n\n", COLOR_GREEN COLOR_BOLD, COLOR_RESET);
     

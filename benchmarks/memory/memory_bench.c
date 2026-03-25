@@ -97,27 +97,27 @@ int main() {
     
     result = benchmark_run("Simple Allocation (1KB)", 100000, bench_simple_allocation);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/memory_simple_alloc.json");
+    benchmark_save_json(&result, "../reports/memory_simple_alloc.json");
     
     result = benchmark_run("Many Small Allocations (100x64B)", 10000, bench_many_small_allocs);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/memory_many_small.json");
+    benchmark_save_json(&result, "../reports/memory_many_small.json");
     
     result = benchmark_run("Large Allocation (1MB)", 10000, bench_large_allocation);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/memory_large_alloc.json");
+    benchmark_save_json(&result, "../reports/memory_large_alloc.json");
     
     result = benchmark_run("Allocation Churn (100 cycles)", 10000, bench_allocation_churn);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/memory_churn.json");
+    benchmark_save_json(&result, "../reports/memory_churn.json");
     
     result = benchmark_run("Fragmentation Pattern", 10000, bench_fragmentation);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/memory_fragmentation.json");
+    benchmark_save_json(&result, "../reports/memory_fragmentation.json");
     
     result = benchmark_run("Reallocation (10x growth)", 10000, bench_reallocation);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/memory_reallocation.json");
+    benchmark_save_json(&result, "../reports/memory_reallocation.json");
     
     printf("%s✓ All memory benchmarks completed!%s\n\n", COLOR_GREEN COLOR_BOLD, COLOR_RESET);
     

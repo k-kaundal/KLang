@@ -1,0 +1,21 @@
+{
+  "name": "Integer Addition (1000 ops)",
+  "iterations": 1003704,
+  "total_time_ms": 100.00,
+  "throughput_mops": 10.04,
+  "timing": {
+    "min_ns": 20,
+    "max_ns": 10436,
+    "mean_ns": 31,
+    "median_ns": 30,
+    "p95_ns": 30,
+    "p99_ns": 31,
+    "stddev_ns": 104
+  },
+  "memory": {
+    "peak_bytes": 0,
+    "allocations": 0,
+    "deallocations": 0,
+    "bytes_allocated": 0
+  }
+}

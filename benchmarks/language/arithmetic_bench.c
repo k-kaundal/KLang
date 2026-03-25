@@ -85,31 +85,31 @@ int main() {
     
     result = benchmark_run("Integer Addition (1000 ops)", 100000, bench_int_add);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/arithmetic_int_add.json");
+    benchmark_save_json(&result, "../reports/arithmetic_int_add.json");
     
     result = benchmark_run("Integer Multiplication (100 ops)", 100000, bench_int_mul);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/arithmetic_int_mul.json");
+    benchmark_save_json(&result, "../reports/arithmetic_int_mul.json");
     
     result = benchmark_run("Integer Division (100 ops)", 100000, bench_int_div);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/arithmetic_int_div.json");
+    benchmark_save_json(&result, "../reports/arithmetic_int_div.json");
     
     result = benchmark_run("Float Addition (1000 ops)", 100000, bench_float_add);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/arithmetic_float_add.json");
+    benchmark_save_json(&result, "../reports/arithmetic_float_add.json");
     
     result = benchmark_run("Float Multiplication (100 ops)", 100000, bench_float_mul);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/arithmetic_float_mul.json");
+    benchmark_save_json(&result, "../reports/arithmetic_float_mul.json");
     
     result = benchmark_run("Float Division (100 ops)", 100000, bench_float_div);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/arithmetic_float_div.json");
+    benchmark_save_json(&result, "../reports/arithmetic_float_div.json");
     
     result = benchmark_run("Mixed Operations (1000 ops)", 100000, bench_mixed_ops);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/arithmetic_mixed.json");
+    benchmark_save_json(&result, "../reports/arithmetic_mixed.json");
     
     printf("%s✓ All arithmetic benchmarks completed!%s\n\n", COLOR_GREEN COLOR_BOLD, COLOR_RESET);
     

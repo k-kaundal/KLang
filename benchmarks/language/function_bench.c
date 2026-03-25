@@ -79,23 +79,23 @@ int main() {
     
     result = benchmark_run("Simple Function Call (1000 calls)", 10000, bench_function_call);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/function_call.json");
+    benchmark_save_json(&result, "../reports/function_call.json");
     
     result = benchmark_run("Recursive Fibonacci(20)", 1000, bench_recursion_fib);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/function_fib_recursive.json");
+    benchmark_save_json(&result, "../reports/function_fib_recursive.json");
     
     result = benchmark_run("Iterative Fibonacci(20)", 100000, bench_iteration_fib);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/function_fib_iterative.json");
+    benchmark_save_json(&result, "../reports/function_fib_iterative.json");
     
     result = benchmark_run("Tail Recursion Factorial(20)", 10000, bench_tail_recursion);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/function_tail_recursion.json");
+    benchmark_save_json(&result, "../reports/function_tail_recursion.json");
     
     result = benchmark_run("Deep Call Stack (100 frames)", 10000, bench_deep_call_stack);
     benchmark_print_result(&result);
-    benchmark_save_json(&result, "reports/function_deep_stack.json");
+    benchmark_save_json(&result, "../reports/function_deep_stack.json");
     
     printf("%s✓ All function benchmarks completed!%s\n\n", COLOR_GREEN COLOR_BOLD, COLOR_RESET);
     
