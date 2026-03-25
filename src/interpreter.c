@@ -2377,6 +2377,10 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                     func.type = VAL_FUNCTION;
                     func.as.func_val.param_count = member->data.func_def.params.count;
                     func.as.func_val.param_names = NULL;
+                    func.as.func_val.default_values = member->data.func_def.default_values;
+                    func.as.func_val.is_async = member->data.func_def.is_async;
+                    func.as.func_val.is_generator = member->data.func_def.is_generator;
+                    func.as.func_val.has_rest_param = member->data.func_def.has_rest_param;
                     if (func.as.func_val.param_count > 0) {
                         int j;
                         func.as.func_val.param_names = malloc(func.as.func_val.param_count * sizeof(char *));
