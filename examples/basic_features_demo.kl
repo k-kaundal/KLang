@@ -52,10 +52,10 @@ println("  20 / 5 =", 20 / 5)
 println("  17 % 5 =", 17 % 5)
 println()
 
-println("Power Operations (using Math.pow):")
-println("  2^8 =", Math.pow(2, 8))
-println("  3^4 =", Math.pow(3, 4))
-println("  5^3 =", Math.pow(5, 3))
+println("Power Operations (using ** operator):")
+println("  2^8 =", 2 ** 8)
+println("  3^4 =", 3 ** 4)
+println("  5^3 =", 5 ** 3)
 println()
 
 // ==========================================
@@ -68,7 +68,7 @@ println()
 println("With Parentheses:")
 println("  (2 + 3) * 4 =", (2 + 3) * 4)
 println("  (10 - 5) / 5 =", (10 - 5) / 5)
-println("  Math.pow(2 + 1, 3) =", Math.pow(2 + 1, 3))
+println("  (2 + 1) ** 3 =", (2 + 1) ** 3)
 println()
 
 println("Order of Operations:")
@@ -96,7 +96,7 @@ println()
 
 println("Circle:")
 println("  Radius:", radius)
-println("  Area:", 3.14159 * Math.pow(radius, 2))
+println("  Area:", 3.14159 * radius ** 2)
 println("  Circumference:", 2 * 3.14159 * radius)
 println()
 
@@ -207,7 +207,7 @@ Key Takeaways:
 1. Use println for output with newline
 2. Use print for output without newline
 3. All arithmetic operators work in print
-4. Use Math.pow for power operations not double asterisk
+4. Use ** operator for power operations (exponentiation)
 5. Three comment styles work hash double-slash and multi-line
 6. Variables can be used in calculations
 7. String concatenation with plus

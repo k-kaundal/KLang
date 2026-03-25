@@ -36,15 +36,19 @@ println(17 % 5)      # Modulo: 2
 
 ### Power Operations
 ```klang
-# Use Math.pow() - NOT **
-println(Math.pow(2, 4))    # 16
-println(Math.pow(3, 3))    # 27
+# Use ** operator for exponentiation
+println(2 ** 4)          # 16
+println(3 ** 3)          # 27
+
+# Math.pow() is also available
+println(Math.pow(2, 8))  # 256
 ```
 
 ### Complex Expressions
 ```klang
-println((2 + 3) * 4)              # 20
-println(5 + 3 * Math.pow(2, 2))   # 17
+println((2 + 3) * 4)         # 20
+println(5 + 3 * 2 ** 2)      # 17
+println(2 ** 3 ** 2)         # 512 (right-associative)
 ```
 
 ## Comparisons and Logic
@@ -137,16 +141,17 @@ println("Final price:", total - discount)
 
 ### Print with variables and text
 ```klang
-let result = Math.pow(2, 8)
+let result = 2 ** 8
 println("2 to the power of 8 is:", result)
 ```
 
 ## Important Notes
 
-⚠️ **The `**` operator is NOT supported**
-- Use `Math.pow(base, exponent)` instead
-- ❌ `println(2 ** 4)` - Does not work
-- ✅ `println(Math.pow(2, 4))` - Use this
+✅ **The `**` operator is NOW supported**
+- Use `**` for exponentiation: `println(2 ** 4)` - Works!
+- ✅ `2 ** 4` gives 16
+- ✅ Right-associative: `2 ** 3 ** 2` = 512
+- `Math.pow(base, exponent)` is also still available
 
 ✅ **All three comment styles work**
 - `#` for quick comments

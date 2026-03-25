@@ -51,34 +51,32 @@ println("Result: ", 2 + 3)          # Output: Result: 5
 println("Complex: ", (2 + 3) * 4)   # Output: Complex: 20
 ```
 
-### 1.4 Power Operations ⚠️
+### 1.4 Power Operations ✅
 
-**Important Note:** KLang currently does NOT support the `**` operator for exponentiation.
+**Power Operator Supported:** KLang now supports the `**` operator for exponentiation.
 
-❌ **NOT SUPPORTED:**
+✅ **SUPPORTED:**
 ```klang
-println(2 ** 4)  # ERROR: This syntax does not work
+println(2 ** 4)  # Output: 16
 ```
 
-✅ **USE INSTEAD:**
-```klang
-println(Math.pow(2, 4))  # Output: 16
-```
+The `**` operator is available for power operations:
+- `2 ** 4` → 16
+- `3 ** 3` → 27
+- `2.5 ** 2` → 6.25
+- `(-2) ** 3` → -8
 
-The `Math.pow(base, exponent)` function is available for power operations:
-- `Math.pow(2, 4)` → 16
-- `Math.pow(3, 3)` → 27
-- `Math.pow(2.5, 2)` → 6.25
-- `Math.pow(-2, 3)` → -8
+**Note:** `Math.pow(base, exponent)` is also still available as an alternative.
 
 ### 1.5 Complex Expressions ✅
 
 KLang correctly handles operator precedence and parentheses:
 
 ```klang
-println(2 + 3 * 4)           # Output: 14 (multiplication first)
-println((2 + 3) * 4)         # Output: 20 (parentheses first)
-println(Math.pow(10 - 5, 2)) # Output: 25
+println(2 + 3 * 4)      # Output: 14 (multiplication first)
+println((2 + 3) * 4)    # Output: 20 (parentheses first)
+println((10 - 5) ** 2)  # Output: 25
+println(2 ** 3 ** 2)    # Output: 512 (right-associative)
 ```
 
 ### 1.6 Comparison Operations ✅
@@ -213,20 +211,34 @@ All of the following work correctly:
 
 ---
 
-## 4. Known Limitations
+## 4. Test Coverage Summary
 
-### 4.1 Power Operator `**`
-The `**` exponentiation operator is not currently supported in KLang. Use `Math.pow()` instead.
+### Print Statements ✅
+- ✅ print() - output without newline
+- ✅ println() - output with newline
+- ✅ Multiple data types (string, int, float, boolean, null)
+- ✅ Multiple arguments
+- ✅ Arithmetic expressions including ** power operator
+- ✅ Complex expressions with parentheses
+- ✅ Variables in print
+- ✅ String concatenation
+- ✅ Comparison operations
+- ✅ Logical operations
 
-**Workaround:**
-```klang
-# Instead of: result = 2 ** 8
-result = Math.pow(2, 8)  # Use this
-```
+### Arithmetic Operations ✅
+- ✅ Addition (+)
+- ✅ Subtraction (-)
+- ✅ Multiplication (*)
+- ✅ Division (/)
+- ✅ Modulo (%)
+- ✅ Power operator (**)
+- ✅ Order of operations
+- ✅ Parentheses grouping
+- ✅ Right-associative exponentiation
 
 ---
 
-## 5. Best Practices
+## 5. Next Steps
 
 ### 5.1 Print Statements
 - Use `println()` for output with newlines
@@ -242,25 +254,22 @@ result = Math.pow(2, 8)  # Use this
 
 ### 5.3 Calculations
 - Always use parentheses to make precedence clear
-- Use `Math.pow()` for exponentiation
+- Use `**` operator for exponentiation (e.g., `2 ** 8`)
+- `Math.pow()` is also available as an alternative
 - Be aware that integer division may truncate
 
 ---
 
-## 6. Next Steps
+## 6. Feature Highlights
 
 Based on this testing, the following features have been validated:
 
 1. ✅ Print statements work correctly
-2. ✅ All arithmetic operations (except ** operator)
+2. ✅ All arithmetic operations including ** power operator
 3. ✅ Comments work with all three syntaxes
 4. ✅ Complex expressions with proper precedence
 5. ✅ Comparison and logical operations
-
-**Recommended Enhancements:**
-1. Add support for `**` power operator in lexer and parser
-2. Add more comprehensive test coverage for edge cases
-3. Document the Math.pow() requirement more prominently
+6. ✅ Right-associative exponentiation (2 ** 3 ** 2 = 512)
 
 ---
 
@@ -269,11 +278,12 @@ Based on this testing, the following features have been validated:
 KLang successfully supports:
 - ✅ Comprehensive print functionality
 - ✅ Multiple comment styles (#, //, /* */)
-- ✅ Arithmetic operations in print statements
+- ✅ Arithmetic operations in print statements including **
 - ✅ Complex expressions and calculations
-- ⚠️ Power operations via Math.pow() (not ** operator)
+- ✅ Power operations via ** operator (right-associative)
+- ✅ String concatenation works with +
 
-All tests passed successfully, and the language is ready for basic use with these features.
+All tests passed successfully, and the language now supports the full set of basic features including the ** power operator.
 
 ---
 

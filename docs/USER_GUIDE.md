@@ -126,8 +126,9 @@ println(17 % 5)       # 2
 # Complex expressions
 println((2 + 3) * 4)  # 20
 
-# Power operations (use Math.pow)
-println(Math.pow(2, 8))  # 256
+# Power operations (use ** operator)
+println(2 ** 8)       # 256
+println(3 ** 3)       # 27
 
 # Comparisons
 println(5 > 3)        # true
@@ -149,7 +150,7 @@ let result = 42
 println("The answer is: " + str(result))
 ```
 
-> **Note:** KLang does not support the `**` operator for exponentiation. Use `Math.pow(base, exponent)` instead.
+> **Note:** KLang supports the `**` operator for exponentiation. Both `2 ** 8` and `Math.pow(2, 8)` work.
 
 ## Core Features
 
