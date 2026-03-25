@@ -183,6 +183,10 @@ LSPMessageType lsp_parse_message_type(const char *method) {
         return LSP_TEXT_DOCUMENT_REFERENCES;
     } else if (strcmp(method, "textDocument/formatting") == 0) {
         return LSP_TEXT_DOCUMENT_FORMATTING;
+    } else if (strcmp(method, "textDocument/documentSymbol") == 0) {
+        return LSP_TEXT_DOCUMENT_DOCUMENT_SYMBOL;
+    } else if (strcmp(method, "textDocument/publishDiagnostics") == 0) {
+        return LSP_TEXT_DOCUMENT_DIAGNOSTIC;
     }
     
     return LSP_UNKNOWN;
@@ -231,22 +235,55 @@ void lsp_handle_text_document_completion(LSPServer *server, int id, const char *
     (void)params;  /* Would parse cursor position */
     lsp_log(server, "Completion requested");
     
-    /* Provide basic completions */
+    /* Enhanced completions with more keywords, types, and built-ins */
     const char *result = 
         "{"
         "\"isIncomplete\":false,"
         "\"items\":["
-        "{\"label\":\"fn\",\"kind\":14,\"detail\":\"Function declaration\"},"
-        "{\"label\":\"let\",\"kind\":14,\"detail\":\"Variable declaration\"},"
-        "{\"label\":\"const\",\"kind\":14,\"detail\":\"Constant declaration\"},"
-        "{\"label\":\"if\",\"kind\":14,\"detail\":\"Conditional statement\"},"
-        "{\"label\":\"for\",\"kind\":14,\"detail\":\"For loop\"},"
-        "{\"label\":\"while\",\"kind\":14,\"detail\":\"While loop\"},"
-        "{\"label\":\"return\",\"kind\":14,\"detail\":\"Return statement\"},"
-        "{\"label\":\"class\",\"kind\":14,\"detail\":\"Class declaration\"},"
-        "{\"label\":\"import\",\"kind\":14,\"detail\":\"Import statement\"},"
-        "{\"label\":\"export\",\"kind\":14,\"detail\":\"Export statement\"},"
-        "{\"label\":\"println\",\"kind\":3,\"detail\":\"Print line function\"}"
+        /* Keywords */
+        "{\"label\":\"fn\",\"kind\":14,\"detail\":\"Function declaration\",\"documentation\":\"Declare a new function\",\"insertText\":\"fn ${1:name}(${2:params}) {\\n\\t$0\\n}\",\"insertTextFormat\":2},"
+        "{\"label\":\"async\",\"kind\":14,\"detail\":\"Async function\",\"documentation\":\"Declare an async function\",\"insertText\":\"async fn ${1:name}(${2:params}) {\\n\\t$0\\n}\",\"insertTextFormat\":2},"
+        "{\"label\":\"let\",\"kind\":14,\"detail\":\"Variable declaration\",\"documentation\":\"Declare a variable\",\"insertText\":\"let ${1:name} = ${0:value}\",\"insertTextFormat\":2},"
+        "{\"label\":\"const\",\"kind\":14,\"detail\":\"Constant declaration\",\"documentation\":\"Declare a constant\",\"insertText\":\"const ${1:name} = ${0:value}\",\"insertTextFormat\":2},"
+        "{\"label\":\"var\",\"kind\":14,\"detail\":\"Variable (function-scoped)\",\"documentation\":\"Declare a function-scoped variable\",\"insertText\":\"var ${1:name} = ${0:value}\",\"insertTextFormat\":2},"
+        "{\"label\":\"class\",\"kind\":14,\"detail\":\"Class declaration\",\"documentation\":\"Declare a class\",\"insertText\":\"class ${1:Name} {\\n\\t$0\\n}\",\"insertTextFormat\":2},"
+        "{\"label\":\"interface\",\"kind\":14,\"detail\":\"Interface declaration\",\"documentation\":\"Declare an interface\",\"insertText\":\"interface ${1:Name} {\\n\\t$0\\n}\",\"insertTextFormat\":2},"
+        "{\"label\":\"enum\",\"kind\":14,\"detail\":\"Enum declaration\",\"documentation\":\"Declare an enum\",\"insertText\":\"enum ${1:Name} {\\n\\t$0\\n}\",\"insertTextFormat\":2},"
+        "{\"label\":\"if\",\"kind\":14,\"detail\":\"If statement\",\"documentation\":\"Conditional statement\",\"insertText\":\"if ${1:condition} {\\n\\t$0\\n}\",\"insertTextFormat\":2},"
+        "{\"label\":\"else\",\"kind\":14,\"detail\":\"Else clause\",\"documentation\":\"Else clause\",\"insertText\":\"else {\\n\\t$0\\n}\",\"insertTextFormat\":2},"
+        "{\"label\":\"for\",\"kind\":14,\"detail\":\"For loop\",\"documentation\":\"For loop\",\"insertText\":\"for ${1:item} in ${2:collection} {\\n\\t$0\\n}\",\"insertTextFormat\":2},"
+        "{\"label\":\"while\",\"kind\":14,\"detail\":\"While loop\",\"documentation\":\"While loop\",\"insertText\":\"while ${1:condition} {\\n\\t$0\\n}\",\"insertTextFormat\":2},"
+        "{\"label\":\"return\",\"kind\":14,\"detail\":\"Return statement\",\"documentation\":\"Return from function\",\"insertText\":\"return ${0:value}\",\"insertTextFormat\":2},"
+        "{\"label\":\"await\",\"kind\":14,\"detail\":\"Await expression\",\"documentation\":\"Wait for promise\",\"insertText\":\"await ${0:promise}\",\"insertTextFormat\":2},"
+        "{\"label\":\"yield\",\"kind\":14,\"detail\":\"Yield expression\",\"documentation\":\"Yield value\",\"insertText\":\"yield ${0:value}\",\"insertTextFormat\":2},"
+        "{\"label\":\"import\",\"kind\":14,\"detail\":\"Import statement\",\"documentation\":\"Import from module\",\"insertText\":\"import { ${1:name} } from \\\"${0:module}\\\"\",\"insertTextFormat\":2},"
+        "{\"label\":\"export\",\"kind\":14,\"detail\":\"Export statement\",\"documentation\":\"Export from module\",\"insertText\":\"export ${0}\",\"insertTextFormat\":2},"
+        "{\"label\":\"new\",\"kind\":14,\"detail\":\"New instance\",\"documentation\":\"Create new instance\",\"insertText\":\"new ${1:ClassName}(${0})\",\"insertTextFormat\":2},"
+        "{\"label\":\"this\",\"kind\":14,\"detail\":\"This reference\",\"documentation\":\"Reference to current object\"},"
+        "{\"label\":\"static\",\"kind\":14,\"detail\":\"Static member\",\"documentation\":\"Static class member\"},"
+        "{\"label\":\"public\",\"kind\":14,\"detail\":\"Public access\",\"documentation\":\"Public access modifier\"},"
+        "{\"label\":\"private\",\"kind\":14,\"detail\":\"Private access\",\"documentation\":\"Private access modifier\"},"
+        "{\"label\":\"protected\",\"kind\":14,\"detail\":\"Protected access\",\"documentation\":\"Protected access modifier\"},"
+        "{\"label\":\"abstract\",\"kind\":14,\"detail\":\"Abstract declaration\",\"documentation\":\"Abstract class or method\"},"
+        "{\"label\":\"extends\",\"kind\":14,\"detail\":\"Class inheritance\",\"documentation\":\"Inherit from parent\"},"
+        "{\"label\":\"implements\",\"kind\":14,\"detail\":\"Interface implementation\",\"documentation\":\"Implement interface\"},"
+        "{\"label\":\"break\",\"kind\":14,\"detail\":\"Break statement\",\"documentation\":\"Exit loop\"},"
+        "{\"label\":\"continue\",\"kind\":14,\"detail\":\"Continue statement\",\"documentation\":\"Skip to next iteration\"},"
+        "{\"label\":\"throw\",\"kind\":14,\"detail\":\"Throw exception\",\"documentation\":\"Throw exception\",\"insertText\":\"throw ${0:error}\",\"insertTextFormat\":2},"
+        "{\"label\":\"try\",\"kind\":14,\"detail\":\"Try-catch block\",\"documentation\":\"Exception handling\",\"insertText\":\"try {\\n\\t${1}\\n} catch (${2:e}) {\\n\\t${0}\\n}\",\"insertTextFormat\":2},"
+        /* Built-in functions */
+        "{\"label\":\"println\",\"kind\":3,\"detail\":\"Print with newline\",\"documentation\":\"Print to console with newline\",\"insertText\":\"println(${0:message})\",\"insertTextFormat\":2},"
+        "{\"label\":\"print\",\"kind\":3,\"detail\":\"Print without newline\",\"documentation\":\"Print to console\",\"insertText\":\"print(${0:message})\",\"insertTextFormat\":2},"
+        "{\"label\":\"len\",\"kind\":3,\"detail\":\"Get length\",\"documentation\":\"Get length of collection\",\"insertText\":\"len(${0:collection})\",\"insertTextFormat\":2},"
+        "{\"label\":\"typeof\",\"kind\":3,\"detail\":\"Get type\",\"documentation\":\"Get type of value\",\"insertText\":\"typeof(${0:value})\",\"insertTextFormat\":2},"
+        "{\"label\":\"assert\",\"kind\":3,\"detail\":\"Assertion\",\"documentation\":\"Assert condition\",\"insertText\":\"assert(${1:condition}, ${0:message})\",\"insertTextFormat\":2},"
+        /* Types */
+        "{\"label\":\"number\",\"kind\":25,\"detail\":\"Number type\",\"documentation\":\"Numeric type\"},"
+        "{\"label\":\"string\",\"kind\":25,\"detail\":\"String type\",\"documentation\":\"String type\"},"
+        "{\"label\":\"bool\",\"kind\":25,\"detail\":\"Boolean type\",\"documentation\":\"Boolean type\"},"
+        "{\"label\":\"void\",\"kind\":25,\"detail\":\"Void type\",\"documentation\":\"No return value\"},"
+        "{\"label\":\"any\",\"kind\":25,\"detail\":\"Any type\",\"documentation\":\"Any type\"},"
+        "{\"label\":\"array\",\"kind\":25,\"detail\":\"Array type\",\"documentation\":\"Array type\",\"insertText\":\"array<${0:Type}>\",\"insertTextFormat\":2}"
         "]"
         "}";
     
@@ -288,6 +325,15 @@ void lsp_handle_text_document_references(LSPServer *server, int id, const char *
 void lsp_handle_text_document_formatting(LSPServer *server, int id, const char *params) {
     (void)params;  /* Would parse formatting options */
     lsp_log(server, "Formatting requested");
+    lsp_send_response(id, "[]");
+}
+
+/* Handle textDocument/documentSymbol */
+void lsp_handle_text_document_document_symbol(LSPServer *server, int id, const char *params) {
+    (void)params;  /* Would parse document URI and content */
+    lsp_log(server, "Document symbol requested");
+    
+    /* Return empty array for now - would parse document and extract symbols */
     lsp_send_response(id, "[]");
 }
 
@@ -372,6 +418,10 @@ void lsp_handle_message(LSPServer *server, const char *message) {
             
         case LSP_TEXT_DOCUMENT_FORMATTING:
             lsp_handle_text_document_formatting(server, id, NULL);
+            break;
+            
+        case LSP_TEXT_DOCUMENT_DOCUMENT_SYMBOL:
+            lsp_handle_text_document_document_symbol(server, id, NULL);
             break;
             
         default:
