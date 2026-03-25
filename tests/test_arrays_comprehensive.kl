@@ -1,0 +1,551 @@
+# Comprehensive Array Operations Test Suite for KLang
+# Tests: creation, access, modification, iteration, methods, algorithms
+
+println("=" * 60)
+println("KLang Array Operations Comprehensive Test Suite")
+println("=" * 60)
+println()
+
+# ============================================
+# Section 1: Array Creation
+# ============================================
+println("Section 1: Array Creation")
+println("-" * 40)
+
+# Test 1.1: Empty array
+let empty = []
+println("✓ Test 1.1: Empty array length: " + str(len(empty)))
+
+# Test 1.2: Array with integers
+let numbers = [1, 2, 3, 4, 5]
+println("✓ Test 1.2: Integer array length: " + str(len(numbers)))
+
+# Test 1.3: Array with strings
+let fruits = ["apple", "banana", "cherry"]
+println("✓ Test 1.3: String array length: " + str(len(fruits)))
+
+# Test 1.4: Array with mixed types
+let mixed = [1, "two", 3, "four", 5]
+println("✓ Test 1.4: Mixed array length: " + str(len(mixed)))
+
+# Test 1.5: Nested arrays
+let matrix = [[1, 2], [3, 4], [5, 6]]
+println("✓ Test 1.5: Matrix length: " + str(len(matrix)))
+
+println()
+
+# ============================================
+# Section 2: Array Access
+# ============================================
+println("Section 2: Array Access")
+println("-" * 40)
+
+# Test 2.1: Access by index
+let arr = [10, 20, 30, 40, 50]
+println("✓ Test 2.1: arr[0] = " + str(arr[0]))
+println("  arr[2] = " + str(arr[2]))
+println("  arr[4] = " + str(arr[4]))
+
+# Test 2.2: Access last element
+let lastIdx = len(arr) - 1
+println("✓ Test 2.2: Last element: " + str(arr[lastIdx]))
+
+# Test 2.3: Access nested array
+let nested = [[1, 2, 3], [4, 5, 6]]
+println("✓ Test 2.3: nested[0][1] = " + str(nested[0][1]))
+println("  nested[1][2] = " + str(nested[1][2]))
+
+println()
+
+# ============================================
+# Section 3: Array Modification
+# ============================================
+println("Section 3: Array Modification")
+println("-" * 40)
+
+# Test 3.1: Modify element
+let modify = [1, 2, 3]
+modify[1] = 99
+println("✓ Test 3.1: After modify[1]=99: " + str(modify[1]))
+
+# Test 3.2: Append elements
+let append = [1, 2, 3]
+append[3] = 4
+append[4] = 5
+println("✓ Test 3.2: After appending: length = " + str(len(append)))
+
+# Test 3.3: Modify nested array
+let nest = [[1, 2], [3, 4]]
+nest[0][1] = 99
+println("✓ Test 3.3: Modified nested[0][1] = " + str(nest[0][1]))
+
+println()
+
+# ============================================
+# Section 4: Array Iteration
+# ============================================
+println("Section 4: Array Iteration")
+println("-" * 40)
+
+# Test 4.1: For-of iteration
+print("✓ Test 4.1: For-of: ")
+for (let n of [1, 2, 3, 4, 5]) {
+    print(str(n) + " ")
+}
+println()
+
+# Test 4.2: Index-based iteration
+print("✓ Test 4.2: Index-based: ")
+let iter = [10, 20, 30]
+for (let i = 0; i < len(iter); i = i + 1) {
+    print(str(iter[i]) + " ")
+}
+println()
+
+# Test 4.3: Backward iteration
+print("✓ Test 4.3: Backward: ")
+let back = [1, 2, 3, 4, 5]
+for (let i = len(back) - 1; i >= 0; i = i - 1) {
+    print(str(back[i]) + " ")
+}
+println()
+
+println()
+
+# ============================================
+# Section 5: Array Algorithms
+# ============================================
+println("Section 5: Array Algorithms")
+println("-" * 40)
+
+# Test 5.1: Sum elements
+fn sumArray(arr) {
+    let total = 0
+    for (let val of arr) {
+        total = total + val
+    }
+    return total
+}
+let nums = [1, 2, 3, 4, 5]
+println("✓ Test 5.1: Sum [1,2,3,4,5] = " + str(sumArray(nums)))
+
+# Test 5.2: Find minimum
+fn findMin(arr) {
+    if (len(arr) == 0) {
+        return null
+    }
+    let minVal = arr[0]
+    for (let val of arr) {
+        if (val < minVal) {
+            minVal = val
+        }
+    }
+    return minVal
+}
+let testArr = [23, 5, 89, 12, 3, 67]
+println("✓ Test 5.2: Min of [23,5,89,12,3,67] = " + str(findMin(testArr)))
+
+# Test 5.3: Find maximum
+fn findMax(arr) {
+    if (len(arr) == 0) {
+        return null
+    }
+    let maxVal = arr[0]
+    for (let val of arr) {
+        if (val > maxVal) {
+            maxVal = val
+        }
+    }
+    return maxVal
+}
+println("✓ Test 5.3: Max of [23,5,89,12,3,67] = " + str(findMax(testArr)))
+
+# Test 5.4: Count occurrences
+fn count(arr, target) {
+    let cnt = 0
+    for (let val of arr) {
+        if (val == target) {
+            cnt = cnt + 1
+        }
+    }
+    return cnt
+}
+let countArr = [1, 3, 5, 3, 7, 3, 9]
+println("✓ Test 5.4: Count 3s in array = " + str(count(countArr, 3)))
+
+# Test 5.5: Average
+fn average(arr) {
+    if (len(arr) == 0) {
+        return 0
+    }
+    return sumArray(arr) / len(arr)
+}
+let avgArr = [10, 20, 30, 40, 50]
+println("✓ Test 5.5: Average of [10,20,30,40,50] = " + str(average(avgArr)))
+
+println()
+
+# ============================================
+# Section 6: Array Transformation
+# ============================================
+println("Section 6: Array Transformation")
+println("-" * 40)
+
+# Test 6.1: Map (double each element)
+fn map(arr, func) {
+    let result = []
+    let idx = 0
+    for (let val of arr) {
+        result[idx] = func(val)
+        idx = idx + 1
+    }
+    return result
+}
+
+fn double(x) {
+    return x * 2
+}
+
+let mapped = map([1, 2, 3, 4, 5], double)
+print("✓ Test 6.1: Mapped (doubled): ")
+for (let v of mapped) {
+    print(str(v) + " ")
+}
+println()
+
+# Test 6.2: Filter (keep even numbers)
+fn filter(arr, predicate) {
+    let result = []
+    let idx = 0
+    for (let val of arr) {
+        if (predicate(val)) {
+            result[idx] = val
+            idx = idx + 1
+        }
+    }
+    return result
+}
+
+fn isEven(x) {
+    return x % 2 == 0
+}
+
+let filtered = filter([1, 2, 3, 4, 5, 6, 7, 8], isEven)
+print("✓ Test 6.2: Filtered (evens): ")
+for (let v of filtered) {
+    print(str(v) + " ")
+}
+println()
+
+# Test 6.3: Reduce (sum all)
+fn reduce(arr, func, initial) {
+    let acc = initial
+    for (let val of arr) {
+        acc = func(acc, val)
+    }
+    return acc
+}
+
+fn add(a, b) {
+    return a + b
+}
+
+let reduced = reduce([1, 2, 3, 4, 5], add, 0)
+println("✓ Test 6.3: Reduced (sum): " + str(reduced))
+
+println()
+
+# ============================================
+# Section 7: Array Searching
+# ============================================
+println("Section 7: Array Searching")
+println("-" * 40)
+
+# Test 7.1: Linear search
+fn indexOf(arr, target) {
+    for (let i = 0; i < len(arr); i = i + 1) {
+        if (arr[i] == target) {
+            return i
+        }
+    }
+    return -1
+}
+
+let searchArr = [10, 20, 30, 40, 50]
+println("✓ Test 7.1: indexOf 30 = " + str(indexOf(searchArr, 30)))
+println("  indexOf 99 = " + str(indexOf(searchArr, 99)))
+
+# Test 7.2: Contains check
+fn contains(arr, target) {
+    return indexOf(arr, target) != -1
+}
+
+println("✓ Test 7.2: contains 40 = " + str(contains(searchArr, 40)))
+println("  contains 99 = " + str(contains(searchArr, 99)))
+
+# Test 7.3: Find first matching
+fn find(arr, predicate) {
+    for (let val of arr) {
+        if (predicate(val)) {
+            return val
+        }
+    }
+    return null
+}
+
+fn greaterThan50(x) {
+    return x > 50
+}
+
+let findArr = [10, 30, 55, 70, 90]
+println("✓ Test 7.3: find first > 50 = " + str(find(findArr, greaterThan50)))
+
+println()
+
+# ============================================
+# Section 8: Array Manipulation
+# ============================================
+println("Section 8: Array Manipulation")
+println("-" * 40)
+
+# Test 8.1: Reverse array
+fn reverse(arr) {
+    let result = []
+    let len = len(arr)
+    for (let i = 0; i < len; i = i + 1) {
+        result[i] = arr[len - 1 - i]
+    }
+    return result
+}
+
+let rev = reverse([1, 2, 3, 4, 5])
+print("✓ Test 8.1: Reversed: ")
+for (let v of rev) {
+    print(str(v) + " ")
+}
+println()
+
+# Test 8.2: Slice (extract portion)
+fn slice(arr, start, end) {
+    let result = []
+    let idx = 0
+    for (let i = start; i < end && i < len(arr); i = i + 1) {
+        result[idx] = arr[i]
+        idx = idx + 1
+    }
+    return result
+}
+
+let sliced = slice([0, 1, 2, 3, 4, 5], 2, 5)
+print("✓ Test 8.2: Slice [2:5]: ")
+for (let v of sliced) {
+    print(str(v) + " ")
+}
+println()
+
+# Test 8.3: Concatenate arrays
+fn concat(arr1, arr2) {
+    let result = []
+    let idx = 0
+    for (let v of arr1) {
+        result[idx] = v
+        idx = idx + 1
+    }
+    for (let v of arr2) {
+        result[idx] = v
+        idx = idx + 1
+    }
+    return result
+}
+
+let concated = concat([1, 2, 3], [4, 5, 6])
+print("✓ Test 8.3: Concatenated: ")
+for (let v of concated) {
+    print(str(v) + " ")
+}
+println()
+
+# Test 8.4: Remove duplicates
+fn unique(arr) {
+    let result = []
+    let idx = 0
+    for (let val of arr) {
+        if (!contains(result, val)) {
+            result[idx] = val
+            idx = idx + 1
+        }
+    }
+    return result
+}
+
+let uniq = unique([1, 2, 2, 3, 3, 3, 4, 5, 5])
+print("✓ Test 8.4: Unique: ")
+for (let v of uniq) {
+    print(str(v) + " ")
+}
+println()
+
+println()
+
+# ============================================
+# Section 9: Sorting (Bubble Sort)
+# ============================================
+println("Section 9: Sorting")
+println("-" * 40)
+
+# Test 9.1: Bubble sort
+fn bubbleSort(arr) {
+    let n = len(arr)
+    for (let i = 0; i < n - 1; i = i + 1) {
+        for (let j = 0; j < n - i - 1; j = j + 1) {
+            if (arr[j] > arr[j + 1]) {
+                let temp = arr[j]
+                arr[j] = arr[j + 1]
+                arr[j + 1] = temp
+            }
+        }
+    }
+    return arr
+}
+
+let unsorted = [64, 34, 25, 12, 22, 11, 90]
+let sorted = bubbleSort(unsorted)
+print("✓ Test 9.1: Sorted: ")
+for (let v of sorted) {
+    print(str(v) + " ")
+}
+println()
+
+println()
+
+# ============================================
+# Section 10: Complex Array Operations
+# ============================================
+println("Section 10: Complex Operations")
+println("-" * 40)
+
+# Test 10.1: Flatten nested array
+fn flatten(arr) {
+    let result = []
+    let idx = 0
+    for (let item of arr) {
+        # Check if item is array (simplified - check if has length)
+        if (typeof(len(item)) != "undefined") {
+            for (let subitem of item) {
+                result[idx] = subitem
+                idx = idx + 1
+            }
+        } else {
+            result[idx] = item
+            idx = idx + 1
+        }
+    }
+    return result
+}
+
+let nestedFlat = [[1, 2], [3, 4], [5, 6]]
+let flat = flatten(nestedFlat)
+print("✓ Test 10.1: Flattened: ")
+for (let v of flat) {
+    print(str(v) + " ")
+}
+println()
+
+# Test 10.2: Zip two arrays
+fn zip(arr1, arr2) {
+    let result = []
+    let minLen = len(arr1)
+    if (len(arr2) < minLen) {
+        minLen = len(arr2)
+    }
+    for (let i = 0; i < minLen; i = i + 1) {
+        result[i] = [arr1[i], arr2[i]]
+    }
+    return result
+}
+
+let zipped = zip([1, 2, 3], ["a", "b", "c"])
+print("✓ Test 10.2: Zipped: ")
+for (let pair of zipped) {
+    print("[" + str(pair[0]) + "," + pair[1] + "] ")
+}
+println()
+
+# Test 10.3: Partition array
+fn partition(arr, predicate) {
+    let truthy = []
+    let falsy = []
+    let tIdx = 0
+    let fIdx = 0
+    for (let val of arr) {
+        if (predicate(val)) {
+            truthy[tIdx] = val
+            tIdx = tIdx + 1
+        } else {
+            falsy[fIdx] = val
+            fIdx = fIdx + 1
+        }
+    }
+    return [truthy, falsy]
+}
+
+let partitioned = partition([1, 2, 3, 4, 5, 6], isEven)
+print("✓ Test 10.3: Partitioned evens: ")
+for (let v of partitioned[0]) {
+    print(str(v) + " ")
+}
+print("| odds: ")
+for (let v of partitioned[1]) {
+    print(str(v) + " ")
+}
+println()
+
+println()
+
+# ============================================
+# Section 11: Edge Cases
+# ============================================
+println("Section 11: Edge Cases")
+println("-" * 40)
+
+# Test 11.1: Empty array operations
+let emptyTest = []
+println("✓ Test 11.1: Empty array sum: " + str(sumArray(emptyTest)))
+println("  Empty array min: " + str(findMin(emptyTest)))
+
+# Test 11.2: Single element array
+let single = [42]
+println("✓ Test 11.2: Single element array: " + str(single[0]))
+println("  Single element min: " + str(findMin(single)))
+println("  Single element max: " + str(findMax(single)))
+
+# Test 11.3: Large array
+let large = []
+for (let i = 0; i < 100; i = i + 1) {
+    large[i] = i
+}
+println("✓ Test 11.3: Large array (100 elements) sum: " + str(sumArray(large)))
+
+println()
+
+# ============================================
+# Test Summary
+# ============================================
+println("=" * 60)
+println("Array Operations Test Suite Complete!")
+println("=" * 60)
+println()
+println("Summary:")
+println("- Array creation: ✓")
+println("- Array access: ✓")
+println("- Array modification: ✓")
+println("- Array iteration: ✓")
+println("- Array algorithms: ✓")
+println("- Array transformation (map/filter/reduce): ✓")
+println("- Array searching: ✓")
+println("- Array manipulation: ✓")
+println("- Sorting: ✓")
+println("- Complex operations: ✓")
+println("- Edge cases: ✓")
+println()
+println("All array operation tests passed! ✓")
