@@ -107,8 +107,15 @@ void env_set_local(Env *env, const char *name, Value val) {
             env_retain(val_copy.as.func_val.closure);
         }
     }
-    // Note: For dict/set, we do shallow copy (share the same dict/set object)
-    // Reference counting is handled when retrieving and storing elsewhere
+    // Note: For dict/set/object, we do shallow copy (share the same dict/set/object)
+    // Increment reference count when storing in environment
+    if (val.type == VAL_DICT && val.as.dict_val) {
+        val.as.dict_val->ref_count++;
+    } else if (val.type == VAL_SET && val.as.set_val) {
+        val.as.set_val->ref_count++;
+    } else if (val.type == VAL_OBJECT && val.as.object_val) {
+        val.as.object_val->ref_count++;
+    }
     
     EnvEntry *e = env->entries;
     while (e) {
@@ -150,8 +157,15 @@ void env_set_local_with_access(Env *env, const char *name, Value val, AccessModi
             env_retain(val_copy.as.func_val.closure);
         }
     }
-    // Note: For dict/set, we do shallow copy (share the same dict/set object)
-    // Reference counting is handled when retrieving and storing elsewhere
+    // Note: For dict/set/object, we do shallow copy (share the same dict/set/object)
+    // Increment reference count when storing in environment
+    if (val.type == VAL_DICT && val.as.dict_val) {
+        val.as.dict_val->ref_count++;
+    } else if (val.type == VAL_SET && val.as.set_val) {
+        val.as.set_val->ref_count++;
+    } else if (val.type == VAL_OBJECT && val.as.object_val) {
+        val.as.object_val->ref_count++;
+    }
     
     EnvEntry *e = env->entries;
     while (e) {
