@@ -1,4 +1,5 @@
 #include "llvm_backend.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1033,19 +1034,58 @@ static LLVMValueRef create_main_wrapper(LLVMCompilerContext *ctx, ASTNode **node
 // ============================================================================
 
 void llvm_apply_optimizations(LLVMCompilerContext *ctx) {
+    // Get configuration to determine optimization level
+    Config *cfg = config_get();
+    OptLevel opt_level = cfg->opt_level;
+    
+    // Map OptLevel to LLVM pass names
+    const char *pass_pipeline = "default<O0>";  // Default to no optimization
+    
+    switch (opt_level) {
+        case OPT_LEVEL_NONE:
+            pass_pipeline = "default<O0>";
+            break;
+        case OPT_LEVEL_BASIC:
+            pass_pipeline = "default<O1>";
+            break;
+        case OPT_LEVEL_DEFAULT:
+            pass_pipeline = "default<O2>";
+            break;
+        case OPT_LEVEL_AGGRESSIVE:
+            pass_pipeline = "default<O3>";
+            break;
+    }
+    
 #if LLVM_LEGACY_PASSES
     // Use legacy pass manager for LLVM < 17
+    // Note: Legacy passes don't have fine-grained control over opt levels
+    // We'll apply a standard set of optimizations for non-O0 builds
+    if (opt_level == OPT_LEVEL_NONE) {
+        // No optimizations for O0
+        return;
+    }
+    
     LLVMPassManagerRef pm = LLVMCreatePassManager();
     
-    // Add optimization passes
+    // Add optimization passes (equivalent to -O1/-O2)
     LLVMAddPromoteMemoryToRegisterPass(pm);      // mem2reg
     LLVMAddInstructionCombiningPass(pm);         // Instruction combining
     LLVMAddReassociatePass(pm);                  // Reassociate expressions
-    LLVMAddGVNPass(pm);                          // Global Value Numbering
-    LLVMAddCFGSimplificationPass(pm);            // Simplify CFG
-    LLVMAddDeadStoreEliminationPass(pm);         // Dead store elimination
-    LLVMAddAggressiveDCEPass(pm);                // Dead code elimination
-    LLVMAddCorrelatedValuePropagationPass(pm);   // Correlated value propagation
+    
+    if (opt_level >= OPT_LEVEL_DEFAULT) {
+        // Additional passes for O2 and above
+        LLVMAddGVNPass(pm);                          // Global Value Numbering
+        LLVMAddCFGSimplificationPass(pm);            // Simplify CFG
+        LLVMAddDeadStoreEliminationPass(pm);         // Dead store elimination
+        LLVMAddAggressiveDCEPass(pm);                // Dead code elimination
+        LLVMAddCorrelatedValuePropagationPass(pm);   // Correlated value propagation
+    }
+    
+    if (opt_level >= OPT_LEVEL_AGGRESSIVE) {
+        // Additional aggressive optimizations for O3
+        LLVMAddInstructionCombiningPass(pm);  // Run again
+        LLVMAddCFGSimplificationPass(pm);     // Run again
+    }
     
     // Run passes
     LLVMRunPassManager(pm, ctx->module);
@@ -1081,13 +1121,21 @@ void llvm_apply_optimizations(LLVMCompilerContext *ctx) {
     LLVMPassBuilderOptionsRef options = LLVMCreatePassBuilderOptions();
     LLVMPassBuilderOptionsSetVerifyEach(options, 0);
     
-    // Run optimization pipeline similar to -O2
-    // This includes mem2reg, instcombine, reassociate, gvn, simplifycfg, dse, adce, and more
-    const char *passes = "default<O2>";
+    // Set debug info pass options based on config
+    if (cfg->strip_debug) {
+        // Note: LLVM doesn't have a direct "strip debug" pass option in the new PM
+        // Debug stripping is typically done at link time or via separate tools
+        // We'll handle this in the link step
+    }
     
-    // LLVMRunPasses returns NULL on success, non-NULL LLVMErrorRef on failure
-    // LLVMGetErrorMessage consumes the error, so no explicit cleanup needed
-    LLVMErrorRef err = LLVMRunPasses(ctx->module, passes, tm, options);
+    // Run optimization pipeline based on configuration
+    printf("Applying LLVM optimizations: %s", pass_pipeline);
+    if (cfg->enable_lto) {
+        printf(" with LTO");
+    }
+    printf("\n");
+    
+    LLVMErrorRef err = LLVMRunPasses(ctx->module, pass_pipeline, tm, options);
     if (err) {
         char *err_msg = LLVMGetErrorMessage(err);
         fprintf(stderr, "Failed to run optimization passes: %s\n", err_msg);
