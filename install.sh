@@ -18,8 +18,9 @@ NC='\033[0m'
 get_latest_version() {
     # Try GitHub API first
     if command -v curl &> /dev/null; then
-        local latest=$(curl -s https://api.github.com/repos/$GITHUB_REPO/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' 2>/dev/null)
-        if [ -n "$latest" ] && [ "$latest" != "null" ]; then
+        local latest=$(curl -sS --max-time 5 https://api.github.com/repos/$GITHUB_REPO/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' 2>/dev/null)
+        # Check if we got a valid tag (not null, not empty, starts with v)
+        if [ -n "$latest" ] && [ "$latest" != "null" ] && [[ "$latest" == v* ]]; then
             echo "$latest"
             return
         fi
@@ -27,14 +28,15 @@ get_latest_version() {
     
     # Try VERSION file from repo
     if command -v curl &> /dev/null; then
-        local version=$(curl -s https://raw.githubusercontent.com/$GITHUB_REPO/main/VERSION 2>/dev/null)
+        local version=$(curl -sS --max-time 5 https://raw.githubusercontent.com/$GITHUB_REPO/main/VERSION 2>/dev/null | tr -d '[:space:]')
+        # Check if we got a non-empty version
         if [ -n "$version" ]; then
             echo "v$version"
             return
         fi
     fi
     
-    # Fallback
+    # Fallback to hardcoded version
     echo "v1.0.0-rc"
 }
 
