@@ -1,0 +1,493 @@
+/**
+ * @module metrics
+ * @description Prometheus-compatible metrics library for KLang
+ * 
+ * Provides enterprise-grade application metrics:
+ * - Counters: monotonically increasing values
+ * - Gauges: values that can go up and down
+ * - Histograms: observations with configurable buckets
+ * - Summaries: observations with quantiles
+ * - Prometheus exposition format export
+ */
+
+/**
+ * MetricRegistry - Central registry for all metrics
+ */
+class MetricRegistry {
+    constructor() {
+        this.metrics = {}
+        this.defaultLabels = {}
+    }
+    
+    /**
+     * Set default labels that appear on all metrics
+     */
+    setDefaultLabels(labels) {
+        this.defaultLabels = {...this.defaultLabels, ...labels}
+    }
+    
+    /**
+     * Register a new metric
+     */
+    register(metric) {
+        const key = metric.name
+        if this.metrics[key] {
+            throw new Error(`Metric ${key} already registered`)
+        }
+        this.metrics[key] = metric
+        return metric
+    }
+    
+    /**
+     * Get a metric by name
+     */
+    get(name) {
+        return this.metrics[name]
+    }
+    
+    /**
+     * Export all metrics in Prometheus format
+     */
+    export() {
+        let output = []
+        
+        for name, metric in this.metrics {
+            output.push(metric.export(this.defaultLabels))
+        }
+        
+        return output.join("\n\n")
+    }
+    
+    /**
+     * Clear all metrics
+     */
+    clear() {
+        this.metrics = {}
+    }
+}
+
+/**
+ * Counter - Monotonically increasing metric
+ */
+class Counter {
+    constructor(name, help, labels = []) {
+        this.name = name
+        this.help = help
+        this.labels = labels
+        this.values = {}
+    }
+    
+    /**
+     * Increment counter by 1
+     */
+    inc(labelValues = {}) {
+        this.add(1, labelValues)
+    }
+    
+    /**
+     * Add value to counter
+     */
+    add(value, labelValues = {}) {
+        if value < 0 {
+            throw new Error("Counter can only increase")
+        }
+        
+        const key = this._labelKey(labelValues)
+        this.values[key] = (this.values[key] || 0) + value
+    }
+    
+    /**
+     * Get current value
+     */
+    get(labelValues = {}) {
+        const key = this._labelKey(labelValues)
+        return this.values[key] || 0
+    }
+    
+    /**
+     * Reset counter to 0
+     */
+    reset(labelValues = {}) {
+        const key = this._labelKey(labelValues)
+        this.values[key] = 0
+    }
+    
+    /**
+     * Export in Prometheus format
+     */
+    export(defaultLabels = {}) {
+        let lines = []
+        lines.push(`# HELP ${this.name} ${this.help}`)
+        lines.push(`# TYPE ${this.name} counter`)
+        
+        for key, value in this.values {
+            const labels = this._parseKey(key)
+            const allLabels = {...defaultLabels, ...labels}
+            const labelStr = this._formatLabels(allLabels)
+            lines.push(`${this.name}${labelStr} ${value}`)
+        }
+        
+        return lines.join("\n")
+    }
+    
+    /**
+     * Generate unique key from label values
+     */
+    _labelKey(labelValues) {
+        if Object.keys(labelValues).length == 0 {
+            return "__default__"
+        }
+        return JSON.stringify(labelValues)
+    }
+    
+    /**
+     * Parse key back to labels
+     */
+    _parseKey(key) {
+        if key == "__default__" {
+            return {}
+        }
+        return JSON.parse(key)
+    }
+    
+    /**
+     * Format labels for Prometheus output
+     */
+    _formatLabels(labels) {
+        if Object.keys(labels).length == 0 {
+            return ""
+        }
+        
+        let pairs = []
+        for key, value in labels {
+            pairs.push(`${key}="${value}"`)
+        }
+        return `{${pairs.join(",")}}`
+    }
+}
+
+/**
+ * Gauge - Metric that can increase or decrease
+ */
+class Gauge {
+    constructor(name, help, labels = []) {
+        this.name = name
+        this.help = help
+        this.labels = labels
+        this.values = {}
+    }
+    
+    /**
+     * Set gauge to specific value
+     */
+    set(value, labelValues = {}) {
+        const key = this._labelKey(labelValues)
+        this.values[key] = value
+    }
+    
+    /**
+     * Increment gauge by 1
+     */
+    inc(labelValues = {}) {
+        this.add(1, labelValues)
+    }
+    
+    /**
+     * Decrement gauge by 1
+     */
+    dec(labelValues = {}) {
+        this.sub(1, labelValues)
+    }
+    
+    /**
+     * Add value to gauge
+     */
+    add(value, labelValues = {}) {
+        const key = this._labelKey(labelValues)
+        this.values[key] = (this.values[key] || 0) + value
+    }
+    
+    /**
+     * Subtract value from gauge
+     */
+    sub(value, labelValues = {}) {
+        const key = this._labelKey(labelValues)
+        this.values[key] = (this.values[key] || 0) - value
+    }
+    
+    /**
+     * Get current value
+     */
+    get(labelValues = {}) {
+        const key = this._labelKey(labelValues)
+        return this.values[key] || 0
+    }
+    
+    /**
+     * Set gauge to current timestamp
+     */
+    setToCurrentTime(labelValues = {}) {
+        this.set(Date.now() / 1000, labelValues)
+    }
+    
+    /**
+     * Time a function execution and set gauge to duration
+     */
+    time(fn, labelValues = {}) {
+        const start = Date.now()
+        const result = fn()
+        const duration = (Date.now() - start) / 1000
+        this.set(duration, labelValues)
+        return result
+    }
+    
+    /**
+     * Export in Prometheus format
+     */
+    export(defaultLabels = {}) {
+        let lines = []
+        lines.push(`# HELP ${this.name} ${this.help}`)
+        lines.push(`# TYPE ${this.name} gauge`)
+        
+        for key, value in this.values {
+            const labels = Counter.prototype._parseKey.call(this, key)
+            const allLabels = {...defaultLabels, ...labels}
+            const labelStr = Counter.prototype._formatLabels.call(this, allLabels)
+            lines.push(`${this.name}${labelStr} ${value}`)
+        }
+        
+        return lines.join("\n")
+    }
+    
+    _labelKey = Counter.prototype._labelKey
+    _parseKey = Counter.prototype._parseKey
+    _formatLabels = Counter.prototype._formatLabels
+}
+
+/**
+ * Histogram - Track distribution of observations
+ */
+class Histogram {
+    constructor(name, help, buckets = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10], labels = []) {
+        this.name = name
+        this.help = help
+        this.buckets = buckets.sort((a, b) => a - b)
+        this.labels = labels
+        this.observations = {}
+    }
+    
+    /**
+     * Observe a value
+     */
+    observe(value, labelValues = {}) {
+        const key = this._labelKey(labelValues)
+        
+        if !this.observations[key] {
+            this.observations[key] = {
+                count: 0,
+                sum: 0,
+                buckets: {}
+            }
+            
+            for bucket in this.buckets {
+                this.observations[key].buckets[bucket] = 0
+            }
+            this.observations[key].buckets["+Inf"] = 0
+        }
+        
+        const obs = this.observations[key]
+        obs.count++
+        obs.sum += value
+        
+        for bucket in this.buckets {
+            if value <= bucket {
+                obs.buckets[bucket]++
+            }
+        }
+        obs.buckets["+Inf"]++
+    }
+    
+    /**
+     * Time a function and observe duration in seconds
+     */
+    time(fn, labelValues = {}) {
+        const start = Date.now()
+        const result = fn()
+        const duration = (Date.now() - start) / 1000
+        this.observe(duration, labelValues)
+        return result
+    }
+    
+    /**
+     * Export in Prometheus format
+     */
+    export(defaultLabels = {}) {
+        let lines = []
+        lines.push(`# HELP ${this.name} ${this.help}`)
+        lines.push(`# TYPE ${this.name} histogram`)
+        
+        for key, obs in this.observations {
+            const labels = Counter.prototype._parseKey.call(this, key)
+            const allLabels = {...defaultLabels, ...labels}
+            
+            // Export buckets
+            for bucket, count in obs.buckets {
+                const bucketLabels = {...allLabels, le: bucket}
+                const labelStr = Counter.prototype._formatLabels.call(this, bucketLabels)
+                lines.push(`${this.name}_bucket${labelStr} ${count}`)
+            }
+            
+            // Export sum and count
+            const labelStr = Counter.prototype._formatLabels.call(this, allLabels)
+            lines.push(`${this.name}_sum${labelStr} ${obs.sum}`)
+            lines.push(`${this.name}_count${labelStr} ${obs.count}`)
+        }
+        
+        return lines.join("\n")
+    }
+    
+    _labelKey = Counter.prototype._labelKey
+}
+
+/**
+ * Summary - Track quantiles of observations
+ */
+class Summary {
+    constructor(name, help, quantiles = [0.5, 0.9, 0.99], labels = []) {
+        this.name = name
+        this.help = help
+        this.quantiles = quantiles
+        this.labels = labels
+        this.observations = {}
+    }
+    
+    /**
+     * Observe a value
+     */
+    observe(value, labelValues = {}) {
+        const key = this._labelKey(labelValues)
+        
+        if !this.observations[key] {
+            this.observations[key] = {
+                count: 0,
+                sum: 0,
+                values: []
+            }
+        }
+        
+        const obs = this.observations[key]
+        obs.count++
+        obs.sum += value
+        obs.values.push(value)
+    }
+    
+    /**
+     * Calculate quantile from observations
+     */
+    _calculateQuantile(values, quantile) {
+        if values.length == 0 {
+            return 0
+        }
+        
+        const sorted = [...values].sort((a, b) => a - b)
+        const index = Math.floor(quantile * sorted.length)
+        return sorted[index]
+    }
+    
+    /**
+     * Export in Prometheus format
+     */
+    export(defaultLabels = {}) {
+        let lines = []
+        lines.push(`# HELP ${this.name} ${this.help}`)
+        lines.push(`# TYPE ${this.name} summary`)
+        
+        for key, obs in this.observations {
+            const labels = Counter.prototype._parseKey.call(this, key)
+            const allLabels = {...defaultLabels, ...labels}
+            
+            // Export quantiles
+            for quantile in this.quantiles {
+                const value = this._calculateQuantile(obs.values, quantile)
+                const quantileLabels = {...allLabels, quantile: quantile}
+                const labelStr = Counter.prototype._formatLabels.call(this, quantileLabels)
+                lines.push(`${this.name}${labelStr} ${value}`)
+            }
+            
+            // Export sum and count
+            const labelStr = Counter.prototype._formatLabels.call(this, allLabels)
+            lines.push(`${this.name}_sum${labelStr} ${obs.sum}`)
+            lines.push(`${this.name}_count${labelStr} ${obs.count}`)
+        }
+        
+        return lines.join("\n")
+    }
+    
+    _labelKey = Counter.prototype._labelKey
+}
+
+// Global registry
+const globalRegistry = new MetricRegistry()
+
+/**
+ * Create a new counter
+ */
+export fn counter(name, help, labels = []) {
+    const c = new Counter(name, help, labels)
+    return globalRegistry.register(c)
+}
+
+/**
+ * Create a new gauge
+ */
+export fn gauge(name, help, labels = []) {
+    const g = new Gauge(name, help, labels)
+    return globalRegistry.register(g)
+}
+
+/**
+ * Create a new histogram
+ */
+export fn histogram(name, help, buckets, labels = []) {
+    const h = new Histogram(name, help, buckets, labels)
+    return globalRegistry.register(h)
+}
+
+/**
+ * Create a new summary
+ */
+export fn summary(name, help, quantiles, labels = []) {
+    const s = new Summary(name, help, quantiles, labels)
+    return globalRegistry.register(s)
+}
+
+/**
+ * Export all metrics in Prometheus format
+ */
+export fn exportMetrics() {
+    return globalRegistry.export()
+}
+
+/**
+ * Set default labels for all metrics
+ */
+export fn setDefaultLabels(labels) {
+    globalRegistry.setDefaultLabels(labels)
+}
+
+/**
+ * Get the global registry
+ */
+export fn getRegistry() {
+    return globalRegistry
+}
+
+/**
+ * Clear all metrics
+ */
+export fn clearMetrics() {
+    globalRegistry.clear()
+}
+
+// Export classes
+export { Counter, Gauge, Histogram, Summary, MetricRegistry }

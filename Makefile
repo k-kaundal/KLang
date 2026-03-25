@@ -2,13 +2,33 @@ CC = gcc
 
 # Try to find llvm-config in order of preference
 # Check standard PATH first, then Homebrew paths (macOS), then fallback
-LLVM_CONFIG := $(shell which llvm-config-16 2>/dev/null || which llvm-config-18 2>/dev/null || which llvm-config-17 2>/dev/null || which llvm-config 2>/dev/null || (test -x /opt/homebrew/opt/llvm@16/bin/llvm-config && echo "/opt/homebrew/opt/llvm@16/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@17/bin/llvm-config && echo "/opt/homebrew/opt/llvm@17/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@18/bin/llvm-config && echo "/opt/homebrew/opt/llvm@18/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm/bin/llvm-config && echo "/opt/homebrew/opt/llvm/bin/llvm-config") || (test -x /usr/local/opt/llvm@16/bin/llvm-config && echo "/usr/local/opt/llvm@16/bin/llvm-config") || (test -x /usr/local/opt/llvm@17/bin/llvm-config && echo "/usr/local/opt/llvm@17/bin/llvm-config") || (test -x /usr/local/opt/llvm@18/bin/llvm-config && echo "/usr/local/opt/llvm@18/bin/llvm-config") || (test -x /usr/local/opt/llvm/bin/llvm-config && echo "/usr/local/opt/llvm/bin/llvm-config") || echo "llvm-config-16")
+LLVM_CONFIG := $(shell which llvm-config-18 2>/dev/null || which llvm-config-17 2>/dev/null || which llvm-config-16 2>/dev/null || which llvm-config-15 2>/dev/null || which llvm-config-14 2>/dev/null || which llvm-config 2>/dev/null || (test -x /opt/homebrew/opt/llvm@18/bin/llvm-config && echo "/opt/homebrew/opt/llvm@18/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@17/bin/llvm-config && echo "/opt/homebrew/opt/llvm@17/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@16/bin/llvm-config && echo "/opt/homebrew/opt/llvm@16/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@15/bin/llvm-config && echo "/opt/homebrew/opt/llvm@15/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm@14/bin/llvm-config && echo "/opt/homebrew/opt/llvm@14/bin/llvm-config") || (test -x /opt/homebrew/opt/llvm/bin/llvm-config && echo "/opt/homebrew/opt/llvm/bin/llvm-config") || (test -x /usr/local/opt/llvm@18/bin/llvm-config && echo "/usr/local/opt/llvm@18/bin/llvm-config") || (test -x /usr/local/opt/llvm@17/bin/llvm-config && echo "/usr/local/opt/llvm@17/bin/llvm-config") || (test -x /usr/local/opt/llvm@16/bin/llvm-config && echo "/usr/local/opt/llvm@16/bin/llvm-config") || (test -x /usr/local/opt/llvm@15/bin/llvm-config && echo "/usr/local/opt/llvm@15/bin/llvm-config") || (test -x /usr/local/opt/llvm@14/bin/llvm-config && echo "/usr/local/opt/llvm@14/bin/llvm-config") || (test -x /usr/local/opt/llvm/bin/llvm-config && echo "/usr/local/opt/llvm/bin/llvm-config") || echo "llvm-config")
 
 LLVM_CFLAGS = $(shell $(LLVM_CONFIG) --cflags 2>/dev/null)
 LLVM_LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags --libs core executionengine mcjit native passes 2>/dev/null)
 
-CFLAGS = -Wall -Wextra -std=c99 -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L -Isrc -Iinclude -g $(LLVM_CFLAGS)
-LDFLAGS = $(LLVM_LDFLAGS) -lm -lreadline -lpthread -ldl
+# Platform detection for conditional linking
+UNAME_S := $(shell uname -s 2>/dev/null || echo Windows)
+ifeq ($(OS),Windows_NT)
+    # Windows (native or MinGW)
+    PLATFORM_CFLAGS = -D_GNU_SOURCE
+    PLATFORM_LDFLAGS = -lm -lreadline
+else ifeq ($(UNAME_S),Linux)
+    # Linux
+    PLATFORM_CFLAGS = -D_POSIX_C_SOURCE=200809L
+    PLATFORM_LDFLAGS = -lm -lreadline -lpthread -ldl
+else ifeq ($(UNAME_S),Darwin)
+    # macOS
+    PLATFORM_CFLAGS = -D_POSIX_C_SOURCE=200809L
+    PLATFORM_LDFLAGS = -lm -lreadline -lpthread
+else
+    # Other Unix-like (BSD, etc.)
+    PLATFORM_CFLAGS = -D_POSIX_C_SOURCE=200809L
+    PLATFORM_LDFLAGS = -lm -lreadline -lpthread -ldl
+endif
+
+CFLAGS = -Wall -Wextra -std=c99 $(PLATFORM_CFLAGS) -Isrc -Iinclude -g $(LLVM_CFLAGS)
+LDFLAGS = $(LLVM_LDFLAGS) $(PLATFORM_LDFLAGS)
 
 SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/vm_stack.c src/vm_register.c src/ssa_ir.c src/compiler.c src/gc.c src/runtime.c src/repl.c src/cli.c src/cli_colors.c src/cli_help.c src/cli_commands.c src/formatter.c src/error_reporter.c src/config.c src/test_runner.c src/project_init.c src/llvm_backend.c src/type_checker.c src/package_manager.c src/lsp_server.c src/debugger.c src/type_system.c src/parallel.c src/wasm_backend.c src/plugin_system.c src/cloud_native.c
 OBJ = $(SRC:.c=.o)
@@ -80,7 +100,36 @@ uninstall-user:
 	@rm -rf $(HOME)/.local/share/klang
 	@echo "✓ KLang uninstalled"
 
+# Benchmarking
+BENCH_CFLAGS = -O3 -Ibenchmarks/framework
+BENCH_LDFLAGS = -lm
+
+benchmarks: $(TARGET)
+	@echo "Building benchmarks..."
+	@mkdir -p benchmarks/reports
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/arithmetic_bench benchmarks/language/arithmetic_bench.c $(BENCH_LDFLAGS)
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/loop_bench benchmarks/language/loop_bench.c $(BENCH_LDFLAGS)
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/function_bench benchmarks/language/function_bench.c $(BENCH_LDFLAGS)
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/language/string_bench benchmarks/language/string_bench.c $(BENCH_LDFLAGS)
+	@$(CC) $(BENCH_CFLAGS) -o benchmarks/memory/memory_bench benchmarks/memory/memory_bench.c $(BENCH_LDFLAGS)
+	@echo "✓ Benchmarks built"
+
+bench: benchmarks
+	@./benchmarks/run_benchmarks.sh
+
+bench-quick: benchmarks
+	@echo "Running quick benchmarks..."
+	@./benchmarks/language/arithmetic_bench
+	@echo "✓ Quick benchmark complete"
+
 clean:
 	rm -f src/*.o $(TARGET) test_runner
+	rm -f benchmarks/language/*_bench
+	rm -f benchmarks/reports/*.json
 
-.PHONY: all test run clean install install-user uninstall uninstall-user
+clean-bench:
+	rm -f benchmarks/language/*_bench
+	rm -f benchmarks/reports/*.json
+	rm -f benchmarks/reports/*.md
+
+.PHONY: all test run clean install install-user uninstall uninstall-user benchmarks bench bench-quick clean-bench

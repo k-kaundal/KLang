@@ -103,6 +103,8 @@ CloudFunction* function_create(FunctionSpec *spec) {
 }
 
 Value function_invoke(CloudFunction *func, Value *args, int arg_count) {
+    (void)args;  /* Suppress unused parameter warning - stub implementation */
+    
     if (!func) {
         Value err;
         err.type = VAL_NULL;

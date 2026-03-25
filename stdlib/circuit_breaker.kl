@@ -1,0 +1,252 @@
+/**
+ * @module circuit_breaker
+ * @description Circuit breaker pattern for fault tolerance
+ * 
+ * Prevents cascading failures by stopping requests to failing services.
+ * 
+ * States:
+ * - CLOSED: Normal operation, requests pass through
+ * - OPEN: Failing, requests fail immediately
+ * - HALF_OPEN: Testing if service recovered
+ */
+
+const STATE_CLOSED = "CLOSED"
+const STATE_OPEN = "OPEN"
+const STATE_HALF_OPEN = "HALF_OPEN"
+
+/**
+ * CircuitBreaker class
+ */
+class CircuitBreaker {
+    constructor(options = {}) {
+        // Configuration
+        this.failureThreshold = options.failureThreshold || 5
+        this.successThreshold = options.successThreshold || 2
+        this.timeout = options.timeout || 60000  // 60 seconds
+        this.resetTimeout = options.resetTimeout || 30000  // 30 seconds
+        this.monitoringPeriod = options.monitoringPeriod || 10000  // 10 seconds
+        
+        // State
+        this.state = STATE_CLOSED
+        this.failures = 0
+        this.successes = 0
+        this.nextAttempt = 0
+        this.lastFailureTime = 0
+        
+        // Statistics
+        this.stats = {
+            totalCalls: 0,
+            successfulCalls: 0,
+            failedCalls: 0,
+            rejectedCalls: 0,
+            totalFailures: 0,
+            consecutiveSuccesses: 0,
+            consecutiveFailures: 0,
+            lastStateChange: Date.now()
+        }
+        
+        // Callbacks
+        this.onOpen = options.onOpen || (() => {})
+        this.onClose = options.onClose || (() => {})
+        this.onHalfOpen = options.onHalfOpen || (() => {})
+    }
+    
+    /**
+     * Execute function with circuit breaker protection
+     */
+    async execute(fn) {
+        // Check if circuit is open
+        if this.state == STATE_OPEN {
+            if Date.now() < this.nextAttempt {
+                this.stats.rejectedCalls++
+                throw new Error("Circuit breaker is OPEN")
+            }
+            
+            // Time to try again
+            this._transitionTo(STATE_HALF_OPEN)
+        }
+        
+        this.stats.totalCalls++
+        
+        try {
+            const result = await this._executeWithTimeout(fn)
+            this._onSuccess()
+            return result
+        } catch (err) {
+            this._onFailure()
+            throw err
+        }
+    }
+    
+    /**
+     * Execute with timeout
+     */
+    async _executeWithTimeout(fn) {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error("Operation timeout"))
+            }, this.timeout)
+            
+            Promise.resolve(fn())
+                .then(result => {
+                    clearTimeout(timeoutId)
+                    resolve(result)
+                })
+                .catch(err => {
+                    clearTimeout(timeoutId)
+                    reject(err)
+                })
+        })
+    }
+    
+    /**
+     * Handle successful execution
+     */
+    _onSuccess() {
+        this.stats.successfulCalls++
+        this.stats.consecutiveSuccesses++
+        this.stats.consecutiveFailures = 0
+        this.failures = 0
+        
+        if this.state == STATE_HALF_OPEN {
+            this.successes++
+            
+            if this.successes >= this.successThreshold {
+                this._transitionTo(STATE_CLOSED)
+            }
+        }
+    }
+    
+    /**
+     * Handle failed execution
+     */
+    _onFailure() {
+        this.stats.failedCalls++
+        this.stats.totalFailures++
+        this.stats.consecutiveFailures++
+        this.stats.consecutiveSuccesses = 0
+        this.failures++
+        this.lastFailureTime = Date.now()
+        
+        if this.state == STATE_HALF_OPEN {
+            this._transitionTo(STATE_OPEN)
+        } else if this.failures >= this.failureThreshold {
+            this._transitionTo(STATE_OPEN)
+        }
+    }
+    
+    /**
+     * Transition to new state
+     */
+    _transitionTo(newState) {
+        const oldState = this.state
+        this.state = newState
+        this.stats.lastStateChange = Date.now()
+        
+        if newState == STATE_OPEN {
+            this.nextAttempt = Date.now() + this.resetTimeout
+            this.onOpen()
+        } else if newState == STATE_CLOSED {
+            this.failures = 0
+            this.successes = 0
+            this.onClose()
+        } else if newState == STATE_HALF_OPEN {
+            this.successes = 0
+            this.onHalfOpen()
+        }
+        
+        println(`Circuit breaker: ${oldState} -> ${newState}`)
+    }
+    
+    /**
+     * Manually open the circuit
+     */
+    open() {
+        this._transitionTo(STATE_OPEN)
+    }
+    
+    /**
+     * Manually close the circuit
+     */
+    close() {
+        this._transitionTo(STATE_CLOSED)
+    }
+    
+    /**
+     * Get current state
+     */
+    getState() {
+        return this.state
+    }
+    
+    /**
+     * Get statistics
+     */
+    getStats() {
+        return {
+            ...this.stats,
+            state: this.state,
+            failureRate: this.stats.totalCalls > 0 
+                ? this.stats.failedCalls / this.stats.totalCalls
+                : 0
+        }
+    }
+    
+    /**
+     * Reset circuit breaker
+     */
+    reset() {
+        this.state = STATE_CLOSED
+        this.failures = 0
+        this.successes = 0
+        this.nextAttempt = 0
+        this.lastFailureTime = 0
+        this.stats = {
+            totalCalls: 0,
+            successfulCalls: 0,
+            failedCalls: 0,
+            rejectedCalls: 0,
+            totalFailures: 0,
+            consecutiveSuccesses: 0,
+            consecutiveFailures: 0,
+            lastStateChange: Date.now()
+        }
+    }
+}
+
+/**
+ * Create a new circuit breaker
+ */
+export fn createCircuitBreaker(options = {}) {
+    return new CircuitBreaker(options)
+}
+
+/**
+ * Wrap a function with circuit breaker
+ */
+export fn withCircuitBreaker(fn, options = {}) {
+    const breaker = new CircuitBreaker(options)
+    
+    return async (...args) => {
+        return await breaker.execute(async () => {
+            return await fn(...args)
+        })
+    }
+}
+
+/**
+ * Circuit breaker decorator
+ */
+export fn circuitBreaker(options = {}) {
+    return fn => {
+        return withCircuitBreaker(fn, options)
+    }
+}
+
+// Export state constants
+export {
+    STATE_CLOSED,
+    STATE_OPEN,
+    STATE_HALF_OPEN,
+    CircuitBreaker
+}

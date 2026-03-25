@@ -3,6 +3,20 @@
 #include <string.h>
 #include "../include/type_checker.h"
 
+// Portable strndup implementation for systems that don't have it
+#if defined(_WIN32) || defined(_WIN64)
+static char *portable_strndup(const char *s, size_t n) {
+    size_t len = strnlen(s, n);
+    char *new_str = malloc(len + 1);
+    if (new_str) {
+        memcpy(new_str, s, len);
+        new_str[len] = '\0';
+    }
+    return new_str;
+}
+#define strndup portable_strndup
+#endif
+
 // Symbol table for type tracking
 typedef struct Symbol {
     char *name;

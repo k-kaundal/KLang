@@ -1,0 +1,21 @@
+{
+  "name": "Integer Multiplication (100 ops)",
+  "iterations": 427797,
+  "total_time_ms": 100.00,
+  "throughput_mops": 4.28,
+  "timing": {
+    "min_ns": 160,
+    "max_ns": 8833,
+    "mean_ns": 166,
+    "median_ns": 161,
+    "p95_ns": 171,
+    "p99_ns": 180,
+    "stddev_ns": 90
+  },
+  "memory": {
+    "peak_bytes": 0,
+    "allocations": 0,
+    "deallocations": 0,
+    "bytes_allocated": 0
+  }
+}

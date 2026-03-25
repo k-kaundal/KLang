@@ -2,7 +2,16 @@
 #define PLUGIN_SYSTEM_H
 
 #include <stdio.h>
-#include <dlfcn.h>
+
+/* Platform-specific includes for dynamic loading */
+#ifdef _WIN32
+    #include <windows.h>
+    typedef HMODULE PluginHandle;
+#else
+    #include <dlfcn.h>
+    typedef void* PluginHandle;
+#endif
+
 #include "interpreter.h"
 
 /* Plugin API version */
@@ -29,7 +38,7 @@ typedef struct {
 
 /* Plugin interface */
 typedef struct Plugin {
-    void *handle;  /* dlopen handle */
+    PluginHandle handle;  /* Dynamic library handle (HMODULE on Windows, void* on POSIX) */
     PluginMetadata metadata;
     
     /* Lifecycle callbacks */

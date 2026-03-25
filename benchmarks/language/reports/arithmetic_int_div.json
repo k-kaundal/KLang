@@ -1,0 +1,21 @@
+{
+  "name": "Integer Division (100 ops)",
+  "iterations": 190766,
+  "total_time_ms": 100.00,
+  "throughput_mops": 1.91,
+  "timing": {
+    "min_ns": 450,
+    "max_ns": 10365,
+    "mean_ns": 459,
+    "median_ns": 451,
+    "p95_ns": 461,
+    "p99_ns": 461,
+    "stddev_ns": 205
+  },
+  "memory": {
+    "peak_bytes": 0,
+    "allocations": 0,
+    "deallocations": 0,
+    "bytes_allocated": 0
+  }
+}

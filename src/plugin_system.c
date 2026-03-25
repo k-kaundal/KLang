@@ -1,8 +1,60 @@
 #include "plugin_system.h"
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
-#include <sys/stat.h>
+
+/* Platform-specific includes for directory operations */
+#ifdef _WIN32
+    #include <windows.h>
+    #include <io.h>
+#else
+    #include <dirent.h>
+    #include <sys/stat.h>
+#endif
+
+/* Platform-specific dynamic loading wrappers */
+#ifdef _WIN32
+    #define PLUGIN_EXTENSION ".dll"
+    
+    static PluginHandle plugin_dlopen(const char *path) {
+        return LoadLibraryA(path);
+    }
+    
+    static void* plugin_dlsym(PluginHandle handle, const char *symbol) {
+        return (void*)GetProcAddress(handle, symbol);
+    }
+    
+    static int plugin_dlclose(PluginHandle handle) {
+        return FreeLibrary(handle) ? 0 : -1;
+    }
+    
+    static const char* plugin_dlerror(void) {
+        static char error_buf[256];
+        DWORD error = GetLastError();
+        if (error == 0) return NULL;
+        
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, error, 0, error_buf, sizeof(error_buf), NULL);
+        return error_buf;
+    }
+#else
+    #define PLUGIN_EXTENSION ".so"
+    
+    static PluginHandle plugin_dlopen(const char *path) {
+        return dlopen(path, RTLD_LAZY);
+    }
+    
+    static void* plugin_dlsym(PluginHandle handle, const char *symbol) {
+        return dlsym(handle, symbol);
+    }
+    
+    static int plugin_dlclose(PluginHandle handle) {
+        return dlclose(handle);
+    }
+    
+    static const char* plugin_dlerror(void) {
+        return dlerror();
+    }
+#endif
 
 /* Create plugin manager */
 PluginManager* plugin_manager_create(Interpreter *interp) {
@@ -40,17 +92,17 @@ void plugin_manager_set_directory(PluginManager *pm, const char *dir) {
 /* Load plugin from path */
 Plugin* plugin_load(const char *path) {
     /* Open dynamic library */
-    void *handle = dlopen(path, RTLD_LAZY);
+    PluginHandle handle = plugin_dlopen(path);
     if (!handle) {
-        fprintf(stderr, "Failed to load plugin %s: %s\n", path, dlerror());
+        fprintf(stderr, "Failed to load plugin %s: %s\n", path, plugin_dlerror());
         return NULL;
     }
     
     /* Get metadata */
-    PluginMetadata *metadata = (PluginMetadata*)dlsym(handle, "klang_plugin_metadata");
+    PluginMetadata *metadata = (PluginMetadata*)plugin_dlsym(handle, "klang_plugin_metadata");
     if (!metadata) {
         fprintf(stderr, "Plugin %s missing metadata\n", path);
-        dlclose(handle);
+        plugin_dlclose(handle);
         return NULL;
     }
     
@@ -58,7 +110,7 @@ Plugin* plugin_load(const char *path) {
     if (metadata->api_version != PLUGIN_API_VERSION) {
         fprintf(stderr, "Plugin %s has incompatible API version %d (expected %d)\n",
                 path, metadata->api_version, PLUGIN_API_VERSION);
-        dlclose(handle);
+        plugin_dlclose(handle);
         return NULL;
     }
     
@@ -72,10 +124,10 @@ Plugin* plugin_load(const char *path) {
     plugin->metadata.description = strdup(metadata->description);
     
     /* Load callback functions */
-    plugin->init = (int (*)(Plugin*, Interpreter*))dlsym(handle, "klang_plugin_init");
-    plugin->cleanup = (void (*)(Plugin*))dlsym(handle, "klang_plugin_cleanup");
-    plugin->register_functions = (int (*)(Plugin*, Interpreter*))dlsym(handle, "klang_plugin_register_functions");
-    plugin->transform_ast = (ASTNode* (*)(Plugin*, ASTNode*))dlsym(handle, "klang_plugin_transform_ast");
+    plugin->init = (int (*)(Plugin*, Interpreter*))plugin_dlsym(handle, "klang_plugin_init");
+    plugin->cleanup = (void (*)(Plugin*))plugin_dlsym(handle, "klang_plugin_cleanup");
+    plugin->register_functions = (int (*)(Plugin*, Interpreter*))plugin_dlsym(handle, "klang_plugin_register_functions");
+    plugin->transform_ast = (ASTNode* (*)(Plugin*, ASTNode*))plugin_dlsym(handle, "klang_plugin_transform_ast");
     
     plugin->user_data = NULL;
     plugin->next = NULL;
@@ -94,7 +146,7 @@ void plugin_unload(Plugin *plugin) {
     
     /* Close library */
     if (plugin->handle) {
-        dlclose(plugin->handle);
+        plugin_dlclose(plugin->handle);
     }
     
     /* Free metadata */
@@ -153,9 +205,9 @@ Plugin* plugin_manager_find(PluginManager *pm, const char *name) {
 int plugin_manager_load(PluginManager *pm, const char *name) {
     if (!pm || !name) return -1;
     
-    /* Build plugin path */
+    /* Build plugin path with platform-specific extension */
     char path[512];
-    snprintf(path, sizeof(path), "%s/%s.so", pm->plugin_directory, name);
+    snprintf(path, sizeof(path), "%s/%s%s", pm->plugin_directory, name, PLUGIN_EXTENSION);
     
     /* Load plugin */
     Plugin *plugin = plugin_load(path);
@@ -171,6 +223,38 @@ int plugin_manager_load(PluginManager *pm, const char *name) {
 int plugin_manager_load_all(PluginManager *pm) {
     if (!pm) return -1;
     
+    int loaded = 0;
+    
+#ifdef _WIN32
+    /* Windows directory traversal */
+    char search_path[512];
+    snprintf(search_path, sizeof(search_path), "%s/*%s", pm->plugin_directory, PLUGIN_EXTENSION);
+    
+    WIN32_FIND_DATAA find_data;
+    HANDLE find_handle = FindFirstFileA(search_path, &find_data);
+    
+    if (find_handle == INVALID_HANDLE_VALUE) {
+        fprintf(stderr, "Cannot open plugin directory: %s\n", pm->plugin_directory);
+        return -1;
+    }
+    
+    do {
+        if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            char path[512];
+            snprintf(path, sizeof(path), "%s/%s", pm->plugin_directory, find_data.cFileName);
+            
+            Plugin *plugin = plugin_load(path);
+            if (plugin) {
+                if (plugin_manager_register(pm, plugin) == 0) {
+                    loaded++;
+                }
+            }
+        }
+    } while (FindNextFileA(find_handle, &find_data) != 0);
+    
+    FindClose(find_handle);
+#else
+    /* POSIX directory traversal */
     DIR *dir = opendir(pm->plugin_directory);
     if (!dir) {
         fprintf(stderr, "Cannot open plugin directory: %s\n", pm->plugin_directory);
@@ -178,12 +262,10 @@ int plugin_manager_load_all(PluginManager *pm) {
     }
     
     struct dirent *entry;
-    int loaded = 0;
-    
     while ((entry = readdir(dir)) != NULL) {
         /* Check if it's a .so file */
         const char *ext = strrchr(entry->d_name, '.');
-        if (ext && strcmp(ext, ".so") == 0) {
+        if (ext && strcmp(ext, PLUGIN_EXTENSION) == 0) {
             char path[512];
             snprintf(path, sizeof(path), "%s/%s", pm->plugin_directory, entry->d_name);
             
@@ -197,6 +279,8 @@ int plugin_manager_load_all(PluginManager *pm) {
     }
     
     closedir(dir);
+#endif
+    
     return loaded;
 }
 
@@ -248,6 +332,33 @@ PluginDiscovery* plugin_discover(const char *directory) {
     discovery->plugin_paths = NULL;
     discovery->count = 0;
     
+#ifdef _WIN32
+    /* Windows directory traversal */
+    char search_path[512];
+    snprintf(search_path, sizeof(search_path), "%s/*%s", directory, PLUGIN_EXTENSION);
+    
+    WIN32_FIND_DATAA find_data;
+    HANDLE find_handle = FindFirstFileA(search_path, &find_data);
+    
+    if (find_handle == INVALID_HANDLE_VALUE) {
+        return discovery;
+    }
+    
+    do {
+        if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            discovery->count++;
+            discovery->plugin_paths = realloc(discovery->plugin_paths,
+                                            discovery->count * sizeof(char*));
+            
+            char path[512];
+            snprintf(path, sizeof(path), "%s/%s", directory, find_data.cFileName);
+            discovery->plugin_paths[discovery->count - 1] = strdup(path);
+        }
+    } while (FindNextFileA(find_handle, &find_data) != 0);
+    
+    FindClose(find_handle);
+#else
+    /* POSIX directory traversal */
     DIR *dir = opendir(directory);
     if (!dir) {
         return discovery;
@@ -256,7 +367,7 @@ PluginDiscovery* plugin_discover(const char *directory) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         const char *ext = strrchr(entry->d_name, '.');
-        if (ext && strcmp(ext, ".so") == 0) {
+        if (ext && strcmp(ext, PLUGIN_EXTENSION) == 0) {
             discovery->count++;
             discovery->plugin_paths = realloc(discovery->plugin_paths,
                                             discovery->count * sizeof(char*));
@@ -268,6 +379,8 @@ PluginDiscovery* plugin_discover(const char *directory) {
     }
     
     closedir(dir);
+#endif
+    
     return discovery;
 }
 

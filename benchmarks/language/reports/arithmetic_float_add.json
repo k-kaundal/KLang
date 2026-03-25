@@ -1,0 +1,21 @@
+{
+  "name": "Float Addition (1000 ops)",
+  "iterations": 100000,
+  "total_time_ms": 114.38,
+  "throughput_mops": 0.87,
+  "timing": {
+    "min_ns": 1061,
+    "max_ns": 15052,
+    "mean_ns": 1081,
+    "median_ns": 1071,
+    "p95_ns": 1072,
+    "p99_ns": 1072,
+    "stddev_ns": 317
+  },
+  "memory": {
+    "peak_bytes": 0,
+    "allocations": 0,
+    "deallocations": 0,
+    "bytes_allocated": 0
+  }
+}

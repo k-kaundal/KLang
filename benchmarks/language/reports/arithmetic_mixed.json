@@ -1,0 +1,21 @@
+{
+  "name": "Mixed Operations (1000 ops)",
+  "iterations": 100000,
+  "total_time_ms": 429.88,
+  "throughput_mops": 0.23,
+  "timing": {
+    "min_ns": 4186,
+    "max_ns": 19759,
+    "mean_ns": 4237,
+    "median_ns": 4196,
+    "p95_ns": 4206,
+    "p99_ns": 4207,
+    "stddev_ns": 593
+  },
+  "memory": {
+    "peak_bytes": 0,
+    "allocations": 0,
+    "deallocations": 0,
+    "bytes_allocated": 0
+  }
+}

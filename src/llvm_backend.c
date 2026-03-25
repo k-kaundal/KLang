@@ -269,9 +269,9 @@ LLVMValueRef llvm_compile_expr(LLVMCompilerContext *ctx, ASTNode *node) {
                                      LLVMConstReal(ctx->double_type, 0.0), "cond");
             }
             
-            LLVMBasicBlockRef then_bb = LLVMAppendBasicBlock(ctx->current_function, "ternary.then");
-            LLVMBasicBlockRef else_bb = LLVMAppendBasicBlock(ctx->current_function, "ternary.else");
-            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ctx->current_function, "ternary.merge");
+            LLVMBasicBlockRef then_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "ternary.then");
+            LLVMBasicBlockRef else_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "ternary.else");
+            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "ternary.merge");
             
             LLVMBuildCondBr(ctx->builder, cond, then_bb, else_bb);
             
@@ -502,9 +502,9 @@ LLVMValueRef llvm_compile_call(LLVMCompilerContext *ctx, ASTNode *node) {
                 // Boolean - convert to "true" or "false" string inline
                 LLVMValueRef current_func = ctx->current_function;
                 
-                LLVMBasicBlockRef true_bb = LLVMAppendBasicBlock(current_func, "bool.true");
-                LLVMBasicBlockRef false_bb = LLVMAppendBasicBlock(current_func, "bool.false");
-                LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(current_func, "bool.merge");
+                LLVMBasicBlockRef true_bb = LLVMAppendBasicBlockInContext(ctx->context, current_func, "bool.true");
+                LLVMBasicBlockRef false_bb = LLVMAppendBasicBlockInContext(ctx->context, current_func, "bool.false");
+                LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlockInContext(ctx->context, current_func, "bool.merge");
                 
                 LLVMBuildCondBr(ctx->builder, arg, true_bb, false_bb);
                 
@@ -709,10 +709,10 @@ void llvm_compile_if(LLVMCompilerContext *ctx, ASTNode *node) {
                             LLVMConstReal(ctx->double_type, 0.0), "ifcond");
     }
     
-    LLVMBasicBlockRef then_bb = LLVMAppendBasicBlock(ctx->current_function, "if.then");
+    LLVMBasicBlockRef then_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "if.then");
     LLVMBasicBlockRef else_bb = node->data.if_stmt.else_block ? 
-        LLVMAppendBasicBlock(ctx->current_function, "if.else") : NULL;
-    LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ctx->current_function, "if.merge");
+        LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "if.else") : NULL;
+    LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "if.merge");
     
     if (else_bb) {
         LLVMBuildCondBr(ctx->builder, cond, then_bb, else_bb);
@@ -745,9 +745,9 @@ void llvm_compile_if(LLVMCompilerContext *ctx, ASTNode *node) {
 // ============================================================================
 
 void llvm_compile_while(LLVMCompilerContext *ctx, ASTNode *node) {
-    LLVMBasicBlockRef cond_bb = LLVMAppendBasicBlock(ctx->current_function, "while.cond");
-    LLVMBasicBlockRef body_bb = LLVMAppendBasicBlock(ctx->current_function, "while.body");
-    LLVMBasicBlockRef after_bb = LLVMAppendBasicBlock(ctx->current_function, "while.after");
+    LLVMBasicBlockRef cond_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "while.cond");
+    LLVMBasicBlockRef body_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "while.body");
+    LLVMBasicBlockRef after_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "while.after");
     
     // Save old targets
     LLVMBasicBlockRef old_break = ctx->current_break_target;
@@ -798,10 +798,10 @@ void llvm_compile_for(LLVMCompilerContext *ctx, ASTNode *node) {
             llvm_compile_stmt(ctx, node->data.for_c_style_stmt.init);
         }
         
-        LLVMBasicBlockRef cond_bb = LLVMAppendBasicBlock(ctx->current_function, "for.cond");
-        LLVMBasicBlockRef body_bb = LLVMAppendBasicBlock(ctx->current_function, "for.body");
-        LLVMBasicBlockRef update_bb = LLVMAppendBasicBlock(ctx->current_function, "for.update");
-        LLVMBasicBlockRef after_bb = LLVMAppendBasicBlock(ctx->current_function, "for.after");
+        LLVMBasicBlockRef cond_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "for.cond");
+        LLVMBasicBlockRef body_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "for.body");
+        LLVMBasicBlockRef update_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "for.update");
+        LLVMBasicBlockRef after_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "for.after");
         
         LLVMBasicBlockRef old_break = ctx->current_break_target;
         LLVMBasicBlockRef old_continue = ctx->current_continue_target;
@@ -862,10 +862,10 @@ void llvm_compile_for(LLVMCompilerContext *ctx, ASTNode *node) {
         LLVMBuildStore(ctx->builder, start, loop_var);
         symbol_table_insert(ctx->symbols, var_name, loop_var);
         
-        LLVMBasicBlockRef cond_bb = LLVMAppendBasicBlock(ctx->current_function, "for.cond");
-        LLVMBasicBlockRef body_bb = LLVMAppendBasicBlock(ctx->current_function, "for.body");
-        LLVMBasicBlockRef update_bb = LLVMAppendBasicBlock(ctx->current_function, "for.update");
-        LLVMBasicBlockRef after_bb = LLVMAppendBasicBlock(ctx->current_function, "for.after");
+        LLVMBasicBlockRef cond_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "for.cond");
+        LLVMBasicBlockRef body_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "for.body");
+        LLVMBasicBlockRef update_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "for.update");
+        LLVMBasicBlockRef after_bb = LLVMAppendBasicBlockInContext(ctx->context, ctx->current_function, "for.after");
         
         LLVMBasicBlockRef old_break = ctx->current_break_target;
         LLVMBasicBlockRef old_continue = ctx->current_continue_target;
@@ -943,7 +943,7 @@ void llvm_compile_function(LLVMCompilerContext *ctx, ASTNode *node) {
     LLVMValueRef func = LLVMAddFunction(ctx->module, func_name, func_type);
     
     // Create entry block
-    LLVMBasicBlockRef entry = LLVMAppendBasicBlock(func, "entry");
+    LLVMBasicBlockRef entry = LLVMAppendBasicBlockInContext(ctx->context, func, "entry");
     LLVMPositionBuilderAtEnd(ctx->builder, entry);
     
     // Save state
@@ -1004,7 +1004,7 @@ static LLVMValueRef create_main_wrapper(LLVMCompilerContext *ctx, ASTNode **node
     LLVMTypeRef main_type = LLVMFunctionType(ctx->i32_type, NULL, 0, 0);
     LLVMValueRef main_func = LLVMAddFunction(ctx->module, "main", main_type);
     
-    LLVMBasicBlockRef entry = LLVMAppendBasicBlock(main_func, "entry");
+    LLVMBasicBlockRef entry = LLVMAppendBasicBlockInContext(ctx->context, main_func, "entry");
     LLVMPositionBuilderAtEnd(ctx->builder, entry);
     
     ctx->current_function = main_func;
