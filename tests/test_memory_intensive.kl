@@ -1,0 +1,187 @@
+// Intensive Memory Stress Test
+println("=== INTENSIVE MEMORY STRESS TEST ===")
+
+// Test 1: Very deep recursion
+println("\nTest 1: Very Deep Recursion (500 levels)")
+fn deepRecursive(n: int, max: int) -> int {
+    if (n >= max) {
+        return n
+    }
+    return deepRecursive(n + 1, max)
+}
+
+let result1 = deepRecursive(0, 500)
+println("Deep recursion completed: " + result1)
+
+// Test 2: Large string concatenation
+println("\nTest 2: Large String Concatenation (1000 chars)")
+let largeStr = ""
+let i = 0
+while (i < 1000) {
+    largeStr = largeStr + "X"
+    i = i + 1
+}
+println("String length built: 1000")
+
+// Test 3: Many function calls
+println("\nTest 3: Many Function Calls (10000)")
+fn increment(x: int) -> int {
+    return x + 1
+}
+let j = 0
+while (j < 10000) {
+    let temp = increment(j)
+    j = j + 1
+}
+println("10000 function calls completed")
+
+// Test 4: Multiple nested scopes
+println("\nTest 4: Nested Scopes")
+fn level1() -> int {
+    let a = 1
+    fn level2() -> int {
+        let b = 2
+        fn level3() -> int {
+            let c = 3
+            fn level4() -> int {
+                let d = 4
+                return a + b + c + d
+            }
+            return level4()
+        }
+        return level3()
+    }
+    return level2()
+}
+let k = 0
+while (k < 100) {
+    let res = level1()
+    k = k + 1
+}
+println("Nested scope test completed")
+
+// Test 5: String operations stress
+println("\nTest 5: String Operations Stress")
+let m = 0
+while (m < 500) {
+    let s1 = "Hello"
+    let s2 = "World"
+    let s3 = s1 + " " + s2
+    let s4 = s3 + " " + m
+    m = m + 1
+}
+println("500 string operations completed")
+
+// Test 6: Mixed arithmetic
+println("\nTest 6: Mixed Arithmetic (10000 ops)")
+let n = 0
+let sum = 0
+while (n < 10000) {
+    sum = sum + n
+    sum = sum - (n / 2)
+    sum = sum * 1
+    n = n + 1
+}
+println("Arithmetic operations completed")
+
+// Test 7: Multiple variable allocations
+println("\nTest 7: Multiple Variables in Loop")
+let p = 0
+while (p < 1000) {
+    let v1 = p
+    let v2 = p + 1
+    let v3 = p + 2
+    let v4 = p + 3
+    let v5 = p + 4
+    let v6 = v1 + v2 + v3 + v4 + v5
+    p = p + 1
+}
+println("1000 iterations with 6 variables each")
+
+// Test 8: Fibonacci with memoization pattern
+println("\nTest 8: Fibonacci Sequence")
+fn fib(n: int) -> int {
+    if (n <= 1) {
+        return n
+    }
+    return fib(n - 1) + fib(n - 2)
+}
+let q = 0
+while (q <= 20) {
+    let fibResult = fib(q)
+    q = q + 1
+}
+println("Fibonacci up to 20 completed")
+
+// Test 9: Rapid allocation/deallocation
+println("\nTest 9: Rapid Alloc/Dealloc (100 iterations)")
+let r = 0
+while (r < 100) {
+    let temp1 = "String" + r
+    let temp2 = r * 2
+    let temp3 = temp2 + r
+    r = r + 1
+}
+println("Rapid allocation test completed")
+
+// Test 10: Boolean logic stress
+println("\nTest 10: Boolean Logic Stress")
+let s = 0
+while (s < 5000) {
+    let b1 = s > 100
+    let b2 = s < 4900
+    let b3 = b1 && b2
+    let b4 = !b3
+    s = s + 1
+}
+println("5000 boolean operations completed")
+
+// Test 11: Nested loops stress
+println("\nTest 11: Nested Loops")
+let t = 0
+while (t < 50) {
+    let u = 0
+    while (u < 50) {
+        let product = t * u
+        u = u + 1
+    }
+    t = t + 1
+}
+println("Nested loops (50x50) completed")
+
+// Test 12: Function with many parameters
+println("\nTest 12: Multi-parameter Functions")
+fn multiParam(a: int, b: int, c: int) -> int {
+    return a + b + c
+}
+let v = 0
+while (v < 1000) {
+    let res = multiParam(v, v + 1, v + 2)
+    v = v + 1
+}
+println("1000 multi-parameter calls completed")
+
+// Test 13: Print stress
+println("\nTest 13: Print Operations Stress")
+let w = 0
+while (w < 100) {
+    print(".")
+    w = w + 1
+}
+println("")
+println("100 print operations completed")
+
+// Test 14: Memory churn
+println("\nTest 14: Memory Churn")
+let x = 0
+while (x < 50) {
+    let churn1 = x
+    let churn2 = x * 2
+    let churn3 = churn1 + churn2
+    let churn4 = "Value: " + churn3
+    x = x + 1
+}
+println("Memory churn completed")
+
+println("\n=== ALL INTENSIVE TESTS COMPLETE ===")
+println("If you see this, the interpreter handled heavy stress!")

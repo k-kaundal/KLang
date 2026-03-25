@@ -1,0 +1,151 @@
+// Comprehensive Print/Println Test Suite
+// Test 1: Basic data types
+println("=== Test 1: Basic Data Types ===");
+print("String: "); println("Hello, World!");
+print("Number: "); println(42);
+print("Float: "); println(3.14159);
+print("Boolean true: "); println(true);
+print("Boolean false: "); println(false);
+print("Null: "); println(null);
+print("Undefined: "); println(undefined);
+
+// Test 2: Multiple arguments (if supported)
+println("\n=== Test 2: Multiple Arguments ===");
+println("Multiple", "arguments", "test", 1, 2, 3);
+
+// Test 3: Large strings
+println("\n=== Test 3: Large Strings ===");
+let largeString = "A".repeat(1000);
+println("Large string (1000 chars): " + largeString.length + " characters");
+println(largeString);
+
+let veryLargeString = "B".repeat(10000);
+println("Very large string (10000 chars): " + veryLargeString.length + " characters");
+println(veryLargeString);
+
+// Test 4: Unicode and special characters
+println("\n=== Test 4: Unicode and Special Characters ===");
+println("Unicode: Hello 世界 🌍 🎉");
+println("Emojis: 😀 😃 😄 😁 🚀 🔥 💯");
+println("Special chars: \n\t\r\"'\\");
+println("Math symbols: ∑ ∫ ∂ √ ∞ π");
+println("Arrows: ← → ↑ ↓ ↔ ⇒");
+println("Currency: $ € £ ¥ ₹");
+
+// Test 5: Empty and whitespace strings
+println("\n=== Test 5: Empty and Whitespace ===");
+println("");
+println("   ");
+println("\t\t\t");
+println("\n\n\n");
+
+// Test 6: Numbers edge cases
+println("\n=== Test 6: Number Edge Cases ===");
+println("Zero: ", 0);
+println("Negative: ", -42);
+println("Large number: ", 9007199254740991);
+println("Small decimal: ", 0.0000000001);
+println("Negative decimal: ", -3.14159);
+println("Scientific: ", 1e10);
+println("Negative scientific: ", -1e-10);
+
+// Test 7: String concatenation
+println("\n=== Test 7: String Concatenation ===");
+let str1 = "Hello";
+let str2 = "World";
+println(str1 + " " + str2);
+println("Number concat: " + 42);
+println("Boolean concat: " + true);
+
+// Test 8: Nested structures (arrays)
+println("\n=== Test 8: Arrays ===");
+let arr = [1, 2, 3, 4, 5];
+println("Array: ", arr);
+let nestedArr = [1, [2, 3], [4, [5, 6]]];
+println("Nested array: ", nestedArr);
+let mixedArr = [1, "two", true, null, undefined];
+println("Mixed array: ", mixedArr);
+
+// Test 9: Objects
+println("\n=== Test 9: Objects ===");
+let obj = {name: "John", age: 30, active: true};
+println("Object: ", obj);
+let nestedObj = {
+    user: {
+        name: "Jane",
+        address: {
+            city: "NYC",
+            zip: 10001
+        }
+    }
+};
+println("Nested object: ", nestedObj);
+
+// Test 10: Rapid successive prints
+println("\n=== Test 10: Rapid Successive Prints ===");
+for (let i = 0; i < 100; i++) {
+    print(i);
+    if (i < 99) print(", ");
+}
+println("");
+
+// Test 11: Mixed print and println
+println("\n=== Test 11: Mixed Print and Println ===");
+print("Start");
+print(" middle ");
+print("end");
+println(" - newline");
+
+// Test 12: Long line
+println("\n=== Test 12: Long Line ===");
+let longLine = "";
+for (let i = 0; i < 200; i++) {
+    longLine += "Word" + i + " ";
+}
+println(longLine);
+
+// Test 13: Special escape sequences
+println("\n=== Test 13: Escape Sequences ===");
+println("Tab:\tTabbed");
+println("Newline:\nNew line");
+println("Quote: \"quoted\"");
+println("Apostrophe: 'quoted'");
+println("Backslash: \\");
+
+// Test 14: Print expressions
+println("\n=== Test 14: Expressions ===");
+println(2 + 2);
+println(10 - 5);
+println(3 * 4);
+println(20 / 4);
+println(10 % 3);
+println(2 ** 8);
+
+// Test 15: Print function results
+println("\n=== Test 15: Function Results ===");
+function getMessage() {
+    return "Hello from function";
+}
+println(getMessage());
+
+// Test 16: Null and undefined variations
+println("\n=== Test 16: Null/Undefined Variations ===");
+let nullVar = null;
+let undefinedVar;
+println("Null variable: ", nullVar);
+println("Undefined variable: ", undefinedVar);
+println("Direct null: ", null);
+println("Direct undefined: ", undefined);
+
+// Test 17: Zero-width and invisible characters
+println("\n=== Test 17: Special Unicode ===");
+println("Zero-width space: |​|");
+println("Non-breaking space: | |");
+
+// Test 18: Binary and hex strings
+println("\n=== Test 18: Binary/Hex (as strings) ===");
+println("Binary: 0b101010");
+println("Hex: 0xFF");
+println("Octal: 0o777");
+
+println("\n=== All Print Tests Complete ===");

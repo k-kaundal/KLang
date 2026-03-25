@@ -1,0 +1,170 @@
+// Basic Memory Test - Using KLang syntax
+println("=== Basic Memory Tests ===")
+
+// Test 1: Variable creation in loop
+println("Test 1: Variable Creation Loop")
+let count = 0
+while (count < 100) {
+    let temp = count
+    count = count + 1
+}
+println("Created 100 variables in loop")
+
+// Test 2: String concatenation
+println("Test 2: String Concatenation")
+let baseStr = ""
+let idx = 0
+while (idx < 100) {
+    baseStr = baseStr + "A"
+    idx = idx + 1
+}
+println("String length: 100")
+
+// Test 3: Function calls
+println("Test 3: Function Calls")
+fn testFunc(n: int) -> int {
+    return n * 2
+}
+let j = 0
+let result = 0
+while (j < 100) {
+    result = testFunc(j)
+    j = j + 1
+}
+println("Called function 100 times")
+
+// Test 4: Nested function calls
+println("Test 4: Nested Functions")
+fn outer(x: int) -> int {
+    fn inner(y: int) -> int {
+        return y + 1
+    }
+    return inner(x)
+}
+let k = 0
+while (k < 50) {
+    let val = outer(k)
+    k = k + 1
+}
+println("Nested function calls complete")
+
+// Test 5: Recursion
+println("Test 5: Recursion")
+fn factorial(n: int) -> int {
+    if (n <= 1) {
+        return 1
+    }
+    return n * factorial(n - 1)
+}
+let fact5 = factorial(5)
+let fact10 = factorial(10)
+println("Factorial(5) calculated")
+println(fact5)
+println("Factorial(10) calculated")
+println(fact10)
+
+// Test 6: Multiple variables
+println("Test 6: Multiple Variables")
+let a = 1
+let b = 2
+let c = 3
+let d = 4
+let e = 5
+let f = 6
+let g = 7
+let h = 8
+let total = a + b + c + d + e + f + g + h
+println("Sum of 8 variables:")
+println(total)
+
+// Test 7: String operations
+println("Test 7: String Operations")
+let base = "Hello"
+let greeting1 = base + " World"
+let greeting2 = base + " There"
+let greeting3 = base + " Everyone"
+println(greeting1)
+println(greeting2)
+println(greeting3)
+
+// Test 8: Scope tests
+println("Test 8: Scope Test")
+let outer_var = "outer"
+fn scopeTest() -> string {
+    let inner_var = "inner"
+    return inner_var
+}
+let m = 0
+while (m < 50) {
+    let temp_result = scopeTest()
+    m = m + 1
+}
+println("Scope test complete")
+
+// Test 9: Boolean operations
+println("Test 9: Boolean Operations")
+let n = 0
+while (n < 100) {
+    let isEven = (n % 2) == 0
+    let isOdd = !isEven
+    n = n + 1
+}
+println("Boolean operations complete")
+
+// Test 10: Large operation count
+println("Test 10: Large Operation Count")
+let p = 0
+while (p < 1000) {
+    let temp1 = p
+    let temp2 = temp1 + 1
+    let temp3 = temp2 * 2
+    p = p + 1
+}
+println("1000 iterations complete")
+
+// Test 11: Deep recursion
+println("Test 11: Deep Recursion")
+fn deepRecursion(n: int, max: int) -> int {
+    if (n >= max) {
+        return n
+    }
+    return deepRecursion(n + 1, max)
+}
+let deepResult = deepRecursion(0, 100)
+println("Deep recursion result:")
+println(deepResult)
+
+// Test 12: String building
+println("Test 12: String Building")
+let q = 0
+while (q < 10) {
+    let tempStr = "String number " + q
+    q = q + 1
+}
+println("Built 10 strings")
+
+// Test 13: Nested loops
+println("Test 13: Nested Loops")
+let r = 0
+while (r < 10) {
+    let s = 0
+    while (s < 10) {
+        let prod = r * s
+        s = s + 1
+    }
+    r = r + 1
+}
+println("Nested loops complete")
+
+// Test 14: Rapid allocation/deallocation
+println("Test 14: Rapid Allocation")
+let iteration = 0
+while (iteration < 10) {
+    let tempVal1 = iteration
+    let tempVal2 = iteration * 2
+    let tempVal3 = iteration + tempVal2
+    iteration = iteration + 1
+}
+println("Rapid allocation complete")
+
+println("=== Basic Memory Tests Complete ===")
