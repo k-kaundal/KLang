@@ -23,7 +23,7 @@ This directory contains comprehensive documentation for Data Structures and Algo
 
 #### Phase 3: Advanced Data Structures
 - **10_tries.md** ⏳ - Prefix trees, autocomplete
-- **11_advanced_structures.md** ⏳ - Segment trees, disjoint sets
+- **11_advanced_structures.md** ✅ - Segment trees, Fenwick trees, union-find, suffix arrays, bloom filters, skip lists
 
 ### Algorithms
 

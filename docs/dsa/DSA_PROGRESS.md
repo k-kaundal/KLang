@@ -124,9 +124,64 @@ Comprehensive Data Structures and Algorithms documentation for KLang, covering b
 - **Examples**: ⏳ Planned
 
 #### 11. Advanced Structures
-- **Documentation**: ⏳ Planned
+- **Documentation**: ✅ Complete (`docs/dsa/data-structures/11_advanced_structures.md`)
 - **Tests**: ⏳ Planned
 - **Examples**: ⏳ Planned
+- **Status**: Documentation complete
+
+**Topics Covered:**
+- Segment Trees
+  - Range query problems (sum, min, max)
+  - Build segment tree - O(n)
+  - Range query - O(log n)
+  - Point update - O(log n)
+  - Range update with lazy propagation
+- Fenwick Tree (Binary Indexed Tree)
+  - Prefix sum queries - O(log n)
+  - Point update - O(log n)
+  - 2D Fenwick tree
+  - Space-efficient design
+- Union-Find (Disjoint Set Union)
+  - Union and Find operations - O(α(n))
+  - Path compression optimization
+  - Union by rank/size
+  - Graph connectivity applications
+  - Component counting
+- Suffix Array
+  - String pattern matching
+  - Construction algorithms - O(n log n)
+  - LCP (Longest Common Prefix) array
+  - Finding repeated substrings
+- Bloom Filter
+  - Probabilistic membership testing
+  - Space-efficient design
+  - Hash function management
+  - False positive rate calculation
+- Skip List
+  - Probabilistic balanced search structure
+  - Fast search, insert, delete - O(log n) average
+  - Level management
+  - Alternative to balanced trees
+- Interview problems (12 problems)
+  - Range Sum Query - Mutable (Segment Tree)
+  - Range Sum Query 2D - Mutable (Fenwick Tree)
+  - Number of Islands II (Union-Find)
+  - Redundant Connection (Union-Find)
+  - Count of Smaller Numbers After Self (Fenwick Tree)
+  - Longest Repeated Substring (Suffix Array)
+  - Friend Circles (Union-Find)
+  - Accounts Merge (Union-Find)
+  - Range Minimum Query (Segment Tree)
+  - Kth Largest Element in Stream (Fenwick Tree)
+  - Pattern Matching (Suffix Array)
+  - Checking Membership (Bloom Filter)
+- Time and space complexity analysis
+- Applications and use cases
+- Decision guide for choosing structures
+
+**Documentation Size**: ~51KB, 1,952 lines
+**Algorithms**: 6 advanced data structures with complete implementations
+**Interview Problems**: 12 real-world problems
 
 ### ⏳ Phase 4: Basic Algorithms
 
@@ -187,12 +242,12 @@ Comprehensive Data Structures and Algorithms documentation for KLang, covering b
 ## Statistics
 
 ### Completed
-- **Documentation Files**: 3 (README, Arrays, Strings)
+- **Documentation Files**: 4 (README, Arrays, Strings, Advanced Structures)
 - **Test Files**: 1 (Arrays)
 - **Example Files**: 0
-- **Total Lines**: ~47,000
+- **Total Lines**: ~50,000+
 - **Test Cases**: 25+
-- **Algorithms Implemented**: 20+
+- **Algorithms Implemented**: 26+ (including 6 advanced data structures)
 
 ### Planned
 - **Documentation Files**: 18 more
@@ -215,6 +270,12 @@ Comprehensive Data Structures and Algorithms documentation for KLang, covering b
 | Binary Tree | O(n) | O(n) | O(n) | O(n) | O(n) |
 | BST (balanced) | O(log n) | O(log n) | O(log n) | O(log n) | O(n) |
 | Heap | O(1) max | O(n) | O(log n) | O(log n) | O(n) |
+| Segment Tree | O(log n) | O(log n) | O(log n) | N/A | O(n) |
+| Fenwick Tree | O(log n) | O(log n) | O(log n) | N/A | O(n) |
+| Union-Find | N/A | O(α(n)) | O(α(n)) | N/A | O(n) |
+| Suffix Array | O(n) | O(m log n) | N/A | N/A | O(n) |
+| Bloom Filter | N/A | O(k) | O(k) | N/A | O(m) |
+| Skip List | O(log n) | O(log n) | O(log n) | O(log n) | O(n log n) |
 
 ### Sorting Algorithms
 
@@ -244,7 +305,7 @@ docs/dsa/
   │   ├── 08_heaps.md                    ⏳ Planned
   │   ├── 09_graphs.md                   ⏳ Planned
   │   ├── 10_tries.md                    ⏳ Planned
-  │   └── 11_advanced_structures.md      ⏳ Planned
+  │   └── 11_advanced_structures.md      ✅ Complete
   └── algorithms/
       ├── 01_sorting.md                  ⏳ Planned
       ├── 02_searching.md                ⏳ Planned
