@@ -28,7 +28,7 @@ This directory contains comprehensive documentation for Data Structures and Algo
 ### Algorithms
 
 #### Phase 1: Basic Algorithms
-- **01_sorting.md** ⏳ - Bubble, insertion, merge, quick, heap sort
+- **01_sorting.md** ✅ - Bubble, selection, insertion, merge, quick, heap, counting, radix sort
 - **02_searching.md** ⏳ - Linear, binary, interpolation search
 - **03_recursion.md** ⏳ - Basics, backtracking, memoization
 
@@ -421,5 +421,5 @@ When adding new DSA documentation:
 
 *Master data structures and algorithms to become a better programmer!*
 
-*Last Updated: 2026-03-25*
-*Version: 1.0*
+*Last Updated: 2026-04-09*
+*Version: 1.1*

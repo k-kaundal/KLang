@@ -183,22 +183,31 @@ Comprehensive Data Structures and Algorithms documentation for KLang, covering b
 **Algorithms**: 6 advanced data structures with complete implementations
 **Interview Problems**: 12 real-world problems
 
-### ⏳ Phase 4: Basic Algorithms
+### ✅ Phase 4: Basic Algorithms (Started)
 
 #### 01. Sorting Algorithms
-- **Documentation**: ⏳ Planned
+- **Documentation**: ✅ Complete (`docs/dsa/algorithms/01_sorting.md`)
 - **Tests**: ⏳ Planned
 - **Examples**: ⏳ Planned
+- **Status**: Comprehensive documentation complete
 
-**Algorithms to Cover:**
-- Bubble Sort - O(n²)
-- Selection Sort - O(n²)
-- Insertion Sort - O(n²)
-- Merge Sort - O(n log n)
-- Quick Sort - O(n log n) average
-- Heap Sort - O(n log n)
-- Counting Sort - O(n+k)
-- Radix Sort - O(d×n)
+**Topics Covered:**
+- Introduction to sorting and stability
+- Bubble Sort - O(n²) - Stable, In-place
+- Selection Sort - O(n²) - Unstable, In-place
+- Insertion Sort - O(n²) best O(n) - Stable, In-place, Adaptive
+- Merge Sort - O(n log n) - Stable, Not in-place
+- Quick Sort - O(n log n) average - Unstable, In-place
+- Heap Sort - O(n log n) - Unstable, In-place
+- Counting Sort - O(n+k) - Stable, Non-comparison
+- Radix Sort - O(d×(n+k)) - Stable, Non-comparison
+- Comparison table and decision guide
+- 12 interview problems with solutions
+- Best practices and optimization techniques
+
+**Documentation Size**: 60KB, 2,518 lines
+**Algorithms**: 9 complete implementations with variants
+**Interview Problems**: 12 solved with detailed explanations
 
 #### 02. Searching Algorithms
 - **Documentation**: ⏳ Planned
