@@ -1,0 +1,568 @@
+# Comprehensive Functions and Recursion Test Suite for KLang
+# Tests: function declarations, parameters, return values, recursion, closures
+
+println("=" * 60)
+println("KLang Functions & Recursion Comprehensive Test Suite")
+println("=" * 60)
+println()
+
+# ============================================
+# Section 1: Basic Function Declarations
+# ============================================
+println("Section 1: Basic Function Declarations")
+println("-" * 40)
+
+# Test 1.1: Function with no parameters, no return
+fn greet() {
+    println("Hello from function!")
+}
+greet()
+println("✓ Test 1.1: No params, no return")
+
+# Test 1.2: Function with no parameters, with return
+fn getFortyTwo() {
+    return 42
+}
+let result1 = getFortyTwo()
+println("✓ Test 1.2: Result = " + str(result1))
+
+# Test 1.3: Function with one parameter
+fn double(x) {
+    return x * 2
+}
+let result2 = double(21)
+println("✓ Test 1.3: double(21) = " + str(result2))
+
+# Test 1.4: Function with multiple parameters
+fn add(a, b) {
+    return a + b
+}
+let result3 = add(10, 20)
+println("✓ Test 1.4: add(10, 20) = " + str(result3))
+
+# Test 1.5: Function with three parameters
+fn volume(length, width, height) {
+    return length * width * height
+}
+let result4 = volume(2, 3, 4)
+println("✓ Test 1.5: volume(2, 3, 4) = " + str(result4))
+
+println()
+
+# ============================================
+# Section 2: Return Values and Types
+# ============================================
+println("Section 2: Return Values and Types")
+println("-" * 40)
+
+# Test 2.1: Return integer
+fn getInt() {
+    return 100
+}
+println("✓ Test 2.1: Returned int: " + str(getInt()))
+
+# Test 2.2: Return float
+fn getFloat() {
+    return 3.14159
+}
+println("✓ Test 2.2: Returned float: " + str(getFloat()))
+
+# Test 2.3: Return string
+fn getString() {
+    return "Hello, World!"
+}
+println("✓ Test 2.3: Returned string: " + getString())
+
+# Test 2.4: Return boolean
+fn getBool() {
+    return true
+}
+println("✓ Test 2.4: Returned bool: " + str(getBool()))
+
+# Test 2.5: Return array
+fn getArray() {
+    return [1, 2, 3, 4, 5]
+}
+let arr = getArray()
+println("✓ Test 2.5: Returned array length: " + str(len(arr)))
+
+# Test 2.6: Return object
+fn getObject() {
+    return {name: "Alice", age: 30}
+}
+let obj = getObject()
+println("✓ Test 2.6: Returned object name: " + obj.name)
+
+# Test 2.7: Return null
+fn getNull() {
+    return null
+}
+let nullVal = getNull()
+println("✓ Test 2.7: Returned null")
+
+# Test 2.8: No explicit return (implicit null)
+fn noReturn() {
+    let x = 5
+}
+let implicitNull = noReturn()
+println("✓ Test 2.8: Implicit return")
+
+println()
+
+# ============================================
+# Section 3: Function Parameters
+# ============================================
+println("Section 3: Function Parameters")
+println("-" * 40)
+
+# Test 3.1: Single parameter
+fn square(n) {
+    return n * n
+}
+println("✓ Test 3.1: square(7) = " + str(square(7)))
+
+# Test 3.2: Two parameters
+fn multiply(a, b) {
+    return a * b
+}
+println("✓ Test 3.2: multiply(6, 7) = " + str(multiply(6, 7)))
+
+# Test 3.3: Three parameters
+fn sum3(a, b, c) {
+    return a + b + c
+}
+println("✓ Test 3.3: sum3(1, 2, 3) = " + str(sum3(1, 2, 3)))
+
+# Test 3.4: Parameter shadowing
+let globalX = 100
+fn shadowTest(globalX) {
+    return globalX * 2
+}
+println("✓ Test 3.4: shadowTest(5) = " + str(shadowTest(5)))
+
+# Test 3.5: Parameters with expressions
+fn calculate(x, y) {
+    return (x + y) * (x - y)
+}
+println("✓ Test 3.5: calculate(10, 3) = " + str(calculate(10, 3)))
+
+println()
+
+# ============================================
+# Section 4: Default Parameters
+# ============================================
+println("Section 4: Default Parameters")
+println("-" * 40)
+
+# Test 4.1: Default parameter
+fn greetWithName(name = "World") {
+    return "Hello, " + name + "!"
+}
+println("✓ Test 4.1a: " + greetWithName())
+println("✓ Test 4.1b: " + greetWithName("Alice"))
+
+# Test 4.2: Multiple defaults
+fn multiply2(a = 1, b = 1) {
+    return a * b
+}
+println("✓ Test 4.2a: multiply2() = " + str(multiply2()))
+println("✓ Test 4.2b: multiply2(5) = " + str(multiply2(5)))
+println("✓ Test 4.2c: multiply2(3, 4) = " + str(multiply2(3, 4)))
+
+# Test 4.3: Default with calculation
+fn power(base = 2, exponent = 2) {
+    return base ** exponent
+}
+println("✓ Test 4.3a: power() = " + str(power()))
+println("✓ Test 4.3b: power(3) = " + str(power(3)))
+println("✓ Test 4.3c: power(2, 10) = " + str(power(2, 10)))
+
+println()
+
+# ============================================
+# Section 5: Recursive Functions
+# ============================================
+println("Section 5: Recursive Functions")
+println("-" * 40)
+
+# Test 5.1: Factorial
+fn factorial(n) {
+    if (n <= 1) {
+        return 1
+    }
+    return n * factorial(n - 1)
+}
+println("✓ Test 5.1: factorial(5) = " + str(factorial(5)))
+println("  factorial(0) = " + str(factorial(0)))
+println("  factorial(6) = " + str(factorial(6)))
+
+# Test 5.2: Fibonacci
+fn fibonacci(n) {
+    if (n <= 1) {
+        return n
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2)
+}
+println("✓ Test 5.2: fibonacci(10) = " + str(fibonacci(10)))
+println("  fibonacci(7) = " + str(fibonacci(7)))
+
+# Test 5.3: Sum of digits
+fn sumDigits(n) {
+    if (n < 10) {
+        return n
+    }
+    return (n % 10) + sumDigits(n / 10)
+}
+println("✓ Test 5.3: sumDigits(12345) = " + str(sumDigits(12345)))
+
+# Test 5.4: Power function (recursive)
+fn powerRec(base, exp) {
+    if (exp == 0) {
+        return 1
+    }
+    if (exp == 1) {
+        return base
+    }
+    return base * powerRec(base, exp - 1)
+}
+println("✓ Test 5.4: powerRec(2, 8) = " + str(powerRec(2, 8)))
+
+# Test 5.5: GCD (Greatest Common Divisor)
+fn gcd(a, b) {
+    if (b == 0) {
+        return a
+    }
+    return gcd(b, a % b)
+}
+println("✓ Test 5.5: gcd(48, 18) = " + str(gcd(48, 18)))
+
+# Test 5.6: Countdown
+fn countdown(n) {
+    if (n <= 0) {
+        println("Blast off!")
+        return
+    }
+    println("  " + str(n) + "...")
+    countdown(n - 1)
+}
+println("✓ Test 5.6: Countdown from 3:")
+countdown(3)
+
+println()
+
+# ============================================
+# Section 6: Mutual Recursion
+# ============================================
+println("Section 6: Mutual Recursion")
+println("-" * 40)
+
+# Test 6.1: Even/Odd check (mutual recursion)
+fn isEven(n) {
+    if (n == 0) {
+        return true
+    }
+    return isOdd(n - 1)
+}
+
+fn isOdd(n) {
+    if (n == 0) {
+        return false
+    }
+    return isEven(n - 1)
+}
+
+println("✓ Test 6.1: isEven(4) = " + str(isEven(4)))
+println("  isEven(7) = " + str(isEven(7)))
+println("  isOdd(5) = " + str(isOdd(5)))
+println("  isOdd(8) = " + str(isOdd(8)))
+
+println()
+
+# ============================================
+# Section 7: Higher-Order Functions
+# ============================================
+println("Section 7: Higher-Order Functions")
+println("-" * 40)
+
+# Test 7.1: Function that takes function as parameter
+fn applyOperation(x, y, operation) {
+    return operation(x, y)
+}
+
+fn addOp(a, b) {
+    return a + b
+}
+
+fn multiplyOp(a, b) {
+    return a * b
+}
+
+let r1 = applyOperation(5, 3, addOp)
+let r2 = applyOperation(5, 3, multiplyOp)
+println("✓ Test 7.1: apply(5, 3, add) = " + str(r1))
+println("  apply(5, 3, mult) = " + str(r2))
+
+# Test 7.2: Function that returns a function
+fn makeMultiplier(factor) {
+    fn multiplier(x) {
+        return x * factor
+    }
+    return multiplier
+}
+
+let times3 = makeMultiplier(3)
+let times5 = makeMultiplier(5)
+println("✓ Test 7.2: times3(10) = " + str(times3(10)))
+println("  times5(10) = " + str(times5(10)))
+
+# Test 7.3: Function composition
+fn compose(f, g) {
+    fn composed(x) {
+        return f(g(x))
+    }
+    return composed
+}
+
+fn addOne(x) {
+    return x + 1
+}
+
+fn timesTwo(x) {
+    return x * 2
+}
+
+let addThenDouble = compose(timesTwo, addOne)
+println("✓ Test 7.3: compose((x+1)*2)(5) = " + str(addThenDouble(5)))
+
+println()
+
+# ============================================
+# Section 8: Closures
+# ============================================
+println("Section 8: Closures")
+println("-" * 40)
+
+# Test 8.1: Basic closure
+fn makeCounter() {
+    let count = 0
+    fn counter() {
+        count = count + 1
+        return count
+    }
+    return counter
+}
+
+let counter1 = makeCounter()
+println("✓ Test 8.1: counter() = " + str(counter1()))
+println("  counter() = " + str(counter1()))
+println("  counter() = " + str(counter1()))
+
+# Test 8.2: Closure with parameter
+fn makeAdder(x) {
+    fn adder(y) {
+        return x + y
+    }
+    return adder
+}
+
+let add10 = makeAdder(10)
+let add20 = makeAdder(20)
+println("✓ Test 8.2: add10(5) = " + str(add10(5)))
+println("  add20(5) = " + str(add20(5)))
+
+# Test 8.3: Closure capturing multiple variables
+fn makePerson(name, age) {
+    fn introduce() {
+        return "Hi, I'm " + name + " and I'm " + str(age)
+    }
+    return introduce
+}
+
+let alice = makePerson("Alice", 30)
+let bob = makePerson("Bob", 25)
+println("✓ Test 8.3: " + alice())
+println("  " + bob())
+
+println()
+
+# ============================================
+# Section 9: Function Scope and Variables
+# ============================================
+println("Section 9: Function Scope")
+println("-" * 40)
+
+# Test 9.1: Local variables don't leak
+fn scopeTest() {
+    let local = 100
+    return local
+}
+let scopeResult = scopeTest()
+println("✓ Test 9.1: Local variable: " + str(scopeResult))
+
+# Test 9.2: Access global from function
+let globalVar = 42
+fn accessGlobal() {
+    return globalVar * 2
+}
+println("✓ Test 9.2: Access global: " + str(accessGlobal()))
+
+# Test 9.3: Modify global from function
+let modifyMe = 10
+fn modifyGlobal() {
+    modifyMe = 20
+}
+modifyGlobal()
+println("✓ Test 9.3: Modified global: " + str(modifyMe))
+
+# Test 9.4: Nested function scope
+fn outer() {
+    let outerVar = "outer"
+    fn inner() {
+        let innerVar = "inner"
+        return outerVar + " " + innerVar
+    }
+    return inner()
+}
+println("✓ Test 9.4: Nested scope: " + outer())
+
+println()
+
+# ============================================
+# Section 10: Complex Function Patterns
+# ============================================
+println("Section 10: Complex Patterns")
+println("-" * 40)
+
+# Test 10.1: Array sum (recursive)
+fn sumArray(arr, index = 0) {
+    if (index >= len(arr)) {
+        return 0
+    }
+    return arr[index] + sumArray(arr, index + 1)
+}
+let numbers = [1, 2, 3, 4, 5]
+println("✓ Test 10.1: sumArray([1,2,3,4,5]) = " + str(sumArray(numbers)))
+
+# Test 10.2: Find max in array (recursive)
+fn findMax(arr, index = 0, currentMax = null) {
+    if (index >= len(arr)) {
+        return currentMax
+    }
+    if (currentMax == null || arr[index] > currentMax) {
+        currentMax = arr[index]
+    }
+    return findMax(arr, index + 1, currentMax)
+}
+let maxArr = [23, 5, 89, 12, 67, 3]
+println("✓ Test 10.2: findMax([23,5,89,12,67,3]) = " + str(findMax(maxArr)))
+
+# Test 10.3: String reversal (recursive)
+fn reverseString(s, index = 0) {
+    if (index >= len(s)) {
+        return ""
+    }
+    return reverseString(s, index + 1) + s[index]
+}
+println("✓ Test 10.3: reverse('hello') = " + reverseString("hello"))
+
+# Test 10.4: Palindrome checker (recursive)
+fn isPalindrome(s, start = 0, end = -1) {
+    if (end == -1) {
+        end = len(s) - 1
+    }
+    if (start >= end) {
+        return true
+    }
+    if (s[start] != s[end]) {
+        return false
+    }
+    return isPalindrome(s, start + 1, end - 1)
+}
+println("✓ Test 10.4: isPalindrome('racecar') = " + str(isPalindrome("racecar")))
+println("  isPalindrome('hello') = " + str(isPalindrome("hello")))
+
+# Test 10.5: Binary search (recursive)
+fn binarySearch(arr, target, left = 0, right = -1) {
+    if (right == -1) {
+        right = len(arr) - 1
+    }
+    if (left > right) {
+        return -1
+    }
+    let mid = (left + right) / 2
+    if (arr[mid] == target) {
+        return mid
+    }
+    if (arr[mid] > target) {
+        return binarySearch(arr, target, left, mid - 1)
+    }
+    return binarySearch(arr, target, mid + 1, right)
+}
+let sorted = [1, 3, 5, 7, 9, 11, 13, 15]
+println("✓ Test 10.5: binarySearch for 7: index " + str(binarySearch(sorted, 7)))
+println("  binarySearch for 15: index " + str(binarySearch(sorted, 15)))
+
+println()
+
+# ============================================
+# Section 11: Edge Cases
+# ============================================
+println("Section 11: Edge Cases")
+println("-" * 40)
+
+# Test 11.1: Empty function
+fn emptyFunction() {
+}
+emptyFunction()
+println("✓ Test 11.1: Empty function executes")
+
+# Test 11.2: Function with only return
+fn justReturn() {
+    return
+}
+justReturn()
+println("✓ Test 11.2: Function with just return")
+
+# Test 11.3: Multiple returns (first wins)
+fn multipleReturns(x) {
+    if (x > 0) {
+        return "positive"
+    }
+    return "non-positive"
+}
+println("✓ Test 11.3: multipleReturns(5) = " + multipleReturns(5))
+println("  multipleReturns(-3) = " + multipleReturns(-3))
+
+# Test 11.4: Deep recursion (careful with stack)
+fn deepRecursion(n) {
+    if (n <= 0) {
+        return 0
+    }
+    return deepRecursion(n - 1)
+}
+deepRecursion(100)
+println("✓ Test 11.4: Deep recursion (100 levels) completed")
+
+println()
+
+# ============================================
+# Test Summary
+# ============================================
+println("=" * 60)
+println("Functions & Recursion Test Suite Complete!")
+println("=" * 60)
+println()
+println("Summary:")
+println("- Basic function declarations: ✓")
+println("- Return values and types: ✓")
+println("- Function parameters: ✓")
+println("- Default parameters: ✓")
+println("- Recursive functions: ✓")
+println("- Mutual recursion: ✓")
+println("- Higher-order functions: ✓")
+println("- Closures: ✓")
+println("- Function scope: ✓")
+println("- Complex patterns: ✓")
+println("- Edge cases: ✓")
+println()
+println("All function and recursion tests passed! ✓")

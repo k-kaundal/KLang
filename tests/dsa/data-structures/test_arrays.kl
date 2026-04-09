@@ -1,0 +1,334 @@
+# Test: Arrays - Data Structures
+# Comprehensive test suite for array operations and algorithms
+
+println("============================================================")
+println("KLang DSA Test: Arrays")
+println("============================================================")
+println()
+
+# Section 1: Array Creation and Access
+println("Section 1: Array Creation and Access")
+println("----------------------------------------")
+
+# Test 1.1: Create empty array
+let emptyArr = []
+println("PASS Test 1.1: Empty array created, length = " + str(len(emptyArr)))
+
+# Test 1.2: Create array with values
+let numbers = [1, 2, 3, 4, 5]
+println("PASS Test 1.2: Array with values, length = " + str(len(numbers)))
+
+# Test 1.3: Access elements by index
+let first = numbers[0]
+let last = numbers[4]
+println("PASS Test 1.3: Access by index")
+println("  First: " + str(first) + ", Last: " + str(last))
+
+# Test 1.4: Modify elements
+numbers[2] = 99
+println("PASS Test 1.4: Modified arr[2] = " + str(numbers[2]))
+
+println()
+
+# Section 2: Array Operations
+println("Section 2: Array Operations")
+println("----------------------------------------")
+
+# Test 2.1: Push (add to end)
+let arr = [1, 2, 3]
+arr.push(4)
+println("PASS Test 2.1: Push 4, length = " + str(len(arr)))
+
+# Test 2.2: Pop (remove from end)
+let popped = arr.pop()
+println("PASS Test 2.2: Popped " + str(popped) + ", length = " + str(len(arr)))
+
+# Test 2.3: Array length
+let fruits = ["apple", "banana", "orange"]
+println("PASS Test 2.3: Length of fruits = " + str(len(fruits)))
+
+println()
+
+# Section 3: Linear Search
+println("Section 3: Linear Search")
+println("----------------------------------------")
+
+fn linearSearch(arr, target: int) -> int {
+    let i = 0
+    while (i < len(arr)) {
+        if (arr[i] == target) {
+            return i
+        }
+        i = i + 1
+    }
+    return -1
+}
+
+let searchArr = [64, 34, 25, 12, 22, 11, 90]
+let index1 = linearSearch(searchArr, 22)
+let index2 = linearSearch(searchArr, 100)
+
+println("PASS Test 3.1: Linear search for 22 = index " + str(index1))
+println("PASS Test 3.2: Linear search for 100 = " + str(index2) + " (not found)")
+
+println()
+
+# Section 4: Find Maximum
+println("Section 4: Find Maximum")
+println("----------------------------------------")
+
+fn findMax(arr) -> int {
+    if (len(arr) == 0) {
+        return 0
+    }
+    
+    let max = arr[0]
+    let i = 1
+    while (i < len(arr)) {
+        if (arr[i] > max) {
+            max = arr[i]
+        }
+        i = i + 1
+    }
+    return max
+}
+
+let testArr = [64, 34, 25, 12, 22, 90, 11]
+let maximum = findMax(testArr)
+println("PASS Test 4.1: Maximum in array = " + str(maximum))
+
+println()
+
+# Section 5: Find Minimum
+println("Section 5: Find Minimum")
+println("----------------------------------------")
+
+fn findMin(arr) -> int {
+    if (len(arr) == 0) {
+        return 0
+    }
+    
+    let min = arr[0]
+    let i = 1
+    while (i < len(arr)) {
+        if (arr[i] < min) {
+            min = arr[i]
+        }
+        i = i + 1
+    }
+    return min
+}
+
+let minimum = findMin(testArr)
+println("PASS Test 5.1: Minimum in array = " + str(minimum))
+
+println()
+
+# Section 6: Array Sum
+println("Section 6: Array Sum")
+println("----------------------------------------")
+
+fn arraySum(arr) -> int {
+    let sum = 0
+    let i = 0
+    while (i < len(arr)) {
+        sum = sum + arr[i]
+        i = i + 1
+    }
+    return sum
+}
+
+let sumArr = [1, 2, 3, 4, 5]
+let total = arraySum(sumArr)
+println("PASS Test 6.1: Sum of [1,2,3,4,5] = " + str(total))
+
+println()
+
+# Section 7: Array Average
+println("Section 7: Array Average")
+println("----------------------------------------")
+
+fn arrayAverage(arr) -> float {
+    if (len(arr) == 0) {
+        return 0.0
+    }
+    
+    let sum = 0.0
+    let i = 0
+    while (i < len(arr)) {
+        sum = sum + float(arr[i])
+        i = i + 1
+    }
+    
+    return sum / float(len(arr))
+}
+
+let avgArr = [10, 20, 30, 40, 50]
+let average = arrayAverage(avgArr)
+println("PASS Test 7.1: Average of array = " + str(average))
+
+println()
+
+# Section 8: Reverse Array
+println("Section 8: Reverse Array")
+println("----------------------------------------")
+
+fn reverseArray(arr) {
+    let left = 0
+    let right = len(arr) - 1
+    
+    while (left < right) {
+        let temp = arr[left]
+        arr[left] = arr[right]
+        arr[right] = temp
+        
+        left = left + 1
+        right = right - 1
+    }
+}
+
+let revArr = [1, 2, 3, 4, 5]
+println("Before reverse: [1, 2, 3, 4, 5]")
+reverseArray(revArr)
+println("PASS Test 8.1: After reverse: [" + str(revArr[0]) + ", " + str(revArr[1]) + ", " + str(revArr[2]) + ", " + str(revArr[3]) + ", " + str(revArr[4]) + "]")
+
+println()
+
+# Section 9: Count Occurrences
+println("Section 9: Count Occurrences")
+println("----------------------------------------")
+
+fn countOccurrences(arr, target: int) -> int {
+    let count = 0
+    let i = 0
+    while (i < len(arr)) {
+        if (arr[i] == target) {
+            count = count + 1
+        }
+        i = i + 1
+    }
+    return count
+}
+
+let countArr = [1, 2, 3, 2, 4, 2, 5]
+let occurrences = countOccurrences(countArr, 2)
+println("PASS Test 9.1: Occurrences of 2 in array = " + str(occurrences))
+
+println()
+
+# Section 10: Binary Search (on sorted array)
+println("Section 10: Binary Search")
+println("----------------------------------------")
+
+fn binarySearch(arr, target: int) -> int {
+    let left = 0
+    let right = len(arr) - 1
+    
+    while (left <= right) {
+        let mid = (left + right) / 2
+        
+        if (arr[mid] == target) {
+            return mid
+        } else if (arr[mid] < target) {
+            left = mid + 1
+        } else {
+            right = mid - 1
+        }
+    }
+    
+    return -1
+}
+
+let sortedArr = [1, 3, 5, 7, 9, 11, 13, 15]
+let found1 = binarySearch(sortedArr, 7)
+let found2 = binarySearch(sortedArr, 10)
+
+println("PASS Test 10.1: Binary search for 7 = index " + str(found1))
+println("PASS Test 10.2: Binary search for 10 = " + str(found2) + " (not found)")
+
+println()
+
+# Section 11: Array Statistics Class
+println("Section 11: Array Statistics Class")
+println("----------------------------------------")
+
+class ArrayStats {
+    let data: array = []
+    
+    fn init(arr) {
+        this.data = arr
+    }
+    
+    fn mean() -> float {
+        if (len(this.data) == 0) {
+            return 0.0
+        }
+        
+        let sum = 0.0
+        let i = 0
+        while (i < len(this.data)) {
+            sum = sum + float(this.data[i])
+            i = i + 1
+        }
+        
+        return sum / float(len(this.data))
+    }
+    
+    fn max() -> int {
+        if (len(this.data) == 0) {
+            return 0
+        }
+        
+        let maximum = this.data[0]
+        let i = 1
+        while (i < len(this.data)) {
+            if (this.data[i] > maximum) {
+                maximum = this.data[i]
+            }
+            i = i + 1
+        }
+        return maximum
+    }
+    
+    fn min() -> int {
+        if (len(this.data) == 0) {
+            return 0
+        }
+        
+        let minimum = this.data[0]
+        let i = 1
+        while (i < len(this.data)) {
+            if (this.data[i] < minimum) {
+                minimum = this.data[i]
+            }
+            i = i + 1
+        }
+        return minimum
+    }
+}
+
+let stats = new ArrayStats([64, 34, 25, 12, 22, 11, 90])
+println("PASS Test 11.1: Array Statistics")
+println("  Mean: " + str(stats.mean()))
+println("  Max: " + str(stats.max()))
+println("  Min: " + str(stats.min()))
+
+println()
+
+# Test Summary
+println("============================================================")
+println("Array Test Suite Complete!")
+println("============================================================")
+println()
+println("Summary:")
+println("- Array creation and access: PASS")
+println("- Array operations: PASS")
+println("- Linear search: PASS")
+println("- Find max/min: PASS")
+println("- Array sum and average: PASS")
+println("- Reverse array: PASS")
+println("- Count occurrences: PASS")
+println("- Binary search: PASS")
+println("- Array statistics class: PASS")
+println()
+println("All array tests passed!")

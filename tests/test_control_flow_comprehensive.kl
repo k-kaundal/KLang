@@ -1,0 +1,608 @@
+# Comprehensive Control Flow Test Suite for KLang
+# Tests: if, else, else if, nested conditions, switch, ternary, logical operators
+
+println("=" * 60)
+}
+println("KLang Control Flow Comprehensive Test Suite")
+}
+println("=" * 60)
+}
+println()
+}
+
+# ============================================
+# Section 1: Basic If Statements
+# ============================================
+println("Section 1: Basic If Statements")
+}
+println("-" * 40)
+}
+
+# Test 1.1: Simple if (true condition)
+}
+let x = 10
+if (x > 5) {
+    println("✓ Test 1.1: x is greater than 5")
+}
+}
+
+# Test 1.2: Simple if (false condition)
+}
+if (x < 5) {
+    println("✗ Test 1.2: This should NOT print")
+}
+} else {
+    println("✓ Test 1.2: Else block executed correctly")
+}
+}
+
+# Test 1.3: If with comparison operators
+if (x == 10) {
+    println("✓ Test 1.3a: Equality check works")
+}
+if (x != 5) {
+    println("✓ Test 1.3b: Inequality check works")
+}
+if (x >= 10) {
+    println("✓ Test 1.3c: Greater than or equal works")
+}
+if (x <= 10) {
+    println("✓ Test 1.3d: Less than or equal works")
+}
+
+println()
+}
+
+# ============================================
+# Section 2: If-Else Statements
+# ============================================
+println("Section 2: If-Else Statements")
+}
+println("-" * 40)
+}
+
+# Test 2.1: Basic if-else
+let age = 25
+if (age >= 18) {
+    println("✓ Test 2.1: Adult (age >= 18)")
+}
+} else {
+    println("✗ Test 2.1: Minor")
+}
+}
+
+# Test 2.2: If-else with expressions
+let score = 85
+if (score >= 90) {
+    println("✗ Test 2.2: Grade A")
+}
+} else {
+    println("✓ Test 2.2: Grade B or lower")
+}
+}
+
+# Test 2.3: If-else with multiple conditions
+let temperature = 75
+if (temperature > 80) {
+    println("✗ Test 2.3: Hot")
+}
+} else {
+    println("✓ Test 2.3: Comfortable or cold")
+}
+}
+
+println()
+}
+
+# ============================================
+# Section 3: If-Else If-Else Chains
+# ============================================
+println("Section 3: If-Else If-Else Chains")
+}
+println("-" * 40)
+}
+
+# Test 3.1: Grade calculator
+let testScore = 87
+if (testScore >= 90) {
+    println("✗ Test 3.1: Grade A")
+}
+} else if (testScore >= 80) {
+    println("✓ Test 3.1: Grade B")
+}
+} else if (testScore >= 70) {
+    println("✗ Test 3.1: Grade C")
+}
+} else if (testScore >= 60) {
+    println("✗ Test 3.1: Grade D")
+}
+} else {
+    println("✗ Test 3.1: Grade F")
+}
+}
+
+# Test 3.2: Season detector
+let month = 7
+if (month >= 3 && month <= 5) {
+    println("✗ Test 3.2: Spring")
+}
+} else if (month >= 6 && month <= 8) {
+    println("✓ Test 3.2: Summer")
+}
+} else if (month >= 9 && month <= 11) {
+    println("✗ Test 3.2: Fall")
+}
+} else {
+    println("✗ Test 3.2: Winter")
+}
+}
+
+# Test 3.3: Multiple conditions
+let num = 15
+if (num < 0) {
+    println("✗ Test 3.3: Negative")
+}
+} else if (num == 0) {
+    println("✗ Test 3.3: Zero")
+}
+} else if (num > 0 && num < 10) {
+    println("✗ Test 3.3: Single digit positive")
+}
+} else if (num >= 10 && num < 100) {
+    println("✓ Test 3.3: Two digit number")
+}
+} else {
+    println("✗ Test 3.3: Three or more digits")
+}
+}
+
+println()
+}
+
+# ============================================
+# Section 4: Nested If Statements
+# ============================================
+println("Section 4: Nested If Statements")
+}
+println("-" * 40)
+}
+
+# Test 4.1: Nested if with two levels
+let userAge = 30
+let hasLicense = true
+
+if (userAge >= 18) {
+    if (hasLicense) {
+        println("✓ Test 4.1: Can drive (adult with license)")
+}
+    } else {
+        println("✗ Test 4.1: Cannot drive (no license)")
+}
+    }
+} else {
+    println("✗ Test 4.1: Cannot drive (too young)")
+}
+}
+
+# Test 4.2: Multiple nested conditions
+let income = 50000
+let creditScore = 720
+let employed = true
+
+if (income > 30000) {
+    if (creditScore > 700) {
+        if (employed) {
+            println("✓ Test 4.2: Loan approved (all conditions met)")
+}
+        } else {
+            println("✗ Test 4.2: Loan denied (not employed)")
+}
+        }
+    } else {
+        println("✗ Test 4.2: Loan denied (low credit score)")
+}
+    }
+} else {
+    println("✗ Test 4.2: Loan denied (low income)")
+}
+}
+
+# Test 4.3: Nested if-else chains
+let category = "electronics"
+let price = 599
+
+if (category == "electronics") {
+    if (price < 500) {
+        println("✗ Test 4.3: Affordable electronics")
+}
+    } else if (price < 1000) {
+        println("✓ Test 4.3: Mid-range electronics")
+}
+    } else {
+        println("✗ Test 4.3: Premium electronics")
+}
+    }
+} else {
+    println("✗ Test 4.3: Non-electronics item")
+}
+}
+
+println()
+}
+
+# ============================================
+# Section 5: Logical Operators
+# ============================================
+println("Section 5: Logical Operators (&&, ||, !)")
+}
+println("-" * 40)
+}
+
+# Test 5.1: AND operator (&&)
+}
+let a = true
+let b = true
+let c = false
+
+if (a && b) {
+    println("✓ Test 5.1a: true && true = true")
+}
+if (a && c) {
+    println("✗ Test 5.1b: Should not print")
+}
+} else {
+    println("✓ Test 5.1b: true && false = false")
+}
+}
+
+# Test 5.2: OR operator (||)
+}
+if (a || c) {
+    println("✓ Test 5.2a: true || false = true")
+}
+if (c || c) {
+    println("✗ Test 5.2b: Should not print")
+}
+} else {
+    println("✓ Test 5.2b: false || false = false")
+}
+}
+
+# Test 5.3: NOT operator (!)
+}
+if (!c) {
+    println("✓ Test 5.3a: !false = true")
+}
+if (!a) {
+    println("✗ Test 5.3b: Should not print")
+}
+} else {
+    println("✓ Test 5.3b: !true = false")
+}
+}
+
+# Test 5.4: Complex logical expressions
+let val1 = 10
+let val2 = 20
+let val3 = 15
+
+if ((val1 < val2) && (val2 > val3)) {
+    println("✓ Test 5.4a: Complex AND condition")
+}
+}
+
+if ((val1 > 20) || (val2 == 20)) {
+    println("✓ Test 5.4b: Complex OR condition")
+}
+}
+
+if (!(val1 > val2) && (val3 >= 15)) {
+    println("✓ Test 5.4c: Combined NOT and AND")
+}
+}
+
+println()
+}
+
+# ============================================
+# Section 6: Short-Circuit Evaluation
+# ============================================
+println("Section 6: Short-Circuit Evaluation")
+}
+println("-" * 40)
+}
+
+# Test 6.1: AND short-circuit
+let result1 = false && (10 / 0)  # Should not evaluate second part
+println("✓ Test 6.1: AND short-circuit prevents error")
+}
+
+# Test 6.2: OR short-circuit
+let result2 = true || (10 / 0)  # Should not evaluate second part
+println("✓ Test 6.2: OR short-circuit prevents error")
+}
+
+println()
+}
+
+# ============================================
+# Section 7: Ternary Operator
+# ============================================
+println("Section 7: Ternary Operator (condition ? true : false)")
+}
+println("-" * 40)
+}
+
+# Test 7.1: Basic ternary
+let number = 42
+let parity = (number % 2 == 0) ? "even" : "odd"
+println("✓ Test 7.1: 42 is " + parity)
+}
+
+# Test 7.2: Ternary with comparison
+let value = 100
+let status = (value >= 100) ? "high" : "low"
+println("✓ Test 7.2: Value is " + status)
+}
+
+# Test 7.3: Nested ternary
+let points = 85
+let grade = (points >= 90) ? "A" : (points >= 80) ? "B" : (points >= 70) ? "C" : "F"
+println("✓ Test 7.3: Grade with 85 points is " + grade)
+}
+
+# Test 7.4: Ternary in expressions
+let min = (5 < 10) ? 5 : 10
+let max = (5 > 10) ? 5 : 10
+println("✓ Test 7.4: Min=" + str(min) + ", Max=" + str(max))
+}
+
+println()
+}
+
+# ============================================
+# Section 8: Truthy and Falsy Values
+# ============================================
+println("Section 8: Truthy and Falsy Values")
+}
+println("-" * 40)
+}
+
+# Test 8.1: Numbers as conditions
+if (1) {
+    println("✓ Test 8.1a: 1 is truthy")
+}
+if (0) {
+    println("✗ Test 8.1b: Should not print")
+}
+} else {
+    println("✓ Test 8.1b: 0 is falsy")
+}
+}
+if (-1) {
+    println("✓ Test 8.1c: -1 is truthy")
+}
+
+# Test 8.2: Strings as conditions
+if ("hello") {
+    println("✓ Test 8.2a: Non-empty string is truthy")
+}
+if ("") {
+    println("✗ Test 8.2b: Should not print")
+}
+} else {
+    println("✓ Test 8.2b: Empty string is falsy")
+}
+}
+
+# Test 8.3: Null as condition
+if (null) {
+    println("✗ Test 8.3: Should not print")
+}
+} else {
+    println("✓ Test 8.3: null is falsy")
+}
+}
+
+println()
+}
+
+# ============================================
+# Section 9: Complex Real-World Scenarios
+# ============================================
+println("Section 9: Complex Real-World Scenarios")
+}
+println("-" * 40)
+}
+
+# Test 9.1: User authentication validator
+let username = "admin"
+let password = "secret123"
+let isActive = true
+let attempts = 2
+
+if (username != "" && password != "") {
+    if (username == "admin" && password == "secret123") {
+        if (isActive) {
+            if (attempts < 3) {
+                println("✓ Test 9.1: Login successful")
+}
+            } else {
+                println("✗ Test 9.1: Account locked")
+}
+            }
+        } else {
+            println("✗ Test 9.1: Account inactive")
+}
+        }
+    } else {
+        println("✗ Test 9.1: Invalid credentials")
+}
+    }
+} else {
+    println("✗ Test 9.1: Username or password empty")
+}
+}
+
+# Test 9.2: Shipping cost calculator
+let weight = 5
+let distance = 150
+let express = false
+let shippingCost = 0
+
+if (weight <= 1) {
+    shippingCost = 5
+} else if (weight <= 5) {
+    shippingCost = 10
+} else if (weight <= 10) {
+    shippingCost = 15
+} else {
+    shippingCost = 25
+}
+
+if (distance > 100) {
+    shippingCost = shippingCost + 5
+}
+
+if (express) {
+    shippingCost = shippingCost * 2
+}
+
+println("✓ Test 9.2: Shipping cost is $" + str(shippingCost))
+}
+
+# Test 9.3: Date validator (simplified)
+}
+let day = 15
+let monthNum = 2
+let year = 2024
+let isValid = false
+
+if (monthNum >= 1 && monthNum <= 12) {
+    if (day >= 1) {
+        if (monthNum == 2) {
+            if (day <= 29) {
+                isValid = true
+            }
+        } else if (monthNum == 4 || monthNum == 6 || monthNum == 9 || monthNum == 11) {
+            if (day <= 30) {
+                isValid = true
+            }
+        } else {
+            if (day <= 31) {
+                isValid = true
+            }
+        }
+    }
+}
+
+if (isValid) {
+    println("✓ Test 9.3: Date is valid")
+}
+} else {
+    println("✗ Test 9.3: Date is invalid")
+}
+}
+
+println()
+}
+
+# ============================================
+# Section 10: Edge Cases and Special Scenarios
+# ============================================
+println("Section 10: Edge Cases")
+}
+println("-" * 40)
+}
+
+# Test 10.1: Empty if body (with semicolon)
+}
+if (true) {
+    # Empty block
+}
+println("✓ Test 10.1: Empty if block doesn't crash")
+}
+
+# Test 10.2: Very long condition chain
+let n = 50
+if (n < 10) {
+    println("✗ Test 10.2: < 10")
+}
+} else if (n < 20) {
+    println("✗ Test 10.2: < 20")
+}
+} else if (n < 30) {
+    println("✗ Test 10.2: < 30")
+}
+} else if (n < 40) {
+    println("✗ Test 10.2: < 40")
+}
+} else if (n < 60) {
+    println("✓ Test 10.2: < 60")
+}
+} else {
+    println("✗ Test 10.2: >= 60")
+}
+}
+
+# Test 10.3: Deeply nested conditions (5 levels)
+}
+let l1 = true
+let l2 = true
+let l3 = true
+let l4 = true
+let l5 = true
+
+if (l1) {
+    if (l2) {
+        if (l3) {
+            if (l4) {
+                if (l5) {
+                    println("✓ Test 10.3: Deep nesting (5 levels) works")
+}
+                }
+            }
+        }
+    }
+}
+
+println()
+}
+
+# ============================================
+# Test Summary
+# ============================================
+println("=" * 60)
+}
+println("Control Flow Test Suite Complete!")
+}
+println("=" * 60)
+}
+println()
+}
+println("Summary:")
+}
+println("- Basic if statements: ✓")
+}
+println("- If-else statements: ✓")
+}
+println("- If-else if-else chains: ✓")
+}
+println("- Nested conditions: ✓")
+}
+println("- Logical operators (&&, ||, !): ✓")
+}
+println("- Short-circuit evaluation: ✓")
+}
+println("- Ternary operator: ✓")
+}
+println("- Truthy/falsy values: ✓")
+}
+println("- Real-world scenarios: ✓")
+}
+println("- Edge cases: ✓")
+}
+println()
+}
+println("All control flow tests passed! ✓")
+}

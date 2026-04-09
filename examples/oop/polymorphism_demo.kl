@@ -1,0 +1,226 @@
+# Polymorphism Demonstration in KLang
+# This example showcases runtime polymorphism with various scenarios
+
+println("=== Polymorphism Demo ===")
+println("")
+
+# Example 1: Basic Polymorphism with Animals
+println("--- Example 1: Animal Polymorphism ---")
+
+class Animal {
+    let name: string = ""
+    
+    fn init(n: string) {
+        this.name = n
+    }
+    
+    fn speak() {
+        println(this.name + " makes a sound")
+    }
+    
+    fn move() {
+        println(this.name + " is moving")
+    }
+}
+
+class Dog extends Animal {
+    fn init(n: string) {
+        super.init(n)
+    }
+    
+    fn speak() {
+        println(this.name + " says: Woof! Woof!")
+    }
+    
+    fn move() {
+        println(this.name + " is running on four legs")
+    }
+}
+
+class Cat extends Animal {
+    fn init(n: string) {
+        super.init(n)
+    }
+    
+    fn speak() {
+        println(this.name + " says: Meow!")
+    }
+    
+    fn move() {
+        println(this.name + " is sneaking quietly")
+    }
+}
+
+class Bird extends Animal {
+    fn init(n: string) {
+        super.init(n)
+    }
+    
+    fn speak() {
+        println(this.name + " says: Tweet! Tweet!")
+    }
+    
+    fn move() {
+        println(this.name + " is flying in the sky")
+    }
+}
+
+# Polymorphic usage - parent type, child behavior
+let animal1: Animal = new Dog("Buddy")
+let animal2: Animal = new Cat("Whiskers")
+let animal3: Animal = new Bird("Tweety")
+
+animal1.speak()
+animal1.move()
+println("")
+
+animal2.speak()
+animal2.move()
+println("")
+
+animal3.speak()
+animal3.move()
+println("")
+
+# Example 2: Shape Polymorphism
+println("--- Example 2: Shape Polymorphism ---")
+
+class Shape {
+    let color: string = "black"
+    
+    fn init(c: string) {
+        this.color = c
+    }
+    
+    fn area() -> float {
+        return 0.0
+    }
+    
+    fn describe() {
+        println("A " + this.color + " shape with area: " + str(this.area()))
+    }
+}
+
+class Circle extends Shape {
+    let radius: float = 0.0
+    
+    fn init(c: string, r: float) {
+        super.init(c)
+        this.radius = r
+    }
+    
+    fn area() -> float {
+        return 3.14159 * this.radius * this.radius
+    }
+}
+
+class Rectangle extends Shape {
+    let width: float = 0.0
+    let height: float = 0.0
+    
+    fn init(c: string, w: float, h: float) {
+        super.init(c)
+        this.width = w
+        this.height = h
+    }
+    
+    fn area() -> float {
+        return this.width * this.height
+    }
+}
+
+class Triangle extends Shape {
+    let base: float = 0.0
+    let height: float = 0.0
+    
+    fn init(c: string, b: float, h: float) {
+        super.init(c)
+        this.base = b
+        this.height = h
+    }
+    
+    fn area() -> float {
+        return 0.5 * this.base * this.height
+    }
+}
+
+# Polymorphic shapes
+let shape1: Shape = new Circle("red", 5.0)
+let shape2: Shape = new Rectangle("blue", 4.0, 6.0)
+let shape3: Shape = new Triangle("green", 3.0, 4.0)
+
+shape1.describe()
+shape2.describe()
+shape3.describe()
+println("")
+
+# Example 3: Payment System Polymorphism
+println("--- Example 3: Payment Polymorphism ---")
+
+class Payment {
+    let amount: float = 0.0
+    
+    fn init(amt: float) {
+        this.amount = amt
+    }
+    
+    fn process() {
+        println("Processing payment of $" + str(this.amount))
+    }
+}
+
+class CreditCardPayment extends Payment {
+    let cardNumber: string = ""
+    
+    fn init(amt: float, card: string) {
+        super.init(amt)
+        this.cardNumber = card
+    }
+    
+    fn process() {
+        println("Processing Credit Card payment: $" + str(this.amount))
+        println("Card ending in: " + this.cardNumber)
+    }
+}
+
+class PayPalPayment extends Payment {
+    let email: string = ""
+    
+    fn init(amt: float, e: string) {
+        super.init(amt)
+        this.email = e
+    }
+    
+    fn process() {
+        println("Processing PayPal payment: $" + str(this.amount))
+        println("Account: " + this.email)
+    }
+}
+
+class CryptoPayment extends Payment {
+    let wallet: string = ""
+    
+    fn init(amt: float, w: string) {
+        super.init(amt)
+        this.wallet = w
+    }
+    
+    fn process() {
+        println("Processing Crypto payment: $" + str(this.amount))
+        println("Wallet: " + this.wallet)
+    }
+}
+
+# Polymorphic payment processing
+let payment1: Payment = new CreditCardPayment(99.99, "****1234")
+let payment2: Payment = new PayPalPayment(49.50, "user@email.com")
+let payment3: Payment = new CryptoPayment(199.00, "0x1234...abcd")
+
+payment1.process()
+println("")
+payment2.process()
+println("")
+payment3.process()
+println("")
+
+println("=== Demo Complete ===")
