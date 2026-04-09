@@ -522,6 +522,9 @@ void value_free(Value *v) {
             if (v->as.object_val->fields) {
                 env_free(v->as.object_val->fields);
             }
+            if (v->as.object_val->methods) {
+                env_free(v->as.object_val->methods);
+            }
             free(v->as.object_val);
             v->as.object_val = NULL;  // Only null out if we actually freed it
         } else {
@@ -1005,6 +1008,8 @@ static Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
                         copy.as.tuple_val.elements[ii] = make_string(v->as.tuple_val.elements[ii].as.str_val);
                     } else {
                         copy.as.tuple_val.elements[ii] = v->as.tuple_val.elements[ii];
+                        /* Retain dict/set/struct values when copying tuples */
+                        value_retain(&copy.as.tuple_val.elements[ii]);
                     }
                 }
                 return copy;
