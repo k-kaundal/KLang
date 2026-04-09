@@ -29,7 +29,7 @@ This directory contains comprehensive documentation for Data Structures and Algo
 
 #### Phase 1: Basic Algorithms
 - **01_sorting.md** ✅ - Bubble, selection, insertion, merge, quick, heap, counting, radix sort
-- **02_searching.md** ⏳ - Linear, binary, interpolation search
+- **02_searching.md** ✅ - Linear, binary, interpolation, jump, exponential, ternary search, rotated arrays
 - **03_recursion.md** ⏳ - Basics, backtracking, memoization
 
 #### Phase 2: Intermediate Algorithms

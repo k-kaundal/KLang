@@ -210,9 +210,27 @@ Comprehensive Data Structures and Algorithms documentation for KLang, covering b
 **Interview Problems**: 12 solved with detailed explanations
 
 #### 02. Searching Algorithms
-- **Documentation**: ⏳ Planned
+- **Documentation**: ✅ Complete (`docs/dsa/algorithms/02_searching.md`)
 - **Tests**: ⏳ Planned
 - **Examples**: ⏳ Planned
+- **Status**: Documentation complete
+
+**Topics Covered:**
+- Linear Search - O(n)
+- Binary Search (iterative & recursive) - O(log n)
+- Binary Search Variants (find first, last, count, insert position)
+- Interpolation Search - O(log log n) average
+- Exponential Search - O(log n)
+- Jump Search - O(√n)
+- Ternary Search - O(log₃ n)
+- Search in Rotated Arrays - O(log n)
+- Comparison table of all algorithms
+- 10 interview problems with solutions
+- Best practices and common pitfalls
+
+**Documentation Size**: ~45 KB, 1,925 lines
+**Algorithms**: 7+ search algorithms with variants
+**Interview Problems**: 10 problems (Binary Search, Rotated Arrays, 2D Matrix, Peak Element, etc.)
 
 #### 03. Recursion
 - **Documentation**: ⏳ Planned
