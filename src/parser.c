@@ -504,9 +504,16 @@ static ASTNode *parse_postfix(Parser *parser) {
             Token member_tok;
             char *member_name;
             token_free(&t);
-            member_tok = consume(parser, TOKEN_IDENT);
-            member_name = strdup(member_tok.value);
-            token_free(&member_tok);
+            /* Allow keywords as member names */
+            if (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_SEMICOLON) {
+                member_tok = advance(parser);
+                member_name = strdup(member_tok.value);
+                token_free(&member_tok);
+            } else {
+                fprintf(stderr, "Parse error: expected member name after '.'\n");
+                parser->had_error = 1;
+                member_name = strdup("");
+            }
             /* Handle super.member specially */
             if (expr->type == NODE_SUPER) {
                 ast_free(expr);
@@ -521,8 +528,16 @@ static ASTNode *parse_postfix(Parser *parser) {
             Token member_tok;
             char *member_name;
             token_free(&t);
-            member_tok = consume(parser, TOKEN_IDENT);
-            member_name = strdup(member_tok.value);
+            /* Allow keywords as member names */
+            if (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_SEMICOLON) {
+                member_tok = advance(parser);
+                member_name = strdup(member_tok.value);
+                token_free(&member_tok);
+            } else {
+                fprintf(stderr, "Parse error: expected member name after '->'\n");
+                parser->had_error = 1;
+                member_name = strdup("");
+            }
             token_free(&member_tok);
             expr = ast_new_pointer_member(expr, member_name, line);
             free(member_name);
