@@ -34,6 +34,15 @@ docs/
 ├── AI_NATIVE_GUIDE.md        # AI features
 ├── QUICK_STATUS.md           # Project status
 │
+├── guides/                   # Step-by-step guides
+│   ├── QUICK_START.md        # Get started in minutes
+│   ├── BUILD.md              # Build from source
+│   ├── DEPLOYMENT.md         # Deployment guide
+│   └── PLAYGROUND.md         # Playground setup
+│
+├── api/                      # API references
+│   └── CLI_REFERENCE.md      # CLI commands & options
+│
 ├── architecture/             # Technical design
 │   ├── ARCHITECTURE.md
 │   ├── COMPILER_DESIGN.md
@@ -43,10 +52,12 @@ docs/
 │   ├── DEVELOPMENT.md
 │   └── TESTING.md
 │
-├── reports/                  # Status reports
+├── reports/                  # Development reports
 │   ├── PRODUCTION_READY_REPORT.md
 │   ├── 100_PERCENT_ACHIEVEMENT.md
-│   └── GC_FIX_SUMMARY.md
+│   ├── BUILD_SUCCESS.md
+│   ├── MEMORY_BUG_ANALYSIS.md
+│   └── VM_IMPLEMENTATION_FINAL.md
 │
 └── archive/                  # Historical docs
     └── session_notes/
@@ -55,7 +66,8 @@ docs/
 ## 🎯 Quick Links
 
 ### For Users
-- [Quick Start Guide](USER_GUIDE.md#quick-start)
+- [Quick Start Guide](guides/QUICK_START.md) - Get started in minutes
+- [CLI Reference](api/CLI_REFERENCE.md) - Complete command reference
 - [Language Syntax](USER_GUIDE.md#syntax)
 - [Built-in Functions](API_REFERENCE.md#built-in-functions)
 - [AI Features](AI_NATIVE_GUIDE.md)
@@ -63,6 +75,7 @@ docs/
 
 ### For Developers
 - [Contributing Guide](../CONTRIBUTING.md)
+- [Build Guide](guides/BUILD.md)
 - [Architecture Overview](architecture/ARCHITECTURE.md)
 - [Development Setup](developer/DEVELOPMENT.md)
 - [Testing Guide](developer/TESTING.md)

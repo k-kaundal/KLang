@@ -331,6 +331,14 @@ verify_installation() {
         echo -e "${GREEN}  Version: $version${NC}"
         echo -e "${GREEN}  Location: $BIN_DIR/klang${NC}"
         
+        # Test basic functionality
+        echo -e "${BLUE}Testing basic functionality...${NC}"
+        if "$BIN_DIR/klang" --help > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ Help command works${NC}"
+        else
+            echo -e "${YELLOW}⚠ Warning: Help command failed${NC}"
+        fi
+        
         # Validate version matches expected release (only if we have a valid expected version)
         local expected_version=$(echo "$KLANG_VERSION" | sed 's/^v//')
         # Only show warning if expected version looks valid (no errors, not the fallback)
@@ -344,6 +352,16 @@ verify_installation() {
                     echo -e "${YELLOW}  This might be expected if you're installing from a specific branch${NC}"
                 fi
             fi
+        fi
+        
+        # Verify dependencies
+        echo -e "${BLUE}Verifying runtime dependencies...${NC}"
+        if ldd "$BIN_DIR/klang" > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ All shared libraries found${NC}"
+        elif otool -L "$BIN_DIR/klang" > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ All shared libraries found (macOS)${NC}"
+        else
+            echo -e "${YELLOW}⚠ Warning: Could not verify shared libraries${NC}"
         fi
     else
         echo -e "${RED}Installation verification failed${NC}"
