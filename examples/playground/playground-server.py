@@ -4,6 +4,20 @@ KLang Playground Backend API Server
 
 This server provides a REST API for executing KLang code safely in a sandboxed environment.
 It handles code execution requests from the playground UI and returns results.
+
+⚠️ SECURITY WARNING:
+This is a demonstration/development server only. DO NOT use in production!
+- Exposes stack traces to users (for debugging)
+- Executes arbitrary code
+- No rate limiting or authentication
+- Intended for local development/testing only
+
+For production use, implement:
+- Sandboxing (Docker, VMs, etc.)
+- Rate limiting
+- Authentication
+- Proper error handling (no stack traces)
+- Input validation and sanitization
 """
 
 import os
