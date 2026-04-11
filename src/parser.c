@@ -12,6 +12,7 @@ static ASTNode *parse_class_def(Parser *parser);
 static ASTNode *parse_struct_def(Parser *parser, int is_union);
 static ASTNode *parse_import(Parser *parser);
 static ASTNode *parse_export(Parser *parser);
+static ASTNode *parse_func_def(Parser *parser);
 static int check_ahead(Parser *parser, TokenType type);
 
 void parser_init(Parser *parser, Lexer *lexer) {
@@ -384,6 +385,18 @@ static ASTNode *parse_primary(Parser *parser) {
                     value = parse_expression(parser);
                 }
             }
+            /* Allow keywords as property names (e.g., {static: value}) */
+            else if (parser->current.type != TOKEN_RBRACE && parser->current.type != TOKEN_EOF) {
+                /* Use the keyword token's value as the key */
+                Token key_tok = advance(parser);
+                key = strdup(key_tok.value);
+                token_free(&key_tok);
+                
+                /* Must be followed by colon */
+                Token colon_tok = consume(parser, TOKEN_COLON);
+                token_free(&colon_tok);
+                value = parse_expression(parser);
+            }
             else {
                 fprintf(stderr, "Syntax error: expected property key\n");
                 exit(1);
@@ -425,6 +438,11 @@ static ASTNode *parse_primary(Parser *parser) {
         token_free(&t);
         /* super.member will be handled in parse_postfix */
         return ast_new_super("", line);
+    }
+    
+    /* Function expression: fn(...) { ... } or fn name(...) { ... } */
+    if (check(parser, TOKEN_FN)) {
+        return parse_func_def(parser);
     }
 
     fprintf(stderr, "Parse error at line %d: unexpected token %s ('%s')\n",
@@ -1244,9 +1262,15 @@ static ASTNode *parse_func_def(Parser *parser) {
         is_generator = 1;
     }
     
-    name_tok = consume(parser, TOKEN_IDENT);
-    fname = strdup(name_tok.value);
-    token_free(&name_tok);
+    /* Function name is optional for expressions (anonymous functions) */
+    if (check(parser, TOKEN_IDENT)) {
+        name_tok = advance(parser);
+        fname = strdup(name_tok.value);
+        token_free(&name_tok);
+    } else {
+        /* Anonymous function */
+        fname = strdup("");
+    }
 
     {
         Token lp_tok = consume(parser, TOKEN_LPAREN);
