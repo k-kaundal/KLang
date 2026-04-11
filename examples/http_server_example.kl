@@ -84,7 +84,7 @@ server.get("/health", (req, res) => {
 })
 
 # Enable hot reload in development
-if (env("KLANG_BUILD_MODE") == "dev") {
+if (env.get("KLANG_BUILD_MODE") == "dev") {
     server.enableHotReload(true)
     server.watchDirectory("./src")
     println("Hot reload enabled")

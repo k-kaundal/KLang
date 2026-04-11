@@ -2699,6 +2699,24 @@ static Value builtin_regexSplit(Interpreter *interp, Value *args, int argc) {
  * ============================================ */
 
 /* Environment Variables */
+/* Shorthand env() function - callable as env("VAR_NAME") */
+static Value builtin_env(Interpreter *interp, Value *args, int argc) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) {
+        fprintf(stderr, "Error: env() requires a string argument (variable name)\n");
+        return make_null();
+    }
+    
+    const char *var_name = args[0].as.str_val;
+    const char *value = getenv(var_name);
+    
+    if (value == NULL) {
+        return make_null();
+    }
+    
+    return make_string((char*)value);
+}
+
 static Value builtin_env_get(Interpreter *interp, Value *args, int argc) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_STRING) {

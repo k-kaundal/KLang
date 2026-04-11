@@ -123,7 +123,25 @@ Token lexer_next_token(Lexer *lexer) {
         char *buf = malloc(cap);
         Token t;
         char quote_char = c;  /* Remember which quote type we're using */
+        int has_interpolation = 0;  /* Track if string has ${} interpolation */
         lexer->pos++; lexer->col++;
+        
+        /* First pass: scan the string and check for interpolation */
+        int scan_pos = lexer->pos;
+        while (lexer->source[scan_pos] && lexer->source[scan_pos] != quote_char) {
+            if (lexer->source[scan_pos] == '\\') {
+                scan_pos++; /* Skip escaped character */
+                if (lexer->source[scan_pos]) scan_pos++;
+            } else if (quote_char == '"' && lexer->source[scan_pos] == '$' && 
+                       lexer->source[scan_pos + 1] == '{') {
+                has_interpolation = 1;
+                break;
+            } else {
+                scan_pos++;
+            }
+        }
+        
+        /* Parse the string content */
         while (lexer->source[lexer->pos] && lexer->source[lexer->pos] != quote_char) {
             char ch = lexer->source[lexer->pos];
             if (ch == '\\') {
@@ -142,7 +160,9 @@ Token lexer_next_token(Lexer *lexer) {
         }
         if (lexer->source[lexer->pos] == quote_char) { lexer->pos++; lexer->col++; }
         buf[len] = '\0';
-        t.type = TOKEN_STRING;
+        
+        /* Use TEMPLATE_LITERAL type if interpolation was detected in double-quoted strings */
+        t.type = (has_interpolation && quote_char == '"') ? TOKEN_TEMPLATE_LITERAL : TOKEN_STRING;
         t.value = buf;
         t.line = line;
         t.col = col;
