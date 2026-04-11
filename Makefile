@@ -92,7 +92,7 @@ CFLAGS = -Wall -Wextra -std=c99 $(PLATFORM_CFLAGS) -Isrc -Iinclude -g $(LLVM_CFL
 LDFLAGS = $(LLVM_LDFLAGS) $(PLATFORM_LDFLAGS) $(KLP_LDFLAGS) $(CRYPTO_LDFLAGS) $(RDMA_LDFLAGS) $(CUDA_LDFLAGS)
 
 # Automatically find all .c files in src/ and subdirectories
-SRC = $(shell find src -name '*.c' -type f)
+SRC = $(shell find src -name '*.c' -type f ! -path '*/archive/*')
 OBJ = $(SRC:.c=.o)
 TARGET = klang
 

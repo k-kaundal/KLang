@@ -5,7 +5,7 @@
 #include <readline/history.h>
 #include "core/lexer/lexer.h"
 #include "core/parser/parser.h"
-#include "runtime/interpreter/interpreter.h"
+#include "interpreter.h"
 #include "runtime/runtime.h"
 #include "cli_colors.h"
 

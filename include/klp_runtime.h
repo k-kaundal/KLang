@@ -6,7 +6,7 @@
 #ifndef KLP_RUNTIME_H
 #define KLP_RUNTIME_H
 
-#include "runtime/interpreter/interpreter.h"
+#include "interpreter.h"
 #include "klp_server.h"
 #include "klp_client.h"
 

@@ -1,7 +1,7 @@
 #ifndef RUNTIME_H
 #define RUNTIME_H
 
-#include "runtime/interpreter/interpreter.h"
+#include "interpreter.h"
 
 void runtime_init(Interpreter *interp);
 void runtime_free(Interpreter *interp);

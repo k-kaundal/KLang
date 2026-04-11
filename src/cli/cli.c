@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include "core/lexer/lexer.h"
 #include "core/parser/parser.h"
-#include "runtime/interpreter/interpreter.h"
+#include "interpreter.h"
 #include "compiler.h"
 #include "vm_stack.h"
 #include "runtime/runtime.h"

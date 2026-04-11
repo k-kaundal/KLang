@@ -2,7 +2,7 @@
 #define CLOUD_NATIVE_H
 
 #include <stdio.h>
-#include "runtime/interpreter/interpreter.h"
+#include "interpreter.h"
 
 /* Container runtime support */
 typedef struct {

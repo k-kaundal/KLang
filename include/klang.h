@@ -12,10 +12,10 @@
 #define KLANG_VERSION_MINOR 0
 #define KLANG_VERSION_PATCH 0
 
-#include "core/lexer/lexer.h"
-#include "core/ast/ast.h"
-#include "core/parser/parser.h"
-#include "runtime/interpreter/interpreter.h"
+#include "lexer.h"
+#include "ast.h"
+#include "parser.h"
+#include "interpreter.h"
 #include "vm.h"
 #include "compiler.h"
 #include "gc.h"

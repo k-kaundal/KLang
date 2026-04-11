@@ -1,7 +1,7 @@
-#include "../core/lexer/lexer.h"
-#include "../core/parser/parser.h"
-#include "../core/ast/ast.h"
-#include "../runtime/interpreter/interpreter.h"
+#include "core/lexer/lexer.h"
+#include "core/parser/parser.h"
+#include "core/ast/ast.h"
+#include "interpreter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
