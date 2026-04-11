@@ -62,6 +62,10 @@ void print_help(void) {
     printf("\n  %sProject:%s\n", get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET));
     printf("    %sinit%s <name>      Initialize a new KLang project [--git]\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("    %snew%s <type> <name> Create new project (server, app) [--git]\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("    %sgenerate%s <type>   Generate component (controller, service, etc.)\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
     printf("    %spkg%s <command>    Package manager (install, list, update, etc.)\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
     
@@ -96,6 +100,9 @@ void print_help(void) {
     printf("  klang fmt script.k             # Format code\n");
     printf("  klang test tests/              # Run all tests\n");
     printf("  klang init my-project --git    # Create new project\n");
+    printf("  klang new server my-api --git  # Create new server\n");
+    printf("  klang generate controller users # Generate controller\n");
+    printf("  klang g service auth           # Generate service (short)\n");
     printf("  klang pkg install lodash@1.0   # Install a package\n");
     printf("  klang pkg list                 # List installed packages\n");
     printf("  klang serve --port=3000        # Start dev server on port 3000\n");

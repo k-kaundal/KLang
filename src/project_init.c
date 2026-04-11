@@ -6,6 +6,7 @@
 #include <errno.h>
 #include "project_init.h"
 #include "cli_colors.h"
+#include "generators.h"
 
 static int create_directory(const char *path) {
     #ifdef _WIN32
@@ -186,4 +187,9 @@ void init_project(const char *project_name, int create_git) {
     printf("  cd %s\n", project_name);
     printf("  klang run src/main.kl\n");
     printf("  klang test tests/\n\n");
+}
+
+/* Initialize a new server project (wrapper for generators) */
+void init_project_server(const char *project_name, int create_git) {
+    init_server_project(project_name, TEMPLATE_SERVER, create_git);
 }

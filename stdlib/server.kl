@@ -1,0 +1,348 @@
+# KLang Server Framework
+# NestJS-inspired server framework for KLang
+
+import core
+import net from "stdlib/net"
+
+# Create a new application instance
+fn createApp() {
+    return {
+        routes: [],
+        middleware: [],
+        errorHandler: null,
+        port: 3000,
+        
+        # Use middleware
+        use: fn(pathOrMiddleware, middleware) {
+            if (typeof(pathOrMiddleware) == "function") {
+                # Global middleware
+                this.middleware.push({
+                    path: "*",
+                    handler: pathOrMiddleware
+                })
+            } else {
+                # Path-specific middleware
+                this.middleware.push({
+                    path: pathOrMiddleware,
+                    handler: middleware
+                })
+            }
+        },
+        
+        # Define GET route
+        get: fn(path, handler) {
+            this.routes.push({
+                method: "GET",
+                path: path,
+                handler: handler
+            })
+        },
+        
+        # Define POST route
+        post: fn(path, handler) {
+            this.routes.push({
+                method: "POST",
+                path: path,
+                handler: handler
+            })
+        },
+        
+        # Define PUT route
+        put: fn(path, handler) {
+            this.routes.push({
+                method: "PUT",
+                path: path,
+                handler: handler
+            })
+        },
+        
+        # Define DELETE route
+        delete: fn(path, handler) {
+            this.routes.push({
+                method: "DELETE",
+                path: path,
+                handler: handler
+            })
+        },
+        
+        # Define PATCH route
+        patch: fn(path, handler) {
+            this.routes.push({
+                method: "PATCH",
+                path: path,
+                handler: handler
+            })
+        },
+        
+        # Serve static files
+        static: fn(mountPath, directory) {
+            println("Serving static files from ${directory} at ${mountPath}")
+            # This would use the native http_server_static function
+        },
+        
+        # Set error handler
+        useErrorHandler: fn(handler) {
+            this.errorHandler = handler
+        },
+        
+        # Start the server
+        listen: fn(port) {
+            this.port = port || this.port
+            println("Starting server on port ${this.port}...")
+            
+            # This would integrate with the native HTTP server
+            # For now, this is a placeholder
+        }
+    }
+}
+
+# Create a router (for modular routes)
+fn Router() {
+    return {
+        routes: [],
+        middleware: [],
+        
+        use: fn(middleware) {
+            this.middleware.push(middleware)
+        },
+        
+        get: fn(path, handler) {
+            this.routes.push({
+                method: "GET",
+                path: path,
+                handler: handler
+            })
+        },
+        
+        post: fn(path, handler) {
+            this.routes.push({
+                method: "POST",
+                path: path,
+                handler: handler
+            })
+        },
+        
+        put: fn(path, handler) {
+            this.routes.push({
+                method: "PUT",
+                path: path,
+                handler: handler
+            })
+        },
+        
+        delete: fn(path, handler) {
+            this.routes.push({
+                method: "DELETE",
+                path: path,
+                handler: handler
+            })
+        },
+        
+        patch: fn(path, handler) {
+            this.routes.push({
+                method: "PATCH",
+                path: path,
+                handler: handler
+            })
+        }
+    }
+}
+
+# CORS middleware
+fn cors(options) {
+    let opts = options || {}
+    let origin = opts.origin || "*"
+    let methods = opts.methods || "GET,POST,PUT,DELETE,PATCH,OPTIONS"
+    let headers = opts.headers || "Content-Type,Authorization"
+    
+    return fn(req, res, next) {
+        res.setHeader("Access-Control-Allow-Origin", origin)
+        res.setHeader("Access-Control-Allow-Methods", methods)
+        res.setHeader("Access-Control-Allow-Headers", headers)
+        
+        if (req.method == "OPTIONS") {
+            res.status(204).send()
+            return
+        }
+        
+        next()
+    }
+}
+
+# JSON body parser middleware
+fn json(options) {
+    let opts = options || {}
+    let limit = opts.limit || "1mb"
+    
+    return fn(req, res, next) {
+        if (req.headers["Content-Type"] && req.headers["Content-Type"].includes("application/json")) {
+            try {
+                req.body = JSON.parse(req.body)
+            } catch (e) {
+                res.status(400).json({ error: "Invalid JSON" })
+                return
+            }
+        }
+        next()
+    }
+}
+
+# URL-encoded body parser middleware
+fn urlencoded(options) {
+    let opts = options || {}
+    
+    return fn(req, res, next) {
+        if (req.headers["Content-Type"] && req.headers["Content-Type"].includes("application/x-www-form-urlencoded")) {
+            # Parse URL-encoded body
+            req.body = net.parseQuery(req.body)
+        }
+        next()
+    }
+}
+
+# Static file serving middleware
+fn serveStatic(directory, options) {
+    let opts = options || {}
+    
+    return fn(req, res, next) {
+        # Check if request is for a static file
+        # This would integrate with native file serving
+        next()
+    }
+}
+
+# Request logging middleware
+fn logger(format) {
+    let fmt = format || "combined"
+    
+    return fn(req, res, next) {
+        let start = Date.now()
+        
+        println("[${req.method}] ${req.path}")
+        
+        next()
+        
+        let duration = Date.now() - start
+        println("${res.statusCode} - ${duration}ms")
+    }
+}
+
+# Helmet security middleware
+fn helmet(options) {
+    return fn(req, res, next) {
+        # Set security headers
+        res.setHeader("X-Content-Type-Options", "nosniff")
+        res.setHeader("X-Frame-Options", "DENY")
+        res.setHeader("X-XSS-Protection", "1; mode=block")
+        res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        
+        next()
+    }
+}
+
+# Rate limiting middleware
+fn rateLimit(options) {
+    let opts = options || {}
+    let windowMs = opts.windowMs || 60000  # 1 minute
+    let max = opts.max || 100
+    let requests = {}
+    
+    return fn(req, res, next) {
+        let ip = req.ip || "unknown"
+        let now = Date.now()
+        
+        if (!requests[ip]) {
+            requests[ip] = []
+        }
+        
+        # Clean old requests
+        requests[ip] = requests[ip].filter(time => now - time < windowMs)
+        
+        if (requests[ip].length >= max) {
+            res.status(429).json({
+                error: "Too many requests",
+                retryAfter: windowMs
+            })
+            return
+        }
+        
+        requests[ip].push(now)
+        next()
+    }
+}
+
+# Compression middleware
+fn compression(options) {
+    return fn(req, res, next) {
+        # Would implement gzip/deflate compression
+        res.setHeader("Content-Encoding", "gzip")
+        next()
+    }
+}
+
+# Cookie parser middleware
+fn cookieParser(secret) {
+    return fn(req, res, next) {
+        req.cookies = {}
+        
+        if (req.headers["Cookie"]) {
+            let cookies = req.headers["Cookie"].split(";")
+            for cookie in cookies {
+                let parts = cookie.trim().split("=")
+                if (len(parts) == 2) {
+                    req.cookies[parts[0]] = parts[1]
+                }
+            }
+        }
+        
+        next()
+    }
+}
+
+# Session middleware
+fn session(options) {
+    let opts = options || {}
+    let secret = opts.secret || "klang-secret"
+    let sessions = {}
+    
+    return fn(req, res, next) {
+        let sessionId = req.cookies["sessionId"]
+        
+        if (!sessionId || !sessions[sessionId]) {
+            sessionId = generateSessionId()
+            sessions[sessionId] = {}
+            res.setCookie("sessionId", sessionId)
+        }
+        
+        req.session = sessions[sessionId]
+        next()
+    }
+}
+
+# Helper: Generate session ID
+fn generateSessionId() {
+    # Simple random ID generation
+    let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    let id = ""
+    for i in range(32) {
+        let idx = Math.floor(Math.random() * len(chars))
+        id = id + chars[idx]
+    }
+    return id
+}
+
+# Export all functions and classes
+export {
+    createApp,
+    Router,
+    cors,
+    json,
+    urlencoded,
+    serveStatic,
+    logger,
+    helmet,
+    rateLimit,
+    compression,
+    cookieParser,
+    session
+}
