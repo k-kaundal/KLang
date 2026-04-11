@@ -1,0 +1,18 @@
+# API Routes
+import server from "stdlib/server"
+
+let router = server.Router()
+
+# Welcome endpoint
+router.get("/", (req, res) => {
+    res.json({
+        message: "Welcome to the API",
+        version: "1.0.0",
+        endpoints: [
+            "GET /api/",
+            "GET /health"
+        ]
+    })
+})
+
+export router

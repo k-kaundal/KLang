@@ -1,0 +1,19 @@
+# KLang
+*.o
+*.tmp
+.klang_history
+node_modules/
+
+# Environment
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

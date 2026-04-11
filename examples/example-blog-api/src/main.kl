@@ -1,0 +1,14 @@
+# Main entry point for example-blog-api
+import server from "stdlib/server"
+import app from "./app"
+
+# Get port from environment or use default
+let port = env("PORT") || 3000
+
+# Start the server
+app.listen(port)
+
+println("🚀 Server running on http://localhost:${port}")
+println("📚 Environment: ${env("NODE_ENV") || "development"}")
+println("")
+println("Press Ctrl+C to stop")
