@@ -37,33 +37,46 @@ void print_help(void) {
 
     printf("%sCOMMANDS:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
     
-    printf("  %srun%s <file>       Execute a KLang source file (.kl, .k, .klang)\n",
+    printf("\n  %sExecution:%s\n", get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET));
+    printf("    %srun%s <file>       Execute a KLang source file (.kl, .k, .klang)\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %sbuild%s <file>     Compile and run via bytecode VM\n",
+    printf("    %sbuild%s <file>     Compile and run via bytecode VM\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %scompile%s <file>   Compile to native executable (LLVM)\n",
+    printf("    %scompile%s <file>   Compile to native executable (LLVM)\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %srepl%s             Start interactive REPL mode\n",
+    printf("    %srepl%s             Start interactive REPL mode\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %scheck%s <file>     Check syntax without executing\n",
+    
+    printf("\n  %sDevelopment:%s\n", get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET));
+    printf("    %scheck%s <file>     Check syntax without executing\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %sfmt%s <file>       Format KLang source code\n",
+    printf("    %stypecheck%s <file> Type check a file [--strict]\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %sinfo%s <file>      Display file information and statistics\n",
+    printf("    %sfmt%s <file>       Format KLang source code\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %stest%s <path>      Run tests from file or directory\n",
+    printf("    %sinfo%s <file>      Display file information and statistics\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %sinit%s <name>      Initialize a new KLang project\n",
+    printf("    %stest%s <path>      Run tests from file or directory\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %spkg%s <command>    Package manager (install, list, update, etc.)\n",
+    
+    printf("\n  %sProject:%s\n", get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET));
+    printf("    %sinit%s <name>      Initialize a new KLang project [--git]\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %slsp%s              Start Language Server Protocol server\n",
+    printf("    %spkg%s <command>    Package manager (install, list, update, etc.)\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %sconfig%s           Show current configuration\n",
+    
+    printf("\n  %sTools:%s\n", get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET));
+    printf("    %slsp%s              Start Language Server Protocol server\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %sversion%s          Show version information\n",
+    printf("    %sserve%s [options]  Start HTTP development server\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
-    printf("  %shelp%s [command]   Show help for a command\n\n",
+    printf("    %sconfig%s           Show current configuration\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    
+    printf("\n  %sInformation:%s\n", get_color(COLOR_BOLD_YELLOW), get_color(COLOR_RESET));
+    printf("    %sversion%s          Show version information\n",
+           get_color(COLOR_GREEN), get_color(COLOR_RESET));
+    printf("    %shelp%s [command]   Show help for a command\n\n",
            get_color(COLOR_GREEN), get_color(COLOR_RESET));
 
     printf("%sOPTIONS:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
@@ -79,11 +92,13 @@ void print_help(void) {
     printf("  klang compile program.kl       # Compile to native code\n");
     printf("  klang repl                     # Start REPL\n");
     printf("  klang check script.k           # Check syntax\n");
+    printf("  klang typecheck --strict app.kl # Strict type checking\n");
     printf("  klang fmt script.k             # Format code\n");
     printf("  klang test tests/              # Run all tests\n");
     printf("  klang init my-project --git    # Create new project\n");
     printf("  klang pkg install lodash@1.0   # Install a package\n");
     printf("  klang pkg list                 # List installed packages\n");
+    printf("  klang serve --port=3000        # Start dev server on port 3000\n");
     printf("  klang info myfile.klang        # Show file info\n");
     printf("  klang help run                 # Help for 'run' command\n\n");
 
@@ -237,6 +252,75 @@ void print_command_help(const char* command) {
         printf("    KLANG_HISTORY_SIZE    REPL history size (0-10000)\n");
         printf("    KLANG_PATH            Module search paths (colon-separated)\n");
         printf("    KLANG_MAX_LINE_LENGTH Max line length for formatter\n\n");
+    }
+    else if (strcmp(command, "serve") == 0) {
+        printf("\n%sKLang Serve Command%s\n\n", 
+               get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+        printf("%sUSAGE:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang serve [OPTIONS]\n\n");
+        printf("%sDESCRIPTION:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    Start a local HTTP development server.\n");
+        printf("    Serves static files and KLang applications with optional hot-reload.\n\n");
+        printf("%sOPTIONS:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    --port=PORT, -p PORT  Set server port (default: 8080)\n");
+        printf("    --dir=DIR             Set directory to serve (default: current)\n");
+        printf("    --hot-reload, --watch Enable hot-reload on file changes\n");
+        printf("    --mode=MODE           Set build mode (dev/prod, auto hot-reload in dev)\n\n");
+        printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang serve                       # Serve on port 8080\n");
+        printf("    klang serve --port=3000           # Serve on port 3000\n");
+        printf("    klang serve --hot-reload          # Enable hot-reload\n");
+        printf("    klang serve --mode=dev --dir=dist # Dev mode serving dist/\n\n");
+    }
+    else if (strcmp(command, "typecheck") == 0) {
+        printf("\n%sKLang Typecheck Command%s\n\n", 
+               get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+        printf("%sUSAGE:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang typecheck [OPTIONS] <file>\n\n");
+        printf("%sDESCRIPTION:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    Perform static type checking on a KLang file.\n");
+        printf("    Validates type safety without executing the code.\n\n");
+        printf("%sOPTIONS:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    --strict              Enable strict type checking mode\n\n");
+        printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang typecheck script.kl         # Standard type check\n");
+        printf("    klang typecheck --strict app.kl   # Strict mode\n\n");
+    }
+    else if (strcmp(command, "pkg") == 0 || strcmp(command, "package") == 0) {
+        printf("\n%sKLang Package Manager%s\n\n", 
+               get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+        printf("%sUSAGE:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang pkg <command> [ARGS]\n\n");
+        printf("%sDESCRIPTION:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    Manage KLang packages and dependencies.\n\n");
+        printf("%sCOMMANDS:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    install, add <pkg>    Install a package (with optional @version)\n");
+        printf("    uninstall, remove     Remove a package\n");
+        printf("    update [pkg]          Update package(s) to latest version\n");
+        printf("    list, ls              List installed packages\n");
+        printf("    init <name>           Create a new package manifest\n\n");
+        printf("%sEXAMPLES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang pkg install lodash          # Install latest lodash\n");
+        printf("    klang pkg install lodash@4.17.21  # Install specific version\n");
+        printf("    klang pkg list                    # List packages\n");
+        printf("    klang pkg update                  # Update all packages\n");
+        printf("    klang pkg init my-lib             # Create package.kl.json\n\n");
+    }
+    else if (strcmp(command, "lsp") == 0) {
+        printf("\n%sKLang LSP Server%s\n\n", 
+               get_color(COLOR_BOLD_CYAN), get_color(COLOR_RESET));
+        printf("%sUSAGE:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    klang lsp\n\n");
+        printf("%sDESCRIPTION:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    Start the Language Server Protocol server.\n");
+        printf("    Provides IDE features like autocomplete, go-to-definition, etc.\n");
+        printf("    Used by editors like VS Code, Neovim, Emacs, etc.\n\n");
+        printf("%sFEATURES:%s\n", get_color(COLOR_BOLD_WHITE), get_color(COLOR_RESET));
+        printf("    - Syntax highlighting\n");
+        printf("    - Code completion\n");
+        printf("    - Go to definition\n");
+        printf("    - Error diagnostics\n");
+        printf("    - Code formatting\n\n");
     }
     else {
         print_error("Unknown command");

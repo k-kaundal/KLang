@@ -57,3 +57,44 @@ test_examples
 
 # Build directory
 build/
+
+# Benchmark executables
+benchmarks/language/*_bench
+benchmarks/memory/*_bench
+benchmarks/klp_benchmark
+benchmarks/reports/*.json
+benchmarks/reports/*.md
+
+# KLP Examples
+examples/klp_echo_server
+examples/klp_test_client
+
+# Test executables
+test_pointers_unit
+test_structs_unit
+test_memory_unit
+test_function_calls
+test_vm_features
+benchmark_vm_register
+
+# Report and summary files (moved to docs/reports/)
+*_REPORT.md
+*_SUMMARY.md
+*_SUMMARY.txt
+*_COMPLETE.md
+*_PROGRESS.md
+*_VALIDATION.md
+*_FIX_PLAN.md
+*_IMPLEMENTATION.md
+*_INDEX.md
+
+# Package manager artifacts
+node_modules/
+.klang_packages/
+package-lock.json
+
+# Coverage
+coverage/
+*.gcov
+*.gcda
+*.gcno
