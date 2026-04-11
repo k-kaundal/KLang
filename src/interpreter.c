@@ -3536,6 +3536,8 @@ void microtask_queue_process(Interpreter *interp) {
 /* Resolve module path to absolute path */
 char *resolve_module_path(Interpreter *interp, const char *import_path) {
     char *resolved = malloc(PATH_MAX);
+    char *with_ext = malloc(PATH_MAX);
+    FILE *test_file;
     
     /* If it starts with ./ or ../ it's relative */
     if (import_path[0] == '.' && (import_path[1] == '/' || 
@@ -3544,7 +3546,64 @@ char *resolve_module_path(Interpreter *interp, const char *import_path) {
         /* Get the directory of the current module */
         char *base_dir = interp->current_module_dir ? interp->current_module_dir : ".";
         snprintf(resolved, PATH_MAX, "%s/%s", base_dir, import_path);
-    } else {
+        
+        /* Try with .kl extension if file doesn't exist */
+        test_file = fopen(resolved, "r");
+        if (!test_file && !strstr(import_path, ".kl")) {
+            snprintf(with_ext, PATH_MAX, "%s.kl", resolved);
+            test_file = fopen(with_ext, "r");
+            if (test_file) {
+                strcpy(resolved, with_ext);
+                fclose(test_file);
+            }
+        } else if (test_file) {
+            fclose(test_file);
+        }
+    } 
+    /* If it starts with stdlib/, resolve to the stdlib directory */
+    else if (strncmp(import_path, "stdlib/", 7) == 0) {
+        const char *module_name = import_path + 7;  /* Skip "stdlib/" */
+        /* Check if KLANG_STDLIB_PATH is set */
+        const char *stdlib_path = getenv("KLANG_STDLIB_PATH");
+        if (stdlib_path) {
+            snprintf(resolved, PATH_MAX, "%s/%s", stdlib_path, module_name);
+        } else {
+            /* Try multiple locations for stdlib */
+            const char *search_paths[] = {
+                "./stdlib/%s",
+                "../stdlib/%s", 
+                "../../stdlib/%s",
+                "/usr/local/lib/klang/stdlib/%s",
+                "/usr/lib/klang/stdlib/%s",
+                NULL
+            };
+            int found = 0;
+            int i;
+            for (i = 0; search_paths[i] != NULL; i++) {
+                snprintf(resolved, PATH_MAX, search_paths[i], module_name);
+                test_file = fopen(resolved, "r");
+                if (!test_file && !strstr(module_name, ".kl")) {
+                    snprintf(with_ext, PATH_MAX, "%s.kl", resolved);
+                    test_file = fopen(with_ext, "r");
+                    if (test_file) {
+                        strcpy(resolved, with_ext);
+                        found = 1;
+                    }
+                }
+                if (test_file) {
+                    fclose(test_file);
+                    found = 1;
+                    break;
+                }
+            }
+            /* If still not found and no .kl extension, add it */
+            if (!found && !strstr(resolved, ".kl")) {
+                snprintf(with_ext, PATH_MAX, "%s.kl", resolved);
+                strcpy(resolved, with_ext);
+            }
+        }
+    }
+    else {
         /* Absolute path or bare import - for now treat as relative to cwd */
         if (import_path[0] == '/') {
             strncpy(resolved, import_path, PATH_MAX);
@@ -3552,8 +3611,22 @@ char *resolve_module_path(Interpreter *interp, const char *import_path) {
             /* Try current directory */
             snprintf(resolved, PATH_MAX, "./%s", import_path);
         }
+        
+        /* Try with .kl extension if file doesn't exist */
+        test_file = fopen(resolved, "r");
+        if (!test_file && !strstr(import_path, ".kl")) {
+            snprintf(with_ext, PATH_MAX, "%s.kl", resolved);
+            test_file = fopen(with_ext, "r");
+            if (test_file) {
+                strcpy(resolved, with_ext);
+                fclose(test_file);
+            }
+        } else if (test_file) {
+            fclose(test_file);
+        }
     }
     
+    free(with_ext);
     return resolved;
 }
 
