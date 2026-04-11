@@ -1,0 +1,15 @@
+# Logger Middleware
+
+fn loggerMiddleware(req, res, next) {
+    let start = Date.now()
+    
+    println("[${req.method}] ${req.path}")
+    
+    # Continue to next middleware/handler
+    next()
+    
+    let duration = Date.now() - start
+    println("Completed in ${duration}ms")
+}
+
+export loggerMiddleware

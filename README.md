@@ -284,11 +284,65 @@ let answer = rag.query("What is KLang?")
 println(answer)
 ```
 
+### 🚀 Server Creation (NestJS-like!)
+
+```bash
+# Create a new server project
+klang new server blog-api
+
+# Generate modules with controllers, services, and routes
+klang generate module posts
+klang generate module users
+```
+
+```klang
+# Generated controller with CRUD operations
+class PostsController {
+    getAll(req, res) {
+        res.json({ message: "Get all posts", data: [] })
+    }
+    
+    getById(req, res) {
+        let id = req.params.id
+        res.json({ message: "Get post by id", id: id })
+    }
+    
+    create(req, res) {
+        res.status(201).json({ message: "Post created" })
+    }
+}
+```
+
 More examples in [`examples/`](examples/) directory.
 
 ---
 
 ## 🆕 New Features (v1.1)
+
+### NestJS-like Server Creation & Code Generators
+
+Create production-ready server applications with built-in code generators:
+
+```bash
+# Create a new server project
+klang new server my-api
+
+# Generate components instantly
+klang generate module users
+klang generate controller products
+klang generate service auth
+klang generate middleware cors
+```
+
+**Features:**
+- 🏗️ Project scaffolding with best-practice structure
+- 🎯 Component generators (controllers, services, middleware, routes)
+- 📦 Module system for organized code
+- ✅ Built-in validation library
+- 🔒 Guards and interceptors support
+- 🎨 Decorator patterns for advanced use cases
+
+See [Server Generators Guide](docs/SERVER_GENERATORS.md) for details.
 
 ### Built-in HTTP Server
 
@@ -366,6 +420,7 @@ See [Build Modes Guide](docs/BUILD_MODES.md), [HTTP Server Guide](docs/HTTP_SERV
 | Document | Description |
 |----------|-------------|
 | [User Guide](docs/USER_GUIDE.md) | **Start here!** Installation, basics, and tutorials |
+| [Server Generators](docs/SERVER_GENERATORS.md) | **NEW!** NestJS-like server creation and code generators |
 | [Build Modes](docs/BUILD_MODES.md) | **NEW!** Build modes and optimization guide |
 | [HTTP Server](docs/HTTP_SERVER.md) | **NEW!** Built-in web server documentation |
 | [C/C++ Features](docs/C_CPP_FEATURES.md) | **NEW!** Low-level programming features |

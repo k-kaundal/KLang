@@ -1,0 +1,431 @@
+# KLang Decorators Library
+# Decorator pattern utilities for server applications
+
+import core
+
+# Metadata storage for decorators
+let decoratorMetadata = {}
+
+# Store metadata for a class or function
+fn setMetadata(key, value, target) {
+    let targetId = getObjectId(target)
+    
+    if (!decoratorMetadata[targetId]) {
+        decoratorMetadata[targetId] = {}
+    }
+    
+    decoratorMetadata[targetId][key] = value
+}
+
+# Get metadata for a class or function
+fn getMetadata(key, target) {
+    let targetId = getObjectId(target)
+    
+    if (!decoratorMetadata[targetId]) {
+        return null
+    }
+    
+    return decoratorMetadata[targetId][key]
+}
+
+# Get object ID (simplified - in real implementation would use object hash)
+fn getObjectId(obj) {
+    if (!obj.__decoratorId) {
+        obj.__decoratorId = "obj_" + str(Date.now()) + "_" + str(Math.random())
+    }
+    return obj.__decoratorId
+}
+
+# Controller decorator
+fn Controller(path) {
+    return fn(target) {
+        setMetadata("controller", {
+            path: path,
+            routes: []
+        }, target)
+        return target
+    }
+}
+
+# Route method decorators
+
+# GET route decorator
+fn Get(path) {
+    return fn(target, propertyKey, descriptor) {
+        let metadata = getMetadata("controller", target) || { routes: [] }
+        metadata.routes.push({
+            method: "GET",
+            path: path,
+            handler: propertyKey
+        })
+        setMetadata("controller", metadata, target)
+        return descriptor
+    }
+}
+
+# POST route decorator
+fn Post(path) {
+    return fn(target, propertyKey, descriptor) {
+        let metadata = getMetadata("controller", target) || { routes: [] }
+        metadata.routes.push({
+            method: "POST",
+            path: path,
+            handler: propertyKey
+        })
+        setMetadata("controller", metadata, target)
+        return descriptor
+    }
+}
+
+# PUT route decorator
+fn Put(path) {
+    return fn(target, propertyKey, descriptor) {
+        let metadata = getMetadata("controller", target) || { routes: [] }
+        metadata.routes.push({
+            method: "PUT",
+            path: path,
+            handler: propertyKey
+        })
+        setMetadata("controller", metadata, target)
+        return descriptor
+    }
+}
+
+# DELETE route decorator
+fn Delete(path) {
+    return fn(target, propertyKey, descriptor) {
+        let metadata = getMetadata("controller", target) || { routes: [] }
+        metadata.routes.push({
+            method: "DELETE",
+            path: path,
+            handler: propertyKey
+        })
+        setMetadata("controller", metadata, target)
+        return descriptor
+    }
+}
+
+# PATCH route decorator
+fn Patch(path) {
+    return fn(target, propertyKey, descriptor) {
+        let metadata = getMetadata("controller", target) || { routes: [] }
+        metadata.routes.push({
+            method: "PATCH",
+            path: path,
+            handler: propertyKey
+        })
+        setMetadata("controller", metadata, target)
+        return descriptor
+    }
+}
+
+# Middleware decorator
+fn UseMiddleware(...middlewares) {
+    return fn(target, propertyKey, descriptor) {
+        setMetadata("middleware", middlewares, descriptor || target)
+        return descriptor
+    }
+}
+
+# Guard decorator (for authentication/authorization)
+fn UseGuards(...guards) {
+    return fn(target, propertyKey, descriptor) {
+        setMetadata("guards", guards, descriptor || target)
+        return descriptor
+    }
+}
+
+# Interceptor decorator
+fn UseInterceptors(...interceptors) {
+    return fn(target, propertyKey, descriptor) {
+        setMetadata("interceptors", interceptors, descriptor || target)
+        return descriptor
+    }
+}
+
+# Injectable decorator (for dependency injection)
+fn Injectable() {
+    return fn(target) {
+        setMetadata("injectable", true, target)
+        return target
+    }
+}
+
+# Inject decorator (for dependency injection)
+fn Inject(token) {
+    return fn(target, propertyKey, parameterIndex) {
+        let injectMetadata = getMetadata("inject", target) || {}
+        
+        if (!injectMetadata[propertyKey]) {
+            injectMetadata[propertyKey] = {}
+        }
+        
+        injectMetadata[propertyKey][parameterIndex] = token
+        setMetadata("inject", injectMetadata, target)
+    }
+}
+
+# HTTP status code decorators
+
+# HttpCode decorator
+fn HttpCode(statusCode) {
+    return fn(target, propertyKey, descriptor) {
+        setMetadata("httpCode", statusCode, descriptor)
+        return descriptor
+    }
+}
+
+# Header decorator
+fn Header(name, value) {
+    return fn(target, propertyKey, descriptor) {
+        let headers = getMetadata("headers", descriptor) || {}
+        headers[name] = value
+        setMetadata("headers", headers, descriptor)
+        return descriptor
+    }
+}
+
+# Redirect decorator
+fn Redirect(url, statusCode) {
+    return fn(target, propertyKey, descriptor) {
+        setMetadata("redirect", {
+            url: url,
+            statusCode: statusCode || 302
+        }, descriptor)
+        return descriptor
+    }
+}
+
+# Parameter decorators
+
+# Request body decorator
+fn Body(propertyKey) {
+    return fn(target, methodName, parameterIndex) {
+        let params = getMetadata("params", target) || {}
+        
+        if (!params[methodName]) {
+            params[methodName] = []
+        }
+        
+        params[methodName][parameterIndex] = {
+            type: "body",
+            key: propertyKey
+        }
+        
+        setMetadata("params", params, target)
+    }
+}
+
+# Request parameter decorator
+fn Param(paramName) {
+    return fn(target, methodName, parameterIndex) {
+        let params = getMetadata("params", target) || {}
+        
+        if (!params[methodName]) {
+            params[methodName] = []
+        }
+        
+        params[methodName][parameterIndex] = {
+            type: "param",
+            key: paramName
+        }
+        
+        setMetadata("params", params, target)
+    }
+}
+
+# Query parameter decorator
+fn Query(queryName) {
+    return fn(target, methodName, parameterIndex) {
+        let params = getMetadata("params", target) || {}
+        
+        if (!params[methodName]) {
+            params[methodName] = []
+        }
+        
+        params[methodName][parameterIndex] = {
+            type: "query",
+            key: queryName
+        }
+        
+        setMetadata("params", params, target)
+    }
+}
+
+# Request headers decorator
+fn Headers(headerName) {
+    return fn(target, methodName, parameterIndex) {
+        let params = getMetadata("params", target) || {}
+        
+        if (!params[methodName]) {
+            params[methodName] = []
+        }
+        
+        params[methodName][parameterIndex] = {
+            type: "header",
+            key: headerName
+        }
+        
+        setMetadata("params", params, target)
+    }
+}
+
+# Request object decorator
+fn Req() {
+    return fn(target, methodName, parameterIndex) {
+        let params = getMetadata("params", target) || {}
+        
+        if (!params[methodName]) {
+            params[methodName] = []
+        }
+        
+        params[methodName][parameterIndex] = {
+            type: "request"
+        }
+        
+        setMetadata("params", params, target)
+    }
+}
+
+# Response object decorator
+fn Res() {
+    return fn(target, methodName, parameterIndex) {
+        let params = getMetadata("params", target) || {}
+        
+        if (!params[methodName]) {
+            params[methodName] = []
+        }
+        
+        params[methodName][parameterIndex] = {
+            type: "response"
+        }
+        
+        setMetadata("params", params, target)
+    }
+}
+
+# Utility decorators
+
+# Cache decorator (simple in-memory cache)
+fn Cache(ttl) {
+    let cache = {}
+    let cacheTTL = ttl || 60000  # Default 1 minute
+    
+    return fn(target, propertyKey, descriptor) {
+        let originalMethod = descriptor.value
+        
+        descriptor.value = fn(...args) {
+            let key = propertyKey + "_" + JSON.stringify(args)
+            let now = Date.now()
+            
+            if (cache[key] && (now - cache[key].timestamp) < cacheTTL) {
+                return cache[key].value
+            }
+            
+            let result = originalMethod.apply(this, args)
+            cache[key] = {
+                value: result,
+                timestamp: now
+            }
+            
+            return result
+        }
+        
+        return descriptor
+    }
+}
+
+# Timeout decorator
+fn Timeout(ms) {
+    return fn(target, propertyKey, descriptor) {
+        let originalMethod = descriptor.value
+        
+        descriptor.value = fn(...args) {
+            return new Promise((resolve, reject) => {
+                let timeoutId = setTimeout(() => {
+                    reject(new Error("Operation timed out"))
+                }, ms)
+                
+                try {
+                    let result = originalMethod.apply(this, args)
+                    clearTimeout(timeoutId)
+                    resolve(result)
+                } catch (err) {
+                    clearTimeout(timeoutId)
+                    reject(err)
+                }
+            })
+        }
+        
+        return descriptor
+    }
+}
+
+# Retry decorator
+fn Retry(attempts, delay) {
+    return fn(target, propertyKey, descriptor) {
+        let originalMethod = descriptor.value
+        let maxAttempts = attempts || 3
+        let retryDelay = delay || 1000
+        
+        descriptor.value = fn(...args) {
+            let attempt = 0
+            
+            let tryExecute = fn() {
+                try {
+                    return originalMethod.apply(this, args)
+                } catch (err) {
+                    attempt = attempt + 1
+                    
+                    if (attempt < maxAttempts) {
+                        setTimeout(tryExecute, retryDelay)
+                    } else {
+                        throw err
+                    }
+                }
+            }
+            
+            return tryExecute()
+        }
+        
+        return descriptor
+    }
+}
+
+# Validate decorator (for validation)
+fn Validate(schema) {
+    return fn(target, propertyKey, descriptor) {
+        setMetadata("validation", schema, descriptor)
+        return descriptor
+    }
+}
+
+# Export all decorators
+export {
+    setMetadata,
+    getMetadata,
+    Controller,
+    Get,
+    Post,
+    Put,
+    Delete,
+    Patch,
+    UseMiddleware,
+    UseGuards,
+    UseInterceptors,
+    Injectable,
+    Inject,
+    HttpCode,
+    Header,
+    Redirect,
+    Body,
+    Param,
+    Query,
+    Headers,
+    Req,
+    Res,
+    Cache,
+    Timeout,
+    Retry,
+    Validate
+}

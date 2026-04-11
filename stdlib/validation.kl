@@ -1,0 +1,378 @@
+# KLang Validation Library
+# Data validation utilities for server applications
+
+import core
+import string
+
+# Validation result object
+fn ValidationResult(isValid, errors) {
+    return {
+        isValid: isValid,
+        errors: errors || [],
+        
+        # Get first error message
+        firstError: fn() {
+            return len(this.errors) > 0 ? this.errors[0] : null
+        },
+        
+        # Get all error messages
+        allErrors: fn() {
+            return this.errors
+        }
+    }
+}
+
+# Validator class
+class Validator {
+    constructor(rules) {
+        this.rules = rules || {}
+        this.errors = []
+    }
+    
+    # Validate data against rules
+    validate(data) {
+        this.errors = []
+        
+        for field in keys(this.rules) {
+            let fieldRules = this.rules[field]
+            let value = data[field]
+            
+            for rule in fieldRules {
+                let result = this.applyRule(field, value, rule)
+                if (!result) {
+                    break  # Stop on first error for this field
+                }
+            }
+        }
+        
+        return ValidationResult(len(this.errors) == 0, this.errors)
+    }
+    
+    # Apply a single validation rule
+    applyRule(field, value, rule) {
+        if (rule.type == "required") {
+            if (value == null || value == undefined || value == "") {
+                this.errors.push("${field} is required")
+                return false
+            }
+        }
+        
+        if (rule.type == "string") {
+            if (typeof(value) != "string") {
+                this.errors.push("${field} must be a string")
+                return false
+            }
+            
+            if (rule.minLength && len(value) < rule.minLength) {
+                this.errors.push("${field} must be at least ${rule.minLength} characters")
+                return false
+            }
+            
+            if (rule.maxLength && len(value) > rule.maxLength) {
+                this.errors.push("${field} must be at most ${rule.maxLength} characters")
+                return false
+            }
+        }
+        
+        if (rule.type == "number") {
+            if (typeof(value) != "number") {
+                this.errors.push("${field} must be a number")
+                return false
+            }
+            
+            if (rule.min != null && value < rule.min) {
+                this.errors.push("${field} must be at least ${rule.min}")
+                return false
+            }
+            
+            if (rule.max != null && value > rule.max) {
+                this.errors.push("${field} must be at most ${rule.max}")
+                return false
+            }
+        }
+        
+        if (rule.type == "email") {
+            if (!isValidEmail(value)) {
+                this.errors.push("${field} must be a valid email address")
+                return false
+            }
+        }
+        
+        if (rule.type == "url") {
+            if (!isValidURL(value)) {
+                this.errors.push("${field} must be a valid URL")
+                return false
+            }
+        }
+        
+        if (rule.type == "pattern") {
+            if (!rule.pattern.test(value)) {
+                this.errors.push("${field} format is invalid")
+                return false
+            }
+        }
+        
+        if (rule.type == "enum") {
+            if (!rule.values.includes(value)) {
+                this.errors.push("${field} must be one of: ${rule.values.join(', ')}")
+                return false
+            }
+        }
+        
+        if (rule.type == "custom") {
+            if (!rule.validator(value)) {
+                this.errors.push(rule.message || "${field} is invalid")
+                return false
+            }
+        }
+        
+        return true
+    }
+}
+
+# Quick validation functions
+
+# Required field
+fn required(message) {
+    return {
+        type: "required",
+        message: message || "Field is required"
+    }
+}
+
+# String validation
+fn string(options) {
+    let opts = options || {}
+    return {
+        type: "string",
+        minLength: opts.minLength,
+        maxLength: opts.maxLength,
+        message: opts.message
+    }
+}
+
+# Number validation
+fn number(options) {
+    let opts = options || {}
+    return {
+        type: "number",
+        min: opts.min,
+        max: opts.max,
+        message: opts.message
+    }
+}
+
+# Email validation
+fn email(message) {
+    return {
+        type: "email",
+        message: message || "Must be a valid email"
+    }
+}
+
+# URL validation
+fn url(message) {
+    return {
+        type: "url",
+        message: message || "Must be a valid URL"
+    }
+}
+
+# Pattern validation (regex)
+fn pattern(regex, message) {
+    return {
+        type: "pattern",
+        pattern: regex,
+        message: message || "Format is invalid"
+    }
+}
+
+# Enum validation
+fn enum(values, message) {
+    return {
+        type: "enum",
+        values: values,
+        message: message
+    }
+}
+
+# Custom validator
+fn custom(validator, message) {
+    return {
+        type: "custom",
+        validator: validator,
+        message: message
+    }
+}
+
+# Helper: Check if valid email
+fn isValidEmail(email) {
+    if (typeof(email) != "string") {
+        return false
+    }
+    
+    # Simple email validation
+    let atIndex = email.indexOf("@")
+    if (atIndex < 1) {
+        return false
+    }
+    
+    let dotIndex = email.lastIndexOf(".")
+    if (dotIndex < atIndex + 2 || dotIndex >= len(email) - 1) {
+        return false
+    }
+    
+    return true
+}
+
+# Helper: Check if valid URL
+fn isValidURL(url) {
+    if (typeof(url) != "string") {
+        return false
+    }
+    
+    # Simple URL validation
+    return url.startsWith("http://") || url.startsWith("https://")
+}
+
+# Helper: Check if valid UUID
+fn isValidUUID(uuid) {
+    if (typeof(uuid) != "string") {
+        return false
+    }
+    
+    # UUID v4 pattern
+    let pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    return pattern.test(uuid)
+}
+
+# Sanitization functions
+
+# Sanitize string (remove HTML tags)
+fn sanitizeString(str) {
+    if (typeof(str) != "string") {
+        return str
+    }
+    
+    # Remove HTML tags
+    return str.replace(/<[^>]*>/g, "")
+}
+
+# Escape HTML entities
+fn escapeHTML(str) {
+    if (typeof(str) != "string") {
+        return str
+    }
+    
+    let map = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#x27;",
+        "/": "&#x2F;"
+    }
+    
+    let result = str
+    for char in keys(map) {
+        result = result.replace(char, map[char])
+    }
+    
+    return result
+}
+
+# Trim whitespace
+fn trim(str) {
+    if (typeof(str) != "string") {
+        return str
+    }
+    
+    return str.trim()
+}
+
+# Normalize whitespace
+fn normalizeWhitespace(str) {
+    if (typeof(str) != "string") {
+        return str
+    }
+    
+    return str.replace(/\s+/g, " ").trim()
+}
+
+# Validation middleware for server
+fn validateBody(schema) {
+    return fn(req, res, next) {
+        let validator = Validator(schema)
+        let result = validator.validate(req.body)
+        
+        if (!result.isValid) {
+            res.status(400).json({
+                error: "Validation failed",
+                errors: result.allErrors()
+            })
+            return
+        }
+        
+        next()
+    }
+}
+
+# Validation middleware for query parameters
+fn validateQuery(schema) {
+    return fn(req, res, next) {
+        let validator = Validator(schema)
+        let result = validator.validate(req.query)
+        
+        if (!result.isValid) {
+            res.status(400).json({
+                error: "Validation failed",
+                errors: result.allErrors()
+            })
+            return
+        }
+        
+        next()
+    }
+}
+
+# Validation middleware for URL parameters
+fn validateParams(schema) {
+    return fn(req, res, next) {
+        let validator = Validator(schema)
+        let result = validator.validate(req.params)
+        
+        if (!result.isValid) {
+            res.status(400).json({
+                error: "Validation failed",
+                errors: result.allErrors()
+            })
+            return
+        }
+        
+        next()
+    }
+}
+
+# Export all functions and classes
+export {
+    Validator,
+    ValidationResult,
+    required,
+    string,
+    number,
+    email,
+    url,
+    pattern,
+    enum,
+    custom,
+    isValidEmail,
+    isValidURL,
+    isValidUUID,
+    sanitizeString,
+    escapeHTML,
+    trim,
+    normalizeWhitespace,
+    validateBody,
+    validateQuery,
+    validateParams
+}

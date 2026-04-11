@@ -1,0 +1,13 @@
+{
+  "name": "example-blog-api",
+  "version": "1.0.0",
+  "description": "A KLang server application",
+  "main": "src/main.kl",
+  "scripts": {
+    "start": "klang run src/main.kl --mode=production",
+    "dev": "klang run src/main.kl --mode=dev --hot-reload",
+    "test": "klang test tests/"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

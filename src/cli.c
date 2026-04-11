@@ -19,6 +19,7 @@
 #include "../include/package_manager.h"
 #include "../include/lsp_server.h"
 #include "../include/http_server.h"
+#include "../include/generators.h"
 
 void run_repl(void);
 
@@ -401,6 +402,96 @@ int main(int argc, char **argv) {
         }
         
         init_project(argv[2], create_git);
+    }
+    else if (strcmp(argv[1], "new") == 0) {
+        if (argc < 3) {
+            print_error("Missing project type");
+            fprintf(stderr, "Usage: klang new <server|app> <project-name> [--git]\n");
+            fprintf(stderr, "Try 'klang help new' for more information.\n");
+            config_free();
+            return 1;
+        }
+        
+        if (strcmp(argv[2], "server") == 0) {
+            if (argc < 4) {
+                print_error("Missing project name");
+                fprintf(stderr, "Usage: klang new server <project-name> [--git]\n");
+                config_free();
+                return 1;
+            }
+            
+            int create_git = 0;
+            if (argc >= 5 && strcmp(argv[4], "--git") == 0) {
+                create_git = 1;
+            }
+            
+            init_project_server(argv[3], create_git);
+        } else if (strcmp(argv[2], "app") == 0) {
+            if (argc < 4) {
+                print_error("Missing project name");
+                fprintf(stderr, "Usage: klang new app <project-name> [--git]\n");
+                config_free();
+                return 1;
+            }
+            
+            int create_git = 0;
+            if (argc >= 5 && strcmp(argv[4], "--git") == 0) {
+                create_git = 1;
+            }
+            
+            init_project(argv[3], create_git);
+        } else {
+            print_error("Unknown project type");
+            fprintf(stderr, "Supported types: server, app\n");
+            fprintf(stderr, "Usage: klang new <server|app> <project-name>\n");
+            config_free();
+            return 1;
+        }
+    }
+    else if (strcmp(argv[1], "generate") == 0 || strcmp(argv[1], "g") == 0) {
+        if (argc < 3) {
+            print_error("Missing generator type");
+            fprintf(stderr, "Usage: klang generate <type> <name>\n");
+            fprintf(stderr, "Types: module, controller, service, middleware, route, guard, interceptor\n");
+            fprintf(stderr, "Short aliases: m (module), c (controller), s (service), mw (middleware), r (route)\n");
+            config_free();
+            return 1;
+        }
+        
+        const char *type = argv[2];
+        const char *name = argc >= 4 ? argv[3] : NULL;
+        
+        if (!name) {
+            print_error("Missing component name");
+            fprintf(stderr, "Usage: klang generate %s <name>\n", type);
+            config_free();
+            return 1;
+        }
+        
+        int result = 0;
+        if (strcmp(type, "module") == 0 || strcmp(type, "m") == 0) {
+            result = generate_module(name);
+        } else if (strcmp(type, "controller") == 0 || strcmp(type, "c") == 0) {
+            result = generate_controller(name);
+        } else if (strcmp(type, "service") == 0 || strcmp(type, "s") == 0) {
+            result = generate_service(name);
+        } else if (strcmp(type, "middleware") == 0 || strcmp(type, "mw") == 0) {
+            result = generate_middleware(name);
+        } else if (strcmp(type, "route") == 0 || strcmp(type, "r") == 0) {
+            result = generate_route(name);
+        } else if (strcmp(type, "guard") == 0) {
+            result = generate_guard(name);
+        } else if (strcmp(type, "interceptor") == 0 || strcmp(type, "i") == 0) {
+            result = generate_interceptor(name);
+        } else {
+            print_error("Unknown generator type");
+            fprintf(stderr, "Supported types: module, controller, service, middleware, route, guard, interceptor\n");
+            config_free();
+            return 1;
+        }
+        
+        config_free();
+        return result == 0 ? 0 : 1;
     }
     else if (strcmp(argv[1], "config") == 0) {
         config_print();

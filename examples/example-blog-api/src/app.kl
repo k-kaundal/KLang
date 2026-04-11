@@ -1,0 +1,42 @@
+# Application setup for example-blog-api
+import server from "stdlib/server"
+import apiRoutes from "./routes/api.routes"
+import loggerMiddleware from "./middleware/logger.middleware"
+
+# Create server application
+let app = server.createApp()
+
+# Global middleware
+app.use(loggerMiddleware)
+
+# Enable CORS
+app.use(server.cors())
+
+# Parse JSON bodies
+app.use(server.json())
+
+# API routes
+app.use("/api", apiRoutes)
+
+# Serve static files
+app.static("/", "./public")
+
+# Health check endpoint
+app.get("/health", (req, res) => {
+    res.json({
+        status: "healthy",
+        timestamp: Date.now(),
+        uptime: process.uptime()
+    })
+})
+
+# Error handler
+app.useErrorHandler((err, req, res) => {
+    println("Error:", err.message)
+    res.status(500).json({
+        error: err.message,
+        timestamp: Date.now()
+    })
+})
+
+export app
