@@ -78,15 +78,16 @@ test_vm_features
 benchmark_vm_register
 
 # Report and summary files (moved to docs/reports/)
-*_REPORT.md
-*_SUMMARY.md
-*_SUMMARY.txt
-*_COMPLETE.md
-*_PROGRESS.md
-*_VALIDATION.md
-*_FIX_PLAN.md
-*_IMPLEMENTATION.md
-*_INDEX.md
+# Ignore these patterns in root directory only
+/*_REPORT.md
+/*_SUMMARY.md
+/*_SUMMARY.txt
+/*_COMPLETE.md
+/*_PROGRESS.md
+/*_VALIDATION.md
+/*_FIX_PLAN.md
+/*_IMPLEMENTATION.md
+/*_INDEX.md
 
 # Package manager artifacts
 node_modules/
