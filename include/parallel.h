@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include <stdatomic.h>
-#include "interpreter.h"
+#include "runtime/interpreter/interpreter.h"
 
 /* Thread pool configuration */
 #define DEFAULT_THREAD_COUNT 4

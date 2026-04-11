@@ -1,7 +1,7 @@
 #ifndef TYPE_CHECKER_H
 #define TYPE_CHECKER_H
 
-#include "ast.h"
+#include "core/ast/ast.h"
 
 typedef enum {
     TYPE_INT,

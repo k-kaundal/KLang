@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "interpreter.h"
-#include "ast.h"
+#include "runtime/interpreter/interpreter.h"
+#include "core/ast/ast.h"
 
 /* Debugger state */
 typedef enum {

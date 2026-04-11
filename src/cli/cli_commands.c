@@ -5,9 +5,9 @@
 #include <unistd.h>
 #include "cli_commands.h"
 #include "cli_colors.h"
-#include "lexer.h"
-#include "parser.h"
-#include "ast.h"
+#include "core/lexer/lexer.h"
+#include "core/parser/parser.h"
+#include "core/ast/ast.h"
 #include "formatter.h"
 #include "../include/type_checker.h"
 

@@ -4,7 +4,7 @@
  */
 
 #include "klp_runtime.h"
-#include "runtime.h"
+#include "runtime/runtime.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

@@ -1,7 +1,7 @@
 #ifndef SSA_IR_H
 #define SSA_IR_H
 
-#include "ast.h"
+#include "core/ast/ast.h"
 
 /* SSA IR Instruction Opcodes */
 typedef enum {

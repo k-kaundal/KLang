@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include "ast.h"
+#include "core/ast/ast.h"
 
 /* WASM value types */
 typedef enum {

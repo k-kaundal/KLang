@@ -3,12 +3,12 @@
 #include <string.h>
 #include <libgen.h>
 #include <unistd.h>
-#include "lexer.h"
-#include "parser.h"
-#include "interpreter.h"
+#include "core/lexer/lexer.h"
+#include "core/parser/parser.h"
+#include "runtime/interpreter/interpreter.h"
 #include "compiler.h"
 #include "vm_stack.h"
-#include "runtime.h"
+#include "runtime/runtime.h"
 #include "cli_colors.h"
 #include "cli_help.h"
 #include "cli_commands.h"

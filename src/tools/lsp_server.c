@@ -1,6 +1,8 @@
+#include "../core/lexer/lexer.h"
+#include "../core/parser/parser.h"
+#include "../core/ast/ast.h"
+#include "../runtime/interpreter/interpreter.h"
 #include "lsp_server.h"
-#include "lexer.h"
-#include "parser.h"
 #include "cli_colors.h"
 #include <stdarg.h>
 #include <ctype.h>

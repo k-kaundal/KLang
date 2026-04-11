@@ -1,7 +1,7 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#include "ast.h"
+#include "core/ast/ast.h"
 #include "vm_stack.h"
 
 typedef struct {

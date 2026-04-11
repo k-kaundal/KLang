@@ -91,7 +91,8 @@ VERSION := $(or $(GIT_VERSION),$(FILE_VERSION))
 CFLAGS = -Wall -Wextra -std=c99 $(PLATFORM_CFLAGS) -Isrc -Iinclude -g $(LLVM_CFLAGS) -DKLANG_VERSION=\"$(VERSION)\"
 LDFLAGS = $(LLVM_LDFLAGS) $(PLATFORM_LDFLAGS) $(KLP_LDFLAGS) $(CRYPTO_LDFLAGS) $(RDMA_LDFLAGS) $(CUDA_LDFLAGS)
 
-SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/vm_stack.c src/vm_register.c src/ssa_ir.c src/compiler.c src/gc.c src/runtime.c src/runtime/builtins/builtin_io.c src/runtime/builtins/builtin_string.c src/runtime/builtins/builtin_array.c src/runtime/builtins/builtin_math.c src/runtime/builtins/builtin_file.c src/runtime/builtins/builtin_env.c src/runtime/builtins/builtin_http.c src/runtime/builtins/builtin_json.c src/runtime/builtins/builtin_core.c src/repl.c src/cli.c src/cli_colors.c src/cli_help.c src/cli_commands.c src/formatter.c src/error_reporter.c src/config.c src/test_runner.c src/project_init.c src/generators.c src/llvm_backend.c src/type_checker.c src/package_manager.c src/lsp_server.c src/debugger.c src/type_system.c src/parallel.c src/wasm_backend.c src/plugin_system.c src/cloud_native.c src/http_server.c src/klp_protocol.c src/klp_server.c src/klp_client.c src/klp_runtime.c src/klp_crypto.c src/klp_accel.c src/klp_rdma.c
+# Automatically find all .c files in src/ and subdirectories
+SRC = $(shell find src -name '*.c' -type f)
 OBJ = $(SRC:.c=.o)
 TARGET = klang
 
@@ -100,15 +101,17 @@ all: $(TARGET)
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+# Pattern rule to compile .c files anywhere in src/
 src/%.o: src/%.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Base test sources (always needed)
-TEST_BASE_SRC = tests/test_runner.c tests/test_lexer.c tests/test_parser.c tests/test_interpreter.c tests/test_arrow_functions.c tests/test_ternary.c tests/test_async_await.c src/lexer.c src/ast.c src/parser.c src/interpreter.c src/runtime.c src/runtime/builtins/builtin_io.c src/runtime/builtins/builtin_string.c src/runtime/builtins/builtin_array.c src/runtime/builtins/builtin_math.c src/runtime/builtins/builtin_file.c src/runtime/builtins/builtin_env.c src/runtime/builtins/builtin_http.c src/runtime/builtins/builtin_json.c src/runtime/builtins/builtin_core.c src/gc.c src/vm_stack.c src/vm_register.c src/compiler.c src/config.c src/error_reporter.c src/cli_colors.c
+TEST_BASE_SRC = tests/test_runner.c tests/test_lexer.c tests/test_parser.c tests/test_interpreter.c tests/test_arrow_functions.c tests/test_ternary.c tests/test_async_await.c src/core/lexer/lexer.c src/core/ast/ast.c src/core/parser/parser.c src/runtime/interpreter/interpreter.c src/runtime/interpreter/evaluator.c src/runtime/interpreter/expressions.c src/runtime/interpreter/statements.c src/runtime/runtime.c src/runtime/builtins/builtin_io.c src/runtime/builtins/builtin_string.c src/runtime/builtins/builtin_array.c src/runtime/builtins/builtin_math.c src/runtime/builtins/builtin_file.c src/runtime/builtins/builtin_env.c src/runtime/builtins/builtin_http.c src/runtime/builtins/builtin_json.c src/runtime/builtins/builtin_core.c src/runtime/memory/gc.c src/vm/vm_stack.c src/vm/vm_register.c src/compiler/bytecode/compiler.c src/utils/config.c src/utils/error_reporter.c src/cli/cli_colors.c
 
 # KLP sources (when ENABLE_KLP=1)
 ifeq ($(ENABLE_KLP),1)
-    TEST_KLP_SRC = src/klp_protocol.c src/klp_server.c src/klp_client.c src/klp_runtime.c src/klp_crypto.c src/klp_accel.c src/klp_rdma.c
+    TEST_KLP_SRC = src/network/klp/klp_protocol.c src/network/klp/klp_server.c src/network/klp/klp_client.c src/network/klp/klp_runtime.c src/network/klp/klp_crypto.c src/network/klp/klp_accel.c src/network/klp/klp_rdma.c
 else
     TEST_KLP_SRC =
 endif
@@ -123,7 +126,7 @@ test: $(TEST_SRC)
 	./test_runner
 
 # Phase 2 Unit Tests
-PHASE2_SRC = src/lexer.c src/ast.c src/parser.c src/interpreter.c src/runtime.c src/runtime/builtins/builtin_io.c src/runtime/builtins/builtin_string.c src/runtime/builtins/builtin_array.c src/runtime/builtins/builtin_math.c src/runtime/builtins/builtin_file.c src/runtime/builtins/builtin_env.c src/runtime/builtins/builtin_http.c src/runtime/builtins/builtin_json.c src/runtime/builtins/builtin_core.c src/gc.c src/vm_stack.c src/vm_register.c src/compiler.c src/ssa_ir.c src/llvm_backend.c src/type_checker.c src/config.c src/error_reporter.c src/cli_colors.c
+PHASE2_SRC = src/core/lexer/lexer.c src/core/ast/ast.c src/core/parser/parser.c src/runtime/interpreter/interpreter.c src/runtime/interpreter/evaluator.c src/runtime/interpreter/expressions.c src/runtime/interpreter/statements.c src/runtime/runtime.c src/runtime/builtins/builtin_io.c src/runtime/builtins/builtin_string.c src/runtime/builtins/builtin_array.c src/runtime/builtins/builtin_math.c src/runtime/builtins/builtin_file.c src/runtime/builtins/builtin_env.c src/runtime/builtins/builtin_http.c src/runtime/builtins/builtin_json.c src/runtime/builtins/builtin_core.c src/runtime/memory/gc.c src/vm/vm_stack.c src/vm/vm_register.c src/compiler/bytecode/compiler.c src/compiler/bytecode/ssa_ir.c src/compiler/llvm/llvm_backend.c src/core/types/type_checker.c src/utils/config.c src/utils/error_reporter.c src/cli/cli_colors.c
 
 test-pointers: $(PHASE2_SRC)
 	$(CC) $(CFLAGS) -o test_pointers_unit tests/test_pointers_unit.c $(PHASE2_SRC) $(LDFLAGS)
@@ -222,7 +225,7 @@ bench-quick: benchmarks
 klp-benchmark: $(TARGET)
 	@echo "Building KLP benchmark..."
 	@$(CC) $(CFLAGS) -o benchmarks/klp_benchmark benchmarks/klp_benchmark.c \
-		src/klp_protocol.o src/klp_server.o src/klp_client.o \
+		src/network/klp/klp_protocol.o src/network/klp/klp_server.o src/network/klp/klp_client.o \
 		-lz -lpthread -lm
 	@echo "✓ KLP benchmark built"
 	@echo "Running KLP benchmark..."
@@ -232,16 +235,17 @@ klp-benchmark: $(TARGET)
 klp-examples:
 	@echo "Building KLP examples..."
 	@$(CC) $(CFLAGS) -o examples/klp_echo_server examples/klp_echo_server.c \
-		src/klp_protocol.o src/klp_server.o -lz -lpthread
+		src/network/klp/klp_protocol.o src/network/klp/klp_server.o -lz -lpthread
 	@$(CC) $(CFLAGS) -o examples/klp_test_client examples/klp_test_client.c \
-		src/klp_protocol.o src/klp_client.o -lz
+		src/network/klp/klp_protocol.o src/network/klp/klp_client.o -lz
 	@echo "✓ KLP examples built"
 	@echo ""
 	@echo "Run server: ./examples/klp_echo_server 9000"
 	@echo "Run client: ./examples/klp_test_client 127.0.0.1 9000"
 
 clean:
-	rm -f src/*.o $(TARGET) test_runner
+	find src -name '*.o' -type f -delete
+	rm -f $(TARGET) test_runner
 	rm -f benchmarks/language/*_bench
 	rm -f benchmarks/reports/*.json
 	rm -f benchmarks/klp_benchmark

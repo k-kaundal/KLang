@@ -1,7 +1,7 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "ast.h"
+#include "core/ast/ast.h"
 #include <stdio.h>
 
 typedef enum {

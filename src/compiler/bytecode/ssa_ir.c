@@ -1,5 +1,5 @@
 #include "ssa_ir.h"
-#include "ast.h"
+#include "core/ast/ast.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

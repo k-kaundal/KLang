@@ -12,7 +12,7 @@
     typedef void* PluginHandle;
 #endif
 
-#include "interpreter.h"
+#include "runtime/interpreter/interpreter.h"
 
 /* Plugin API version */
 #define PLUGIN_API_VERSION 1

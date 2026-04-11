@@ -1,3 +1,7 @@
+#include "../core/lexer/lexer.h"
+#include "../core/parser/parser.h"
+#include "../core/ast/ast.h"
+#include "../runtime/interpreter/interpreter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,10 +9,6 @@
 #include <sys/stat.h>
 #include "test_runner.h"
 #include "cli_colors.h"
-#include "lexer.h"
-#include "parser.h"
-#include "interpreter.h"
-#include "runtime.h"
 
 typedef struct {
     int total;

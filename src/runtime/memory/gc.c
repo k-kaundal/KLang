@@ -1,4 +1,4 @@
-#include "gc.h"
+#include "runtime/memory/gc.h"
 #include <stdlib.h>
 #include <string.h>
 

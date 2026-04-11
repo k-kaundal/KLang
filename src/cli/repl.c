@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "lexer.h"
-#include "parser.h"
-#include "interpreter.h"
-#include "runtime.h"
+#include "core/lexer/lexer.h"
+#include "core/parser/parser.h"
+#include "runtime/interpreter/interpreter.h"
+#include "runtime/runtime.h"
 #include "cli_colors.h"
 
 static Value builtin_exit(Interpreter *interp, Value *args, int argc) {
