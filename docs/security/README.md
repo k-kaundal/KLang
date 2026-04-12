@@ -179,20 +179,22 @@ KLang implements defense in depth with multiple security layers:
 
 ## Current Status
 
-| Feature | Status | Phase |
-|---------|--------|-------|
-| Architecture Design | ✅ Complete | - |
-| Implementation Plan | ✅ Complete | - |
-| Safety Context | 🚧 In Progress | Phase 1 |
-| Capability System | 🚧 In Progress | Phase 1 |
-| Unsafe Block Parsing | ⏳ Planned | Phase 2 |
-| Unsafe Block Runtime | ⏳ Planned | Phase 2 |
-| Sandbox Engine | ⏳ Planned | Phase 3 |
-| Sandbox Syntax | ⏳ Planned | Phase 3 |
-| Testing | ⏳ Planned | Phase 4 |
-| Documentation | ⏳ Planned | Phase 4 |
-| VM Integration | ⏳ Planned | Phase 5 |
-| LLVM Integration | ⏳ Planned | Phase 5 |
+| Feature | Status | Phase | Documentation |
+|---------|--------|-------|---------------|
+| Architecture Design | ✅ Complete | - | [SECURITY_ARCHITECTURE.md](SECURITY_ARCHITECTURE.md) |
+| Implementation Plan | ✅ Complete | - | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) |
+| Safety Context | ✅ Complete | Phase 1 | [PHASE1_IMPLEMENTATION.md](PHASE1_IMPLEMENTATION.md) |
+| Capability System | ✅ Complete | Phase 1 | [PHASE1_QUICKREF.md](PHASE1_QUICKREF.md) |
+| Unsafe Block Parsing | ✅ Complete | Phase 2 | [PHASE2_IMPLEMENTATION.md](PHASE2_IMPLEMENTATION.md) |
+| Unsafe Block Runtime | ✅ Complete | Phase 2 | [UNSAFE_BLOCKS_QUICKREF.md](UNSAFE_BLOCKS_QUICKREF.md) |
+| Runtime Context Tracking | ⏳ Planned | Phase 3 | - |
+| Capability Checks in Builtins | ⏳ Planned | Phase 3 | - |
+| Sandbox Engine | ⏳ Planned | Phase 4 | - |
+| Sandbox Syntax | ⏳ Planned | Phase 4 | - |
+| Testing | 🚧 In Progress | Phase 4 | - |
+| Documentation | 🚧 In Progress | Phase 4 | [QUICK_REFERENCE.md](QUICK_REFERENCE.md) |
+| VM Integration | ⏳ Planned | Phase 5 | - |
+| LLVM Integration | ⏳ Planned | Phase 5 | - |
 
 ## Backwards Compatibility
 
@@ -252,10 +254,21 @@ Optimization strategies:
 
 See the `examples/security/` directory for complete examples:
 
-- `unsafe_example.kl` - Unsafe block examples
-- `capability_example.kl` - Capability system examples
-- `sandbox_example.kl` - Sandbox examples
-- `advanced_security.kl` - Combining all features
+- `unsafe_example.kl` - Basic unsafe block demonstration
+- `unsafe_comprehensive_test.kl` - Comprehensive unsafe block tests with 5 test cases
+- (Coming soon) `capability_example.kl` - Capability system examples
+- (Coming soon) `sandbox_example.kl` - Sandbox examples
+- (Coming soon) `advanced_security.kl` - Combining all features
+
+### Running the Examples
+
+```bash
+# Basic unsafe block example
+./klang run examples/security/unsafe_example.kl
+
+# Comprehensive tests
+./klang run examples/security/unsafe_comprehensive_test.kl
+```
 
 ## Contributing
 
@@ -285,5 +298,6 @@ To report security vulnerabilities:
 ---
 
 **Last Updated:** 2025  
-**Status:** Design Phase  
-**Version:** 1.0
+**Status:** Phase 2 Complete - Unsafe block parsing and runtime implemented  
+**Version:** 1.0  
+**Test Status:** 237/238 tests passing, all unsafe block tests passing
