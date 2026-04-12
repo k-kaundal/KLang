@@ -265,6 +265,7 @@ int klp_rdma_send(KLPRDMAConnection *conn, const void *data, size_t length) {
 
 int klp_rdma_recv(KLPRDMAConnection *conn, void *buffer, size_t buffer_size,
                   size_t *bytes_received) {
+    (void)buffer_size;  /* Unused parameter */
     if (!conn || !buffer || !conn->connected) return -1;
     
 #ifdef ENABLE_RDMA

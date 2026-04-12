@@ -142,6 +142,7 @@ Value eval_block_stmt(Interpreter *interp, ASTNode *node, Env *env) {
 }
 
 Value eval_func_def(Interpreter *interp, ASTNode *node, Env *env) {
+    (void)interp;  /* Unused parameter */
     Value func;
     func.type = VAL_FUNCTION;
     func.as.func_val.param_count = node->data.func_def.params.count;
@@ -180,11 +181,13 @@ Value eval_return(Interpreter *interp, ASTNode *node, Env *env) {
 }
 
 Value eval_break(Interpreter *interp, ASTNode *node, Env *env) {
+    (void)node; (void)env;  /* Unused parameters */
     interp->last_result.is_break = 1;
     return make_null();
 }
 
 Value eval_continue(Interpreter *interp, ASTNode *node, Env *env) {
+    (void)node; (void)env;  /* Unused parameters */
     interp->last_result.is_continue = 1;
     return make_null();
 }
@@ -731,6 +734,7 @@ Value eval_export(Interpreter *interp, ASTNode *node, Env *env) {
 }
 
 Value eval_struct_def(Interpreter *interp, ASTNode *node, Env *env) {
+    (void)interp;  /* Unused parameter */
     /* Store struct/union definition in environment as a type */
     /* For now, we'll store the AST node itself as metadata */
     /* In a full implementation, we'd have a type system */

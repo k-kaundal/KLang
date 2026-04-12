@@ -410,6 +410,7 @@ Value builtin_klp_stream_read(Interpreter *interp, Value *args, int argc) {
 /* stream.writeTensor(tensor_data) */
 Value builtin_klp_stream_write_tensor(Interpreter *interp, Value *args, int argc) {
     (void)interp;
+    (void)args;  /* Unused parameter */
     
     if (argc < 2) {
         fprintf(stderr, "stream.writeTensor() requires stream and tensor\n");
@@ -430,6 +431,7 @@ Value builtin_klp_stream_write_tensor(Interpreter *interp, Value *args, int argc
 /* stream.readTensor() */
 Value builtin_klp_stream_read_tensor(Interpreter *interp, Value *args, int argc) {
     (void)interp;
+    (void)args;  /* Unused parameter */
     
     if (argc < 1) {
         fprintf(stderr, "stream.readTensor() requires stream\n");

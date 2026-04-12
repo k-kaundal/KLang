@@ -242,6 +242,7 @@ static const char *SERVER_PACKAGE_TEMPLATE =
 
 /* Initialize a new server project */
 void init_server_project(const char *project_name, TemplateType template, int create_git) {
+    (void)template;  /* Unused parameter - reserved for future template variations */
     char path[512];
     char content[4096];
     

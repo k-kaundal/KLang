@@ -2,6 +2,7 @@
 #include "core/parser/parser.h"
 #include "core/ast/ast.h"
 #include "interpreter.h"
+#include "runtime.h"  /* For runtime_init declaration */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

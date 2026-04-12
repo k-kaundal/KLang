@@ -1,6 +1,7 @@
 #include "interpreter_internal.h"
 
 Value eval_number(Interpreter *interp, ASTNode *node, Env *env) {
+    (void)interp; (void)env;  /* Unused parameters */
     double v = node->data.num_val;
     if (fmod(v, 1.0) == 0.0 && v >= -9.2e18 && v <= 9.2e18)
         return make_int((long long)v);
@@ -8,14 +9,17 @@ Value eval_number(Interpreter *interp, ASTNode *node, Env *env) {
 }
 
 Value eval_string(Interpreter *interp, ASTNode *node, Env *env) {
+    (void)interp; (void)env;  /* Unused parameters */
     return make_string(node->data.str_val);
 }
 
 Value eval_bool(Interpreter *interp, ASTNode *node, Env *env) {
+    (void)interp; (void)env;  /* Unused parameters */
     return make_bool(node->data.bool_val);
 }
 
 Value eval_null(Interpreter *interp, ASTNode *node, Env *env) {
+    (void)interp; (void)node; (void)env;  /* Unused parameters */
     return make_null();
 }
 

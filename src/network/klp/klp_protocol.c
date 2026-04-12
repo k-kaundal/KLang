@@ -345,6 +345,7 @@ int klp_send_tensor(KLPConnection *conn, uint32_t stream_id,
 
 int klp_recv_tensor(KLPConnection *conn, uint32_t stream_id,
                     void **data, KLPTensorMeta *meta) {
+    (void)stream_id;  /* Unused parameter */
     if (!conn || !data || !meta) return KLP_ERROR_PROTOCOL_ERROR;
     
     /* Receive tensor metadata */
