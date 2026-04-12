@@ -275,6 +275,7 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "struct") == 0) type = TOKEN_STRUCT;
             else if (strcmp(buf, "union") == 0) type = TOKEN_UNION;
             else if (strcmp(buf, "typedef") == 0) type = TOKEN_TYPEDEF;
+            else if (strcmp(buf, "unsafe") == 0) type = TOKEN_UNSAFE;  /* Security: unsafe keyword */
             t.type = type;
             t.value = buf;
             t.line = line;
@@ -470,6 +471,7 @@ const char *token_type_name(TokenType type) {
         case TOKEN_STRUCT: return "STRUCT";
         case TOKEN_UNION: return "UNION";
         case TOKEN_TYPEDEF: return "TYPEDEF";
+        case TOKEN_UNSAFE: return "UNSAFE";  /* Security: unsafe keyword */
         case TOKEN_PLUS: return "PLUS";
         case TOKEN_MINUS: return "MINUS";
         case TOKEN_STAR: return "STAR";

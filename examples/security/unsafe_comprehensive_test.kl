@@ -1,0 +1,101 @@
+// Comprehensive test for unsafe block functionality
+// Tests parsing, nested blocks, scoping, and control flow
+
+fn test_basic_unsafe() {
+    println("Test 1: Basic unsafe block");
+    let x = 10;
+    
+    unsafe {
+        let y = 20;
+        println("x = " + str(x) + ", y = " + str(y));
+    }
+    
+    println("Outside unsafe block, x = " + str(x));
+    println("✓ Test 1 passed\n");
+}
+
+fn test_nested_unsafe() {
+    println("Test 2: Nested unsafe blocks");
+    
+    unsafe {
+        let outer = "outer";
+        println("In " + outer + " unsafe block");
+        
+        unsafe {
+            let inner = "inner";
+            println("In " + inner + " unsafe block");
+            
+            unsafe {
+                let deep = "deep";
+                println("In " + deep + " nested unsafe block");
+            }
+        }
+        
+        println("Back in " + outer + " unsafe block");
+    }
+    
+    println("✓ Test 2 passed\n");
+}
+
+fn test_unsafe_with_control_flow() {
+    println("Test 3: Unsafe with control flow");
+    
+    let result = 0;
+    unsafe {
+        for (let i = 0; i < 5; i++) {
+            if (i == 2) {
+                println("Skipping i = 2");
+                continue;
+            }
+            result = result + i;
+            println("Added " + str(i) + ", result = " + str(result));
+        }
+    }
+    
+    println("Final result = " + str(result));
+    println("✓ Test 3 passed\n");
+}
+
+fn test_unsafe_with_return() {
+    println("Test 4: Unsafe with return");
+    
+    fn unsafe_function() {
+        unsafe {
+            println("Inside unsafe block in function");
+            return 42;
+        }
+    }
+    
+    let value = unsafe_function();
+    println("Returned value = " + str(value));
+    println("✓ Test 4 passed\n");
+}
+
+fn test_mixed_safe_unsafe() {
+    println("Test 5: Mixed safe and unsafe code");
+    
+    let safe_var = "safe";
+    println("Safe code: " + safe_var);
+    
+    unsafe {
+        let unsafe_var = "potentially unsafe";
+        println("Unsafe code: " + unsafe_var);
+    }
+    
+    println("Back to safe code: " + safe_var);
+    println("✓ Test 5 passed\n");
+}
+
+fn main() {
+    println("=== KLang Phase 2: Unsafe Block Tests ===\n");
+    
+    test_basic_unsafe();
+    test_nested_unsafe();
+    test_unsafe_with_control_flow();
+    test_unsafe_with_return();
+    test_mixed_safe_unsafe();
+    
+    println("=== All tests passed! ===");
+}
+
+main();

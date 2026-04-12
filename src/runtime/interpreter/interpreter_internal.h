@@ -80,6 +80,8 @@ Value eval_import_default(Interpreter *interp, ASTNode *node, Env *env);
 Value eval_import_namespace(Interpreter *interp, ASTNode *node, Env *env);
 Value eval_export(Interpreter *interp, ASTNode *node, Env *env);
 Value eval_struct_def(Interpreter *interp, ASTNode *node, Env *env);
+/* Security: Unsafe block evaluation */
+Value eval_unsafe_block(Interpreter *interp, ASTNode *node, Env *env);
 
 /* Environment management functions (in interpreter.c) */
 Env *env_new(Env *parent);

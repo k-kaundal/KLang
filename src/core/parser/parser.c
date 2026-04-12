@@ -13,6 +13,7 @@ static ASTNode *parse_struct_def(Parser *parser, int is_union);
 static ASTNode *parse_import(Parser *parser);
 static ASTNode *parse_export(Parser *parser);
 static ASTNode *parse_func_def(Parser *parser);
+static ASTNode *parse_unsafe_block(Parser *parser);  /* Security: unsafe block parser */
 static int check_ahead(Parser *parser, TokenType type);
 
 void parser_init(Parser *parser, Lexer *lexer) {
@@ -948,6 +949,42 @@ static ASTNode *parse_block(Parser *parser) {
     return block;
 }
 
+/* Security: Parse unsafe block
+ * Syntax: unsafe { statements }
+ * Supports nested unsafe blocks
+ */
+static ASTNode *parse_unsafe_block(Parser *parser) {
+    int line = parser->current.line;
+    Token unsafe_tok = consume(parser, TOKEN_UNSAFE);
+    ASTNode *unsafe_block;
+    token_free(&unsafe_tok);
+    
+    /* Expect opening brace */
+    Token lbrace = consume(parser, TOKEN_LBRACE);
+    token_free(&lbrace);
+    
+    /* Create unsafe block node */
+    unsafe_block = ast_new_unsafe_block(line);
+    
+    /* Parse statements inside the unsafe block */
+    while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+        ASTNode *stmt;
+        while (match(parser, TOKEN_SEMICOLON)) {}
+        if (check(parser, TOKEN_RBRACE) || check(parser, TOKEN_EOF)) break;
+        stmt = parse_statement(parser);
+        if (stmt) nodelist_push(&unsafe_block->data.unsafe_block.stmts, stmt);
+        while (match(parser, TOKEN_SEMICOLON)) {}
+    }
+    
+    /* Expect closing brace */
+    {
+        Token rbrace = consume(parser, TOKEN_RBRACE);
+        token_free(&rbrace);
+    }
+    
+    return unsafe_block;
+}
+
 /* Parse destructuring array pattern element */
 static ASTNode *parse_destructure_array_element(Parser *parser) {
     int line = parser->current.line;
@@ -1844,6 +1881,7 @@ static ASTNode *parse_statement(Parser *parser) {
     if (check(parser, TOKEN_STRUCT)) return parse_struct_def(parser, 0);  // 0 = not union
     if (check(parser, TOKEN_UNION)) return parse_struct_def(parser, 1);   // 1 = union
     if (check(parser, TOKEN_FN)) return parse_func_def(parser);
+    if (check(parser, TOKEN_UNSAFE)) return parse_unsafe_block(parser);  /* Security: unsafe block */
     if (check(parser, TOKEN_LET)) return parse_let(parser);
     if (check(parser, TOKEN_VAR)) return parse_var(parser);
     if (check(parser, TOKEN_CONST)) return parse_const(parser);

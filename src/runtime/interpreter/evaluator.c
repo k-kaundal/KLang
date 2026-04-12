@@ -114,6 +114,10 @@ Value eval_node_env(Interpreter *interp, ASTNode *node, Env *env) {
         case NODE_STRUCT_DEF:
         case NODE_UNION_DEF:
             return eval_struct_def(interp, node, env);
+        
+        /* Security: Unsafe block evaluation */
+        case NODE_UNSAFE_BLOCK:
+            return eval_unsafe_block(interp, node, env);
 
         default:
             fprintf(stderr, "Error: unknown node type %d\n", node->type);

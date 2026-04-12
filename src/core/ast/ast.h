@@ -15,7 +15,8 @@ typedef enum {
     NODE_TRY_CATCH, NODE_THROW,
     NODE_POSTFIX, NODE_OPTIONAL_CHAIN, NODE_NULLISH_COALESCE,
     NODE_ADDRESS_OF, NODE_DEREFERENCE, NODE_POINTER_MEMBER,
-    NODE_STRUCT_LITERAL
+    NODE_STRUCT_LITERAL,
+    NODE_UNSAFE_BLOCK  /* Security: unsafe block */
 } NodeType;
 
 typedef enum {
@@ -159,6 +160,10 @@ struct ASTNode {
             ObjectProperty *fields;      // Field initializers (reuse ObjectProperty)
             int field_count;             // Number of field initializers
         } struct_literal;
+        /* Security: Unsafe block support */
+        struct {
+            NodeList stmts;              // Statements inside unsafe block
+        } unsafe_block;
     } data;
 };
 
@@ -223,6 +228,8 @@ ASTNode *ast_new_struct_def(const char *name, int is_union, int line);
 void ast_struct_add_field(ASTNode *struct_node, const char *field_name, const char *field_type, ASTNode *default_value);
 ASTNode *ast_new_struct_literal(const char *struct_name, int line);
 void ast_struct_literal_add_field(ASTNode *literal, const char *field_name, ASTNode *value);
+/* Security: Unsafe block constructor */
+ASTNode *ast_new_unsafe_block(int line);
 void ast_free(ASTNode *node);
 
 #endif

@@ -747,3 +747,38 @@ Value eval_struct_def(Interpreter *interp, ASTNode *node, Env *env) {
     }
     return make_null();
 }
+
+/* Security: Evaluate unsafe block
+ * Phase 2: Basic evaluation support for unsafe blocks
+ * 
+ * Unsafe blocks allow potentially dangerous operations that would normally
+ * be restricted. In this phase, we simply evaluate the statements inside
+ * the unsafe block. Future phases will add runtime security context tracking.
+ * 
+ * The unsafe block creates its own scope (like a regular block) and evaluates
+ * all statements within it. This maintains proper scoping while marking the
+ * code region as potentially unsafe.
+ */
+Value eval_unsafe_block(Interpreter *interp, ASTNode *node, Env *env) {
+    /* Create a new environment for the unsafe block scope */
+    Env *unsafe_env = env_new(env);
+    Value result = make_null();
+    int i;
+    
+    /* Evaluate each statement in the unsafe block */
+    for (i = 0; i < node->data.unsafe_block.stmts.count; i++) {
+        value_free(&result);
+        result = eval_node_env(interp, node->data.unsafe_block.stmts.items[i], unsafe_env);
+        
+        /* Handle control flow: return, break, continue */
+        if (interp->last_result.is_return || 
+            interp->last_result.is_break || 
+            interp->last_result.is_continue) {
+            break;
+        }
+    }
+    
+    /* Release the unsafe block environment */
+    env_release(unsafe_env);
+    return result;
+}

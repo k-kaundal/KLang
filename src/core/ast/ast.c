@@ -452,6 +452,13 @@ void ast_struct_literal_add_field(ASTNode *literal, const char *field_name, ASTN
     literal->data.struct_literal.field_count++;
 }
 
+/* Security: Create unsafe block node */
+ASTNode *ast_new_unsafe_block(int line) {
+    ASTNode *n = ast_alloc(NODE_UNSAFE_BLOCK, line);
+    nodelist_init(&n->data.unsafe_block.stmts);
+    return n;
+}
+
 
 void ast_free(ASTNode *node) {
     int i;
@@ -734,6 +741,12 @@ void ast_free(ASTNode *node) {
                 }
                 free(node->data.struct_literal.fields);
             }
+            break;
+        /* Security: Free unsafe block statements */
+        case NODE_UNSAFE_BLOCK:
+            for (i = 0; i < node->data.unsafe_block.stmts.count; i++)
+                ast_free(node->data.unsafe_block.stmts.items[i]);
+            nodelist_free(&node->data.unsafe_block.stmts);
             break;
         default:
             break;
