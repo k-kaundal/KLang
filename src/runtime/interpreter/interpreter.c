@@ -1,4 +1,5 @@
 #include "interpreter_internal.h"
+#include "security.h"
 
 /* Helper function to increment reference count when copying dict/set values */
 void value_retain(Value *v) {
@@ -858,6 +859,10 @@ Interpreter *interpreter_new(void) {
     interp->module_count = 0;
     interp->module_capacity = 0;
     interp->current_module_dir = NULL;
+    
+    /* Initialize security context (Phase 2B) */
+    interp->security = security_context_new();
+    
     return interp;
 }
 
@@ -889,6 +894,13 @@ void interpreter_free(Interpreter *interp) {
     }
     free(interp->loaded_modules);
     if (interp->current_module_dir) free(interp->current_module_dir);
+    
+    /* Free security context (Phase 2B) */
+    if (interp->security) {
+        security_context_free(interp->security);
+        interp->security = NULL;
+    }
+    
     // Only release global_env if it hasn't been freed already
     if (interp->global_env && interp->global_env->ref_count > 0) {
         env_release(interp->global_env);

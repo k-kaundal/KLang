@@ -1,4 +1,5 @@
 #include "interpreter_internal.h"
+#include "security.h"
 
 Value eval_let(Interpreter *interp, ASTNode *node, Env *env) {
     Value val = make_null();
@@ -765,6 +766,11 @@ Value eval_unsafe_block(Interpreter *interp, ASTNode *node, Env *env) {
     Value result = make_null();
     int i;
     
+    /* Enter unsafe context (Phase 2B) */
+    if (interp->security && interp->security->unsafe_ctx) {
+        unsafe_context_enter(interp->security->unsafe_ctx, node->line, NULL);
+    }
+    
     /* Evaluate each statement in the unsafe block */
     for (i = 0; i < node->data.unsafe_block.stmts.count; i++) {
         value_free(&result);
@@ -776,6 +782,11 @@ Value eval_unsafe_block(Interpreter *interp, ASTNode *node, Env *env) {
             interp->last_result.is_continue) {
             break;
         }
+    }
+    
+    /* Exit unsafe context (Phase 2B) */
+    if (interp->security && interp->security->unsafe_ctx) {
+        unsafe_context_exit(interp->security->unsafe_ctx);
     }
     
     /* Release the unsafe block environment */
