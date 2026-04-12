@@ -308,8 +308,8 @@ Value make_class(const char *name, const char *parent_name) {
     val.as.class_val.parent_name = parent_name ? strdup(parent_name) : NULL;
     val.as.class_val.methods = NULL;
     val.as.class_val.fields = NULL;
-    val.as.class_val.static_methods = NULL;
-    val.as.class_val.static_fields = NULL;
+    val.as.class_val.static_methods = env_new(NULL);  /* Initialize to prevent NULL pointer */
+    val.as.class_val.static_fields = env_new(NULL);   /* Initialize to prevent NULL pointer */
     return val;
 }
 
@@ -357,7 +357,8 @@ Value make_promise(void) {
     Value val;
     val.type = VAL_PROMISE;
     val.as.promise_val.state = PROMISE_PENDING;
-    val.as.promise_val.result = NULL;
+    val.as.promise_val.result = malloc(sizeof(Value));  /* Allocate result storage */
+    *val.as.promise_val.result = make_null();           /* Initialize to null */
     val.as.promise_val.callbacks = NULL;
     return val;
 }
