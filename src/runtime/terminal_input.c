@@ -11,6 +11,7 @@
 #include <sys/select.h>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include "terminal_input.h"
 
 #ifdef __linux__
 #include <sys/time.h>
@@ -113,34 +114,6 @@ int terminal_get_size(int *rows, int *cols) {
     *cols = ws.ws_col;
     return 0;
 }
-
-/* Input event types */
-typedef enum {
-    INPUT_KEY,
-    INPUT_MOUSE,
-    INPUT_RESIZE,
-    INPUT_NONE
-} InputEventType;
-
-typedef struct {
-    InputEventType type;
-    union {
-        struct {
-            char key[32];
-            int special; /* 0 = normal char, 1 = special key */
-        } key;
-        struct {
-            int button;  /* 0=left, 1=middle, 2=right */
-            int x;
-            int y;
-            int action;  /* 0=press, 1=release, 2=motion */
-        } mouse;
-        struct {
-            int rows;
-            int cols;
-        } resize;
-    } data;
-} InputEvent;
 
 /* Parse escape sequences for special keys */
 static int parse_escape_sequence(char *seq, int len, InputEvent *event) {

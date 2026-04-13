@@ -156,8 +156,8 @@ class FileBrowser {
                       prefix + icon + " " + name + namePadding + 
                       type + typePadding + size + sizePadding + suffix
             
-            # Padding to fit width
-            let totalLen = 95 - (selected ? 0 : 0)
+            # Calculate padding to fit width (95 characters total width)
+            let totalLen = 95
             let padding = " ".repeat(Math.max(0, totalLen - len(line)))
             line = line + padding + cli.BOX_DOUBLE_VERTICAL
             

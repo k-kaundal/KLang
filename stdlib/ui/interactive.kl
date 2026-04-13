@@ -302,6 +302,8 @@ class Checkbox extends InteractiveComponent {
     
     render() {
         let box = this.checked ? "[✓]" : "[ ]"
+        # Fallback for terminals without Unicode support: use X instead of ✓
+        # let box = this.checked ? "[X]" : "[ ]"
         let color = this.checked ? cli.GREEN : cli.RESET
         
         if (this.focused) {

@@ -56,7 +56,9 @@ class TerminalInput {
     readInput() {
         # Read input from stdin (blocking)
         # Returns parsed event: {type, key, x, y, button}
-        # This would be implemented in C runtime
+        # TODO: This is a stub - will be implemented via C runtime integration
+        # using terminal_read_event() from terminal_input.c
+        # For now, returns null to indicate no implementation
         return null
     }
     
@@ -163,6 +165,8 @@ class ScreenBuffer {
     
     renderDiff() {
         # Only render changed cells (more efficient)
+        # Note: Deep copy using map may impact performance for very large buffers
+        # Consider optimizing if targeting higher resolutions or lower-end systems
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 let current = this.buffer[y][x]
@@ -294,8 +298,8 @@ class UIServer extends ui.EventEmitter {
         
         # Draw title bar
         let titleBar = " " + this.title + " "
-        let titlePadding = " ".repeat(Math.max(0, this.width - len(titleBar)))
-        this.screen.write(0, 0, titleBar + titlePadding, cli.BG_CYAN + cli.BLACK + cli.BOLD)
+        let rightPadding = " ".repeat(Math.max(0, this.width - len(titleBar)))
+        this.screen.write(0, 0, titleBar + rightPadding, cli.BG_CYAN + cli.BLACK + cli.BOLD)
         
         # Render each component
         for (let component of this.components) {
