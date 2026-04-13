@@ -1,7 +1,7 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "ast.h"
+#include "core/ast/ast.h"
 #include <stdio.h>
 
 typedef enum {
@@ -203,6 +203,9 @@ typedef struct LoadedModule {
     int is_loading;              // Flag to detect circular dependencies
 } LoadedModule;
 
+/* Forward declare SecurityContext */
+typedef struct SecurityContext SecurityContext;
+
 struct Interpreter {
     Env *global_env;
     EvalResult last_result;
@@ -213,6 +216,7 @@ struct Interpreter {
     int module_count;
     int module_capacity;
     char *current_module_dir;      // Directory of currently executing module
+    SecurityContext *security;     // Security context (Phase 2B integration)
 };
 
 Interpreter *interpreter_new(void);

@@ -1,17 +1,6 @@
-#ifndef COMPILER_H
-#define COMPILER_H
+#ifndef COMPILER_PUBLIC_H
+#define COMPILER_PUBLIC_H
 
-#include "ast.h"
-#include "vm_stack.h"
-
-typedef struct {
-    Chunk *chunk;
-    int had_error;
-} Compiler;
-
-Compiler *compiler_new(void);
-void compiler_free(Compiler *comp);
-Chunk *compile_program(Compiler *comp, ASTNode **nodes, int count);
-void compile_node(Compiler *comp, ASTNode *node);
+#include "compiler/bytecode/compiler.h"
 
 #endif

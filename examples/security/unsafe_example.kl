@@ -1,0 +1,27 @@
+// Example demonstrating unsafe blocks in KLang
+// Phase 2 implementation: unsafe keyword and block parsing
+
+fn main() {
+    println("Testing unsafe blocks...");
+    
+    // This demonstrates the basic unsafe block syntax
+    unsafe {
+        println("Inside unsafe block");
+        println("This code is marked as potentially unsafe");
+    }
+    
+    // Nested unsafe blocks should also work
+    unsafe {
+        println("Outer unsafe block");
+        
+        unsafe {
+            println("Nested unsafe block");
+        }
+        
+        println("Back to outer unsafe block");
+    }
+    
+    println("Outside unsafe block - safe code");
+}
+
+main();

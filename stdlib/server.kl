@@ -1,7 +1,7 @@
 # KLang Server Framework
 # NestJS-inspired server framework for KLang
 
-import core
+import core from "stdlib/core"
 import net from "stdlib/net"
 
 # Create a new application instance

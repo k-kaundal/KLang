@@ -1,18 +1,6 @@
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef PARSER_PUBLIC_H
+#define PARSER_PUBLIC_H
 
-#include "lexer.h"
-#include "ast.h"
-
-typedef struct {
-    Lexer *lexer;
-    Token current;
-    Token peek;
-    int had_error;
-} Parser;
-
-void parser_init(Parser *parser, Lexer *lexer);
-void parser_free(Parser *parser);
-ASTNode **parse_program(Parser *parser, int *count);
+#include "core/parser/parser.h"
 
 #endif
