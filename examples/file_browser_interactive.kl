@@ -1,0 +1,248 @@
+#!/usr/bin/env klang
+# ============================================
+# Interactive File Browser Example
+# ============================================
+# Terminal-based file browser with navigation
+# Demonstrates list selection and file operations
+
+import "stdlib/ui/server.kl" as server
+import "stdlib/ui/interactive.kl" as ui
+import "stdlib/cli.kl" as cli
+import "stdlib/fs.kl" as fs
+
+class FileBrowser {
+    constructor() {
+        this.currentPath = "."
+        this.files = []
+        this.selectedIndex = 0
+        this.server = null
+    }
+    
+    start() {
+        this.server = server.createServer({
+            title: "File Browser - Interactive Navigation",
+            width: 100,
+            height: 30,
+            fps: 30
+        })
+        
+        this.loadDirectory(this.currentPath)
+        this.setupUI()
+        this.server.start()
+    }
+    
+    loadDirectory(path) {
+        # Load files from directory
+        # This would use fs.readdir() in real implementation
+        this.currentPath = path
+        this.files = [
+            {name: "..", type: "dir"},
+            {name: "src", type: "dir"},
+            {name: "examples", type: "dir"},
+            {name: "docs", type: "dir"},
+            {name: "README.md", type: "file", size: "4.2 KB"},
+            {name: "LICENSE", type: "file", size: "1.1 KB"},
+            {name: "Makefile", type: "file", size: "2.5 KB"},
+            {name: "main.kl", type: "file", size: "856 B"}
+        ]
+        this.selectedIndex = 0
+    }
+    
+    setupUI() {
+        # Header with current path
+        this.pathHeader = ui.InteractiveComponent({
+            x: 2,
+            y: 2,
+            enabled: false
+        })
+        this.pathHeader.render = () => {
+            return cli.BOLD + cli.CYAN + "📁 " + this.currentPath + cli.RESET + "\n" +
+                   cli.DIM + "Use ↑↓ to navigate, Enter to open, Esc to go back" + cli.RESET
+        }
+        this.server.addComponent(this.pathHeader)
+        
+        # File list
+        this.fileList = ui.InteractiveComponent({
+            x: 2,
+            y: 5,
+            width: 96,
+            height: 18,
+            enabled: true
+        })
+        this.fileList.render = () => this.renderFileList()
+        this.fileList.handleKeyPress = (key) => this.handleNavigation(key)
+        this.server.addComponent(this.fileList)
+        this.fileList.focus()
+        
+        # Info panel
+        this.infoPanel = ui.InteractiveComponent({
+            x: 2,
+            y: 24,
+            enabled: false
+        })
+        this.infoPanel.render = () => this.renderInfo()
+        this.server.addComponent(this.infoPanel)
+        
+        # Action buttons
+        let openBtn = server.createButton("Open", {
+            x: 2,
+            y: 26,
+            style: "primary"
+        })
+        openBtn.on("click", () => this.openSelected())
+        this.server.addComponent(openBtn)
+        
+        let backBtn = server.createButton("Back", {
+            x: 14,
+            y: 26,
+            style: "default"
+        })
+        backBtn.on("click", () => this.goBack())
+        this.server.addComponent(backBtn)
+        
+        let refreshBtn = server.createButton("Refresh", {
+            x: 26,
+            y: 26,
+            style: "success"
+        })
+        refreshBtn.on("click", () => {
+            this.loadDirectory(this.currentPath)
+            this.server.render()
+        })
+        this.server.addComponent(refreshBtn)
+    }
+    
+    renderFileList() {
+        let lines = []
+        let topBorder = cli.BOX_DOUBLE_TOP_LEFT + 
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(94) + 
+                       cli.BOX_DOUBLE_TOP_RIGHT
+        lines.push(topBorder)
+        
+        # Header row
+        let header = cli.BOX_DOUBLE_VERTICAL + " " +
+                    cli.BOLD + "Name" + " ".repeat(50) + 
+                    "Type       Size" + cli.RESET + " ".repeat(25) +
+                    cli.BOX_DOUBLE_VERTICAL
+        lines.push(header)
+        
+        let separator = cli.BOX_DOUBLE_VERTICAL + 
+                       cli.BOX_SINGLE_HORIZONTAL.repeat(94) + 
+                       cli.BOX_DOUBLE_VERTICAL
+        lines.push(separator)
+        
+        # File entries
+        for (let i = 0; i < len(this.files); i++) {
+            let file = this.files[i]
+            let icon = file.type == "dir" ? "📁" : "📄"
+            let name = file.name
+            let type = file.type == "dir" ? "Directory" : "File"
+            let size = file.size || "-"
+            
+            let selected = i == this.selectedIndex
+            let prefix = selected ? cli.REVERSE + "> " : "  "
+            let suffix = selected ? cli.RESET : ""
+            
+            # Truncate long names
+            if (len(name) > 48) {
+                name = name.substring(0, 45) + "..."
+            }
+            
+            let namePadding = " ".repeat(Math.max(0, 50 - len(name)))
+            let typePadding = " ".repeat(Math.max(0, 10 - len(type)))
+            let sizePadding = " ".repeat(Math.max(0, 10 - len(size)))
+            
+            let line = cli.BOX_DOUBLE_VERTICAL + 
+                      prefix + icon + " " + name + namePadding + 
+                      type + typePadding + size + sizePadding + suffix
+            
+            # Padding to fit width
+            let totalLen = 95 - (selected ? 0 : 0)
+            let padding = " ".repeat(Math.max(0, totalLen - len(line)))
+            line = line + padding + cli.BOX_DOUBLE_VERTICAL
+            
+            lines.push(line)
+        }
+        
+        # Empty rows
+        let emptyRows = 12 - len(this.files)
+        for (let i = 0; i < emptyRows; i++) {
+            lines.push(cli.BOX_DOUBLE_VERTICAL + " ".repeat(94) + cli.BOX_DOUBLE_VERTICAL)
+        }
+        
+        let bottomBorder = cli.BOX_DOUBLE_BOTTOM_LEFT + 
+                          cli.BOX_DOUBLE_HORIZONTAL.repeat(94) + 
+                          cli.BOX_DOUBLE_BOTTOM_RIGHT
+        lines.push(bottomBorder)
+        
+        return lines.join("\n")
+    }
+    
+    renderInfo() {
+        let selected = this.files[this.selectedIndex]
+        if (!selected) {
+            return cli.DIM + "No file selected" + cli.RESET
+        }
+        
+        return cli.BOLD + "Selected: " + cli.RESET + selected.name + 
+               " (" + selected.type + ")" +
+               (selected.size ? " - " + selected.size : "")
+    }
+    
+    handleNavigation(key) {
+        if (key == "ArrowDown") {
+            this.selectedIndex = Math.min(len(this.files) - 1, this.selectedIndex + 1)
+            this.server.render()
+        } else if (key == "ArrowUp") {
+            this.selectedIndex = Math.max(0, this.selectedIndex - 1)
+            this.server.render()
+        } else if (key == "Enter") {
+            this.openSelected()
+        } else if (key == "Escape") {
+            this.goBack()
+        } else if (key == "Home") {
+            this.selectedIndex = 0
+            this.server.render()
+        } else if (key == "End") {
+            this.selectedIndex = len(this.files) - 1
+            this.server.render()
+        }
+    }
+    
+    openSelected() {
+        let selected = this.files[this.selectedIndex]
+        if (!selected) return
+        
+        if (selected.type == "dir") {
+            if (selected.name == "..") {
+                this.goBack()
+            } else {
+                let newPath = this.currentPath + "/" + selected.name
+                this.loadDirectory(newPath)
+                this.pathHeader.render()
+                this.server.render()
+            }
+        } else {
+            # Open file (show content in modal or viewer)
+            # For now, just show notification
+        }
+    }
+    
+    goBack() {
+        # Go to parent directory
+        let parts = this.currentPath.split("/")
+        if (len(parts) > 1) {
+            parts.pop()
+            this.loadDirectory(parts.join("/") || ".")
+            this.pathHeader.render()
+            this.server.render()
+        }
+    }
+}
+
+fn main() {
+    let browser = FileBrowser()
+    browser.start()
+}
+
+main()
