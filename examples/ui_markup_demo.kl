@@ -1,0 +1,274 @@
+# ============================================
+# KLang UI Engine - Markup & Styling Demo
+# ============================================
+# Demonstrates KLUI markup and KLSS styling
+# Build UIs declaratively like HTML/CSS!
+
+fn main() {
+    println()
+    println("\x1b[1m\x1b[36m" + "╔══════════════════════════════════════════════════════════════════╗" + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "║         KLang UI Engine - Markup & Styling System               ║" + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "║         Build UIs Like HTML/CSS for Terminal                    ║" + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "╚══════════════════════════════════════════════════════════════════╝" + "\x1b[0m")
+    println()
+    
+    # Demo 1: KLUI Markup
+    demoKLUIMarkup()
+    
+    # Demo 2: KLSS Styling
+    demoKLSSStyles()
+    
+    # Demo 3: Combined Example
+    demoCombinedExample()
+    
+    # Show how it works
+    showHowItWorks()
+}
+
+# ===========================================
+# Demo 1: KLUI Markup
+# ===========================================
+
+fn demoKLUIMarkup() {
+    println("\x1b[1m\x1b[33m━━━ Part 1: KLUI Markup Language ━━━\x1b[0m")
+    println()
+    
+    println("\x1b[36mℹ\x1b[0m KLUI is a declarative markup language for building terminal UIs")
+    println()
+    
+    # Show KLUI code
+    println("\x1b[1mKLUI Code:\x1b[0m")
+    println("\x1b[2m")
+    println("<App title=\"My Dashboard\">")
+    println("  <Container border=\"true\">")
+    println("    <Panel title=\"Welcome\" color=\"cyan\">")
+    println("      <Text bold=\"true\">Hello from KLang UI!</Text>")
+    println("      <Text color=\"green\">Build beautiful terminal apps</Text>")
+    println("    </Panel>")
+    println("    ")
+    println("    <Spacer size=\"1\" />")
+    println("    ")
+    println("    <Panel title=\"Status\" color=\"blue\">")
+    println("      <ProgressBar label=\"Loading...\" value=\"75\" />")
+    println("      <List items=\"Task 1,Task 2,Task 3\" />")
+    println("    </Panel>")
+    println("  </Container>")
+    println("</App>")
+    println("\x1b[0m")
+    println()
+    
+    # Show rendered output
+    println("\x1b[1mRendered Output:\x1b[0m")
+    println()
+    println("┌────────────────────────────────────────────────────────────────────┐")
+    println("│ \x1b[1m\x1b[36mMy Dashboard\x1b[0m                                                        │")
+    println("├────────────────────────────────────────────────────────────────────┤")
+    println("│                                                                    │")
+    println("│  ┌─── \x1b[1m\x1b[36mWelcome\x1b[0m ─────────────────────────────────────────────────┐  │")
+    println("│  │                                                                │  │")
+    println("│  │ \x1b[1mHello from KLang UI!\x1b[0m                                             │  │")
+    println("│  │ \x1b[32mBuild beautiful terminal apps\x1b[0m                                  │  │")
+    println("│  │                                                                │  │")
+    println("│  └────────────────────────────────────────────────────────────────┘  │")
+    println("│                                                                    │")
+    println("│  ┌─── \x1b[1m\x1b[34mStatus\x1b[0m ──────────────────────────────────────────────────┐  │")
+    println("│  │                                                                │  │")
+    println("│  │ Loading...                                                     │  │")
+    println("│  │ [\x1b[33m██████████████████████████████░░░░░░░░░░\x1b[0m] \x1b[33m75%\x1b[0m                      │  │")
+    println("│  │ • Task 1                                                       │  │")
+    println("│  │ • Task 2                                                       │  │")
+    println("│  │ • Task 3                                                       │  │")
+    println("│  │                                                                │  │")
+    println("│  └────────────────────────────────────────────────────────────────┘  │")
+    println("│                                                                    │")
+    println("└────────────────────────────────────────────────────────────────────┘")
+    println()
+}
+
+# ===========================================
+# Demo 2: KLSS Styling
+# ===========================================
+
+fn demoKLSSStyles() {
+    println("\x1b[1m\x1b[33m━━━ Part 2: KLSS Styling System ━━━\x1b[0m")
+    println()
+    
+    println("\x1b[36mℹ\x1b[0m KLSS is a styling language for UI components (like CSS)")
+    println()
+    
+    # Show KLSS code
+    println("\x1b[1mKLSS Code:\x1b[0m")
+    println("\x1b[2m")
+    println("Panel {")
+    println("  border: true;")
+    println("  color: cyan;")
+    println("  padding: 2;")
+    println("}")
+    println()
+    println(".primary-button {")
+    println("  style: primary;")
+    println("  bold: true;")
+    println("  color: cyan;")
+    println("}")
+    println()
+    println(".danger-button {")
+    println("  style: danger;")
+    println("  color: red;")
+    println("}")
+    println()
+    println("#main-panel {")
+    println("  width: 60;")
+    println("  height: 20;")
+    println("  title: \"Main Panel\";")
+    println("}")
+    println("\x1b[0m")
+    println()
+    
+    # Show how styles apply
+    println("\x1b[1mStyled Components:\x1b[0m")
+    println()
+    println("  Default Panel:")
+    println("  ┌─── \x1b[1m\x1b[36mPanel Title\x1b[0m ───┐")
+    println("  │                  │")
+    println("  │  Content here    │")
+    println("  │                  │")
+    println("  └──────────────────┘")
+    println()
+    
+    println("  Styled Buttons:")
+    println("  \x1b[1m\x1b[36m[ Primary Button ]\x1b[0m  \x1b[31m[ Danger Button ]\x1b[0m  \x1b[32m[ Success Button ]\x1b[0m")
+    println()
+}
+
+# ===========================================
+# Demo 3: Combined Example
+# ===========================================
+
+fn demoCombinedExample() {
+    println("\x1b[1m\x1b[33m━━━ Part 3: Complete Example ━━━\x1b[0m")
+    println()
+    
+    println("\x1b[1mKLUI + KLSS Combined:\x1b[0m")
+    println()
+    
+    # KLUI Markup
+    println("\x1b[2m<!-- app.klui -->\x1b[0m")
+    println("\x1b[2m<App id=\"todo-app\">")
+    println("  <Panel class=\"header\" title=\"Todo List\">")
+    println("    <Text class=\"subtitle\">Manage your tasks</Text>")
+    println("  </Panel>")
+    println("  ")
+    println("  <List class=\"task-list\" items=\"Buy groceries,Walk dog,Code review\" />")
+    println("  ")
+    println("  <Container class=\"actions\">")
+    println("    <Button class=\"primary-button\">Add Task</Button>")
+    println("    <Button class=\"secondary-button\">Clear All</Button>")
+    println("  </Container>")
+    println("</App>\x1b[0m")
+    println()
+    
+    # KLSS Styles
+    println("\x1b[2m/* styles.klss */\x1b[0m")
+    println("\x1b[2m.header { color: green; }")
+    println(".subtitle { color: yellow; }")
+    println(".task-list { border: true; }")
+    println(".primary-button { style: primary; }")
+    println(".secondary-button { style: default; }\x1b[0m")
+    println()
+    
+    # Rendered Result
+    println("\x1b[1mRendered Application:\x1b[0m")
+    println()
+    println("┌────────────────────────────────────────────────────────────┐")
+    println("│ \x1b[1m\x1b[32mTodo List\x1b[0m                                                     │")
+    println("├────────────────────────────────────────────────────────────┤")
+    println("│ \x1b[33mManage your tasks\x1b[0m                                            │")
+    println("└────────────────────────────────────────────────────────────┘")
+    println()
+    println("┌────────────────────────────────────────────────────────────┐")
+    println("│ • Buy groceries                                            │")
+    println("│ • Walk dog                                                 │")
+    println("│ • Code review                                              │")
+    println("└────────────────────────────────────────────────────────────┘")
+    println()
+    println("  \x1b[1m\x1b[36m[ Add Task ]\x1b[0m  [ Clear All ]")
+    println()
+}
+
+# ===========================================
+# Show How It Works
+# ===========================================
+
+fn showHowItWorks() {
+    println("\x1b[1m\x1b[36m" + "━━━ How The UI Engine Works ━━━" + "\x1b[0m")
+    println()
+    
+    println("\x1b[1m1. Declarative UI Definition (KLUI)\x1b[0m")
+    println("   • Write UI structure in markup like HTML")
+    println("   • Components are defined with tags: <Panel>, <Button>, <List>")
+    println("   • Attributes configure component properties")
+    println("   • Nested components create hierarchy")
+    println()
+    
+    println("\x1b[1m2. Styling System (KLSS)\x1b[0m")
+    println("   • Separate styling from structure (like CSS)")
+    println("   • Selectors: tag names, classes (.className), IDs (#id)")
+    println("   • Properties: color, border, padding, style, etc.")
+    println("   • Themes for consistent styling across app")
+    println()
+    
+    println("\x1b[1m3. Component System\x1b[0m")
+    println("   • Base Component class with lifecycle methods")
+    println("   • Built-in components: Panel, Button, List, Table, etc.")
+    println("   • Custom components by extending base class")
+    println("   • Props for configuration, State for data")
+    println()
+    
+    println("\x1b[1m4. Layout Engine\x1b[0m")
+    println("   • Stack: Arrange components vertically or horizontally")
+    println("   • Grid: Multi-column layouts")
+    println("   • Split: Two-pane layouts")
+    println("   • Tabs: Multi-view navigation")
+    println()
+    
+    println("\x1b[1m5. Rendering Pipeline\x1b[0m")
+    println("   • Parse KLUI markup into component tree")
+    println("   • Apply KLSS styles to components")
+    println("   • Layout components (calculate positions/sizes)")
+    println("   • Render to terminal with ANSI codes")
+    println("   • Handle events and state changes")
+    println()
+    
+    println("\x1b[1m6. Usage in KLang\x1b[0m")
+    println("\x1b[2m")
+    println("   # Create app")
+    println("   let app = createApp({\"title\": \"My App\", \"width\": 80, \"height\": 24})")
+    println("   ")
+    println("   # Parse KLUI markup")
+    println("   let root = parseKLUI(markupString)")
+    println("   ")
+    println("   # Parse and apply styles")
+    println("   let stylesheet = parseKLSS(cssString)")
+    println("   stylesheet.apply(root)")
+    println("   ")
+    println("   # Set root and start")
+    println("   app.setRoot(root)")
+    println("   app.start()")
+    println("\x1b[0m")
+    println()
+    
+    println("\x1b[32m✓\x1b[0m Complete UI engine framework for building terminal apps!")
+    println()
+    
+    println("\x1b[1mKey Features:\x1b[0m")
+    println("  ✨ Declarative - Define what you want, not how to build it")
+    println("  🎨 Styleable - Separate styling from structure")
+    println("  📦 Component-based - Reusable, composable UI elements")
+    println("  🚀 Fast - Efficient rendering and updates")
+    println("  💡 Familiar - Similar to HTML/CSS/React")
+    println("  🎯 Terminal-native - Built specifically for CLI apps")
+    println()
+}
+
+# Run the demo
+main()
