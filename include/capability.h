@@ -36,7 +36,7 @@ typedef enum {
  * 
  * Fields:
  *   type: The type of capability (e.g., CAP_FILE_READ)
- *   resource_pattern: Glob pattern for resource matching (e.g., "/tmp/*", "*.json")
+ *   resource_pattern: Glob pattern for resource matching (e.g., "/tmp/ *", "*.json")
  *                     NULL or "*" means match all resources
  *   revocable: Whether this capability can be revoked at runtime
  *   metadata: Additional capability-specific data (implementation-defined)
@@ -207,12 +207,12 @@ void capability_require(Interpreter *interp, CapabilityType type, const char *re
  *   - "**" matches any sequence including path separators (recursive)
  *   - "?" matches any single character
  *   - "*.json" matches all JSON files
- *   - "/tmp/*" matches all files in /tmp (non-recursive)
- *   - "/tmp/**" matches all files in /tmp (recursive)
+ *   - "/tmp/ *" matches all files in /tmp (non-recursive)
+ *   - "/tmp/ **" matches all files in /tmp (recursive)
  * 
  * Params:
  *   resource: The resource path to test (e.g., "/tmp/file.txt")
- *   pattern: The glob pattern to match against (e.g., "/tmp/*")
+ *   pattern: The glob pattern to match against (e.g., "/tmp/ *")
  * 
  * Returns: 1 if resource matches pattern, 0 otherwise
  */
