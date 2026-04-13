@@ -1,0 +1,171 @@
+#!/usr/bin/env klang
+# ============================================
+# Interactive Terminal UI Server Example
+# ============================================
+# Complete demonstration of interactive UI server
+# with buttons, inputs, and real-time interactions
+
+import "stdlib/ui/server.kl" as server
+import "stdlib/ui/interactive.kl" as ui
+import "stdlib/cli.kl" as cli
+
+fn main() {
+    # Create the UI server
+    let app = server.createServer({
+        title: "KLang Interactive UI Demo",
+        width: 80,
+        height: 24,
+        fps: 60
+    })
+    
+    # Create components
+    setupComponents(app)
+    
+    # Start the server
+    app.start()
+}
+
+fn setupComponents(app) {
+    # Welcome message
+    let welcomeText = ui.InteractiveComponent({
+        x: 2,
+        y: 2,
+        width: 76,
+        height: 3,
+        enabled: false
+    })
+    welcomeText.render = () => {
+        return cli.BOLD + cli.CYAN + "Welcome to KLang Interactive UI!" + cli.RESET + "\n" +
+               "Use Tab to navigate, Enter/Space to activate, Ctrl+C to exit.\n" +
+               cli.DIM + "Try clicking buttons and typing in the input field!" + cli.RESET
+    }
+    app.addComponent(welcomeText)
+    
+    # Buttons section
+    let button1 = server.createButton("Primary Action", {
+        x: 2,
+        y: 6,
+        style: "primary"
+    })
+    button1.on("click", (e) => {
+        showNotification(app, "Primary button clicked!", "success")
+    })
+    app.addComponent(button1)
+    
+    let button2 = server.createButton("Delete", {
+        x: 25,
+        y: 6,
+        style: "danger"
+    })
+    button2.on("click", (e) => {
+        showNotification(app, "Delete button clicked!", "danger")
+    })
+    app.addComponent(button2)
+    
+    let button3 = server.createButton("Save", {
+        x: 40,
+        y: 6,
+        style: "success"
+    })
+    button3.on("click", (e) => {
+        showNotification(app, "Save button clicked!", "success")
+    })
+    app.addComponent(button3)
+    
+    # Input field
+    let input = server.createInput("Enter your name...", {
+        x: 2,
+        y: 9,
+        width: 40
+    })
+    input.on("change", (e) => {
+        # Real-time update as user types
+    })
+    input.on("submit", (e) => {
+        showNotification(app, "Submitted: " + e.data.value, "success")
+    })
+    app.addComponent(input)
+    
+    # Checkbox
+    let checkbox = server.createCheckbox("Enable notifications", {
+        x: 2,
+        y: 12,
+        checked: true
+    })
+    checkbox.on("change", (e) => {
+        let status = e.data.checked ? "enabled" : "disabled"
+        showNotification(app, "Notifications " + status, "info")
+    })
+    app.addComponent(checkbox)
+    
+    # Select/Dropdown
+    let select = server.createSelect(
+        ["Option 1", "Option 2", "Option 3", "Option 4"],
+        {
+            x: 2,
+            y: 14,
+            label: "Choose an option"
+        }
+    )
+    select.on("change", (e) => {
+        showNotification(app, "Selected: " + e.data.value, "info")
+    })
+    app.addComponent(select)
+    
+    # Radio buttons
+    let radio = server.createRadioGroup(
+        ["Small", "Medium", "Large"],
+        {
+            x: 45,
+            y: 9,
+            label: "Size:"
+        }
+    )
+    radio.on("change", (e) => {
+        showNotification(app, "Size changed to: " + e.data.value, "info")
+    })
+    app.addComponent(radio)
+    
+    # Status area
+    let statusText = ui.InteractiveComponent({
+        x: 2,
+        y: 20,
+        width: 76,
+        height: 2,
+        enabled: false
+    })
+    statusText.state = {message: "Ready", type: "info"}
+    statusText.render = () => {
+        let icon = "ℹ"
+        let color = cli.CYAN
+        
+        if (statusText.state.type == "success") {
+            icon = "✓"
+            color = cli.GREEN
+        } else if (statusText.state.type == "danger") {
+            icon = "✗"
+            color = cli.RED
+        } else if (statusText.state.type == "warning") {
+            icon = "⚠"
+            color = cli.YELLOW
+        }
+        
+        return cli.BOLD + color + icon + cli.RESET + " " + statusText.state.message
+    }
+    app.addComponent(statusText)
+    
+    # Store status component reference for notifications
+    app.statusComponent = statusText
+}
+
+fn showNotification(app, message, type) {
+    if (app.statusComponent) {
+        app.statusComponent.setState({
+            message: message,
+            type: type || "info"
+        })
+    }
+}
+
+# Run the application
+main()

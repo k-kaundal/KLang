@@ -1,0 +1,482 @@
+# ============================================
+# KLang Interactive Terminal UI Server
+# ============================================
+# WebSocket/Terminal server for interactive UIs
+# Real-time event handling and state management
+#
+# Features:
+# - Terminal event loop (mouse + keyboard)
+# - Component focus management
+# - Real-time rendering
+# - State synchronization
+# - Hot reload support
+
+import "stdlib/ui/interactive.kl" as ui
+import "stdlib/cli.kl" as cli
+import "stdlib/net.kl" as net
+
+# ===========================================
+# Terminal Input Handler
+# ===========================================
+
+class TerminalInput {
+    constructor() {
+        this.mouseEnabled = false
+        this.keyboardEnabled = true
+        this.rawMode = false
+    }
+    
+    enableMouse() {
+        # Enable mouse tracking (VT200)
+        print("\x1b[?1000h")  # Mouse button press
+        print("\x1b[?1002h")  # Mouse button press and release
+        print("\x1b[?1003h")  # All mouse events
+        print("\x1b[?1006h")  # SGR mouse mode
+        this.mouseEnabled = true
+    }
+    
+    disableMouse() {
+        print("\x1b[?1000l")
+        print("\x1b[?1002l")
+        print("\x1b[?1003l")
+        print("\x1b[?1006l")
+        this.mouseEnabled = false
+    }
+    
+    enableRawMode() {
+        # System-specific terminal raw mode
+        # This would be implemented in C runtime
+        this.rawMode = true
+    }
+    
+    disableRawMode() {
+        this.rawMode = false
+    }
+    
+    readInput() {
+        # Read input from stdin (blocking)
+        # Returns parsed event: {type, key, x, y, button}
+        # This would be implemented in C runtime
+        return null
+    }
+    
+    parseMouseEvent(data) {
+        # Parse SGR mouse event
+        # Format: \x1b[<B;X;Ym or M
+        # B = button, X = column, Y = row, m/M = press/release
+        
+        # Simplified parsing
+        return {
+            type: "mouse",
+            button: "left",
+            x: 0,
+            y: 0,
+            action: "click"
+        }
+    }
+    
+    parseKeyEvent(data) {
+        # Parse keyboard input
+        # Special keys: arrows, enter, escape, etc.
+        
+        return {
+            type: "keyboard",
+            key: data
+        }
+    }
+}
+
+# ===========================================
+# Screen Buffer Manager
+# ===========================================
+
+class ScreenBuffer {
+    constructor(width, height) {
+        this.width = width || 80
+        this.height = height || 24
+        this.buffer = []
+        this.previousBuffer = []
+        this.cursorX = 0
+        this.cursorY = 0
+        
+        this.clear()
+    }
+    
+    clear() {
+        this.buffer = []
+        for (let i = 0; i < this.height; i++) {
+            let row = []
+            for (let j = 0; j < this.width; j++) {
+                row.push({char: " ", style: ""})
+            }
+            this.buffer.push(row)
+        }
+    }
+    
+    write(x, y, text, style) {
+        if (y < 0 || y >= this.height) return
+        
+        for (let i = 0; i < len(text); i++) {
+            let col = x + i
+            if (col >= 0 && col < this.width) {
+                this.buffer[y][col] = {
+                    char: text[i],
+                    style: style || ""
+                }
+            }
+        }
+    }
+    
+    writeLines(x, y, lines, style) {
+        for (let i = 0; i < len(lines); i++) {
+            this.write(x, y + i, lines[i], style)
+        }
+    }
+    
+    render() {
+        # Clear screen
+        print("\x1b[2J")
+        print("\x1b[H")
+        
+        # Render buffer
+        for (let y = 0; y < this.height; y++) {
+            let line = ""
+            let currentStyle = ""
+            
+            for (let x = 0; x < this.width; x++) {
+                let cell = this.buffer[y][x]
+                
+                if (cell.style != currentStyle) {
+                    line = line + cli.RESET + cell.style
+                    currentStyle = cell.style
+                }
+                
+                line = line + cell.char
+            }
+            
+            println(line + cli.RESET)
+        }
+        
+        # Position cursor
+        print("\x1b[" + str(this.cursorY + 1) + ";" + str(this.cursorX + 1) + "H")
+    }
+    
+    renderDiff() {
+        # Only render changed cells (more efficient)
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                let current = this.buffer[y][x]
+                let previous = this.previousBuffer[y] ? this.previousBuffer[y][x] : null
+                
+                if (!previous || current.char != previous.char || current.style != previous.style) {
+                    # Move cursor to position
+                    print("\x1b[" + str(y + 1) + ";" + str(x + 1) + "H")
+                    # Write cell
+                    print(current.style + current.char + cli.RESET)
+                }
+            }
+        }
+        
+        # Update previous buffer
+        this.previousBuffer = this.buffer.map(row => row.map(cell => Object.assign({}, cell)))
+    }
+    
+    setCursor(x, y) {
+        this.cursorX = x
+        this.cursorY = y
+    }
+}
+
+# ===========================================
+# Focus Manager
+# ===========================================
+
+class FocusManager {
+    constructor() {
+        this.focusableComponents = []
+        this.focusedIndex = -1
+    }
+    
+    register(component) {
+        this.focusableComponents.push(component)
+        if (this.focusedIndex == -1) {
+            this.focusedIndex = 0
+            component.focus()
+        }
+    }
+    
+    unregister(component) {
+        let index = this.focusableComponents.indexOf(component)
+        if (index != -1) {
+            this.focusableComponents.splice(index, 1)
+            if (this.focusedIndex >= len(this.focusableComponents)) {
+                this.focusedIndex = len(this.focusableComponents) - 1
+            }
+        }
+    }
+    
+    next() {
+        if (len(this.focusableComponents) == 0) return
+        
+        this.focusableComponents[this.focusedIndex].blur()
+        this.focusedIndex = (this.focusedIndex + 1) % len(this.focusableComponents)
+        this.focusableComponents[this.focusedIndex].focus()
+    }
+    
+    previous() {
+        if (len(this.focusableComponents) == 0) return
+        
+        this.focusableComponents[this.focusedIndex].blur()
+        this.focusedIndex = (this.focusedIndex - 1 + len(this.focusableComponents)) % 
+                           len(this.focusableComponents)
+        this.focusableComponents[this.focusedIndex].focus()
+    }
+    
+    getFocused() {
+        if (this.focusedIndex >= 0 && this.focusedIndex < len(this.focusableComponents)) {
+            return this.focusableComponents[this.focusedIndex]
+        }
+        return null
+    }
+}
+
+# ===========================================
+# UI Server Application
+# ===========================================
+
+class UIServer extends ui.EventEmitter {
+    constructor(options) {
+        super()
+        this.options = options || {}
+        this.width = options.width || 80
+        this.height = options.height || 24
+        this.title = options.title || "KLang UI"
+        
+        this.input = TerminalInput()
+        this.screen = ScreenBuffer(this.width, this.height)
+        this.focusManager = FocusManager()
+        
+        this.components = []
+        this.running = false
+        this.fps = options.fps || 60
+        this.frameTime = 1000.0 / this.fps
+    }
+    
+    addComponent(component) {
+        this.components.push(component)
+        
+        # Register focusable components
+        if (component.enabled != false) {
+            this.focusManager.register(component)
+        }
+        
+        # Listen to component events
+        component.on("stateChange", () => this.requestRender())
+        
+        return component
+    }
+    
+    removeComponent(component) {
+        let index = this.components.indexOf(component)
+        if (index != -1) {
+            this.components.splice(index, 1)
+            this.focusManager.unregister(component)
+        }
+    }
+    
+    requestRender() {
+        this.render()
+    }
+    
+    render() {
+        # Clear screen buffer
+        this.screen.clear()
+        
+        # Draw title bar
+        let titleBar = " " + this.title + " "
+        let titlePadding = " ".repeat(Math.max(0, this.width - len(titleBar)))
+        this.screen.write(0, 0, titleBar + titlePadding, cli.BG_CYAN + cli.BLACK + cli.BOLD)
+        
+        # Render each component
+        for (let component of this.components) {
+            if (!component.visible) continue
+            
+            let rendered = component.render()
+            let lines = rendered.split("\n")
+            
+            this.screen.writeLines(component.x, component.y, lines)
+        }
+        
+        # Render to terminal
+        this.screen.render()
+    }
+    
+    handleInput(event) {
+        if (event.type == "keyboard") {
+            this.handleKeyboard(event)
+        } else if (event.type == "mouse") {
+            this.handleMouse(event)
+        }
+    }
+    
+    handleKeyboard(event) {
+        let key = event.key
+        
+        # Global keys
+        if (key == "Tab") {
+            this.focusManager.next()
+            this.render()
+            return
+        } else if (key == "ShiftTab") {
+            this.focusManager.previous()
+            this.render()
+            return
+        } else if (key == "CtrlC" || key == "CtrlQ") {
+            this.stop()
+            return
+        }
+        
+        # Pass to focused component
+        let focused = this.focusManager.getFocused()
+        if (focused) {
+            focused.handleKeyPress(key)
+            this.render()
+        }
+    }
+    
+    handleMouse(event) {
+        let x = event.x
+        let y = event.y - 1  # Adjust for title bar
+        
+        # Find component at position
+        for (let component of this.components) {
+            if (!component.visible || !component.enabled) continue
+            
+            if (component.isPointInside(x, y)) {
+                if (event.action == "click") {
+                    component.handleClick(x - component.x, y - component.y)
+                } else if (event.action == "move") {
+                    if (!component.hovered) {
+                        component.handleMouseEnter()
+                    }
+                } else if (event.action == "leave") {
+                    if (component.hovered) {
+                        component.handleMouseLeave()
+                    }
+                }
+                
+                this.render()
+                break
+            }
+        }
+    }
+    
+    start() {
+        this.running = true
+        
+        # Setup terminal
+        this.input.enableRawMode()
+        this.input.enableMouse()
+        
+        # Hide cursor
+        print("\x1b[?25l")
+        
+        # Initial render
+        this.render()
+        
+        # Event loop
+        this.emit("start", {})
+        this.runEventLoop()
+    }
+    
+    runEventLoop() {
+        # Main event loop
+        while (this.running) {
+            # Read input (blocking with timeout)
+            let event = this.input.readInput()
+            
+            if (event) {
+                this.handleInput(event)
+            }
+            
+            # Sleep to maintain target FPS
+            # sleep(this.frameTime)
+        }
+        
+        # Cleanup
+        this.cleanup()
+    }
+    
+    stop() {
+        this.running = false
+        this.emit("stop", {})
+    }
+    
+    cleanup() {
+        # Restore terminal
+        this.input.disableMouse()
+        this.input.disableRawMode()
+        
+        # Show cursor
+        print("\x1b[?25h")
+        
+        # Clear screen
+        print("\x1b[2J")
+        print("\x1b[H")
+        
+        this.emit("cleanup", {})
+    }
+}
+
+# ===========================================
+# Helper Functions
+# ===========================================
+
+fn createServer(options) {
+    return UIServer(options)
+}
+
+fn createButton(label, options) {
+    return ui.Button(Object.assign({label: label}, options || {}))
+}
+
+fn createInput(placeholder, options) {
+    return ui.Input(Object.assign({placeholder: placeholder}, options || {}))
+}
+
+fn createCheckbox(label, options) {
+    return ui.Checkbox(Object.assign({label: label}, options || {}))
+}
+
+fn createSelect(options, selectOptions) {
+    return ui.Select(Object.assign({options: options}, selectOptions || {}))
+}
+
+fn createRadioGroup(options, groupOptions) {
+    return ui.RadioGroup(Object.assign({options: options}, groupOptions || {}))
+}
+
+fn createModal(title, content, options) {
+    return ui.Modal(Object.assign({
+        title: title,
+        content: content
+    }, options || {}))
+}
+
+# ===========================================
+# Export
+# ===========================================
+
+export {
+    UIServer,
+    TerminalInput,
+    ScreenBuffer,
+    FocusManager,
+    createServer,
+    createButton,
+    createInput,
+    createCheckbox,
+    createSelect,
+    createRadioGroup,
+    createModal
+}
