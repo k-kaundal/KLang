@@ -1,0 +1,408 @@
+# ============================================
+# KLang CLI Task Manager
+# ============================================
+# A practical example of using the CLI library
+# A beautiful command-line task management application
+
+# ===========================================
+# Color and Style Definitions
+# ===========================================
+
+let RED = "\x1b[31m"
+let GREEN = "\x1b[32m"
+let YELLOW = "\x1b[33m"
+let BLUE = "\x1b[34m"
+let CYAN = "\x1b[36m"
+let BOLD = "\x1b[1m"
+let DIM = "\x1b[2m"
+let RESET = "\x1b[0m"
+
+# Icons
+let ICON_CHECK = "✓"
+let ICON_CROSS = "✗"
+let ICON_BULLET = "•"
+let ICON_ARROW_RIGHT = "→"
+let ICON_STAR = "★"
+
+# Box characters
+let BOX_H = "─"
+let BOX_V = "│"
+let BOX_TL = "┌"
+let BOX_TR = "┐"
+let BOX_BL = "└"
+let BOX_BR = "┘"
+let BOX_T_DOWN = "┬"
+let BOX_T_UP = "┴"
+let BOX_T_RIGHT = "├"
+let BOX_T_LEFT = "┤"
+let BOX_CROSS = "┼"
+
+# ===========================================
+# Task Storage
+# ===========================================
+
+let tasks = []
+let nextId = 1
+
+# ===========================================
+# Helper Functions
+# ===========================================
+
+fn drawLine(length, char) {
+    let i = 0
+    let line = ""
+    while i < length {
+        line = line + char
+        i = i + 1
+    }
+    return line
+}
+
+fn centerText(text, width) {
+    let textLen = len(text)
+    let padding = (width - textLen) / 2
+    let leftPad = ""
+    let rightPad = ""
+    
+    let i = 0
+    while i < padding {
+        leftPad = leftPad + " "
+        i = i + 1
+    }
+    
+    i = 0
+    while i < width - padding - textLen {
+        rightPad = rightPad + " "
+        i = i + 1
+    }
+    
+    return leftPad + text + rightPad
+}
+
+fn clearScreen() {
+    print("\x1b[2J\x1b[H")
+}
+
+# ===========================================
+# Display Functions
+# ===========================================
+
+fn showHeader() {
+    println()
+    println(BOLD + CYAN + "╔═══════════════════════════════════════════════════════════╗" + RESET)
+    println(BOLD + CYAN + "║" + centerText("KLang Task Manager", 59) + "║" + RESET)
+    println(BOLD + CYAN + "║" + centerText("Manage your tasks with style", 59) + "║" + RESET)
+    println(BOLD + CYAN + "╚═══════════════════════════════════════════════════════════╝" + RESET)
+    println()
+}
+
+fn showMenu() {
+    println()
+    println(BOX_TL + drawLine(50, BOX_H) + BOX_TR)
+    println(BOX_V + "  " + BOLD + CYAN + "Main Menu" + RESET + drawLine(39, " ") + BOX_V)
+    println(BOX_T_RIGHT + drawLine(50, BOX_H) + BOX_T_LEFT)
+    println(BOX_V + "  " + CYAN + "1." + RESET + " Add Task" + drawLine(38, " ") + BOX_V)
+    println(BOX_V + "  " + CYAN + "2." + RESET + " View Tasks" + drawLine(36, " ") + BOX_V)
+    println(BOX_V + "  " + CYAN + "3." + RESET + " Mark Task Complete" + drawLine(28, " ") + BOX_V)
+    println(BOX_V + "  " + CYAN + "4." + RESET + " Delete Task" + drawLine(35, " ") + BOX_V)
+    println(BOX_V + "  " + CYAN + "5." + RESET + " Statistics" + drawLine(36, " ") + BOX_V)
+    println(BOX_V + "  " + CYAN + "6." + RESET + " Exit" + drawLine(42, " ") + BOX_V)
+    println(BOX_BL + drawLine(50, BOX_H) + BOX_BR)
+    println()
+}
+
+fn showTasks() {
+    let numTasks = len(tasks)
+    
+    if numTasks == 0 {
+        println()
+        println(YELLOW + ICON_STAR + " No tasks yet. Add one to get started!" + RESET)
+        println()
+        return
+    }
+    
+    println()
+    println(BOX_TL + drawLine(70, BOX_H) + BOX_TR)
+    println(BOX_V + "  " + BOLD + CYAN + "Your Tasks" + RESET + drawLine(58, " ") + BOX_V)
+    println(BOX_T_RIGHT + drawLine(70, BOX_H) + BOX_T_LEFT)
+    
+    let i = 0
+    while i < numTasks {
+        let task = tasks[i]
+        let status = ""
+        let taskText = ""
+        
+        if task["completed"] {
+            status = GREEN + ICON_CHECK + RESET
+            taskText = DIM + task["title"] + RESET
+        } else {
+            status = YELLOW + ICON_BULLET + RESET
+            taskText = task["title"]
+        }
+        
+        let idStr = "[" + str(task["id"]) + "]"
+        let priority = task["priority"]
+        let priorityIcon = ""
+        
+        if priority == "high" {
+            priorityIcon = RED + "!" + RESET
+        } else if priority == "medium" {
+            priorityIcon = YELLOW + "!" + RESET
+        } else {
+            priorityIcon = BLUE + "!" + RESET
+        }
+        
+        print(BOX_V + " " + status + " ")
+        print(CYAN + idStr + RESET + " ")
+        print(priorityIcon + " ")
+        print(taskText)
+        
+        # Calculate padding
+        let lineLen = len(idStr) + len(task["title"]) + 8
+        let padding = 70 - lineLen
+        print(drawLine(padding, " "))
+        println(BOX_V)
+        
+        i = i + 1
+    }
+    
+    println(BOX_BL + drawLine(70, BOX_H) + BOX_BR)
+    println()
+}
+
+fn showStats() {
+    let total = len(tasks)
+    let completed = 0
+    let pending = 0
+    let highPriority = 0
+    
+    let i = 0
+    while i < total {
+        let task = tasks[i]
+        
+        if task["completed"] {
+            completed = completed + 1
+        } else {
+            pending = pending + 1
+        }
+        
+        if task["priority"] == "high" {
+            highPriority = highPriority + 1
+        }
+        
+        i = i + 1
+    }
+    
+    println()
+    println(BOX_TL + drawLine(50, BOX_H) + BOX_TR)
+    println(BOX_V + "  " + BOLD + CYAN + "Statistics" + RESET + drawLine(38, " ") + BOX_V)
+    println(BOX_T_RIGHT + drawLine(50, BOX_H) + BOX_T_LEFT)
+    println(BOX_V + "  Total Tasks:        " + BOLD + str(total) + RESET + drawLine(25 - len(str(total)), " ") + BOX_V)
+    println(BOX_V + "  Completed:          " + GREEN + str(completed) + RESET + drawLine(25 - len(str(completed)), " ") + BOX_V)
+    println(BOX_V + "  Pending:            " + YELLOW + str(pending) + RESET + drawLine(25 - len(str(pending)), " ") + BOX_V)
+    println(BOX_V + "  High Priority:      " + RED + str(highPriority) + RESET + drawLine(25 - len(str(highPriority)), " ") + BOX_V)
+    println(BOX_BL + drawLine(50, BOX_H) + BOX_BR)
+    
+    # Progress bar
+    if total > 0 {
+        let percent = (completed * 100) / total
+        let barWidth = 40
+        let filled = (completed * barWidth) / total
+        let empty = barWidth - filled
+        
+        println()
+        println("Completion Progress:")
+        print("[")
+        
+        # Determine color
+        let barColor = RED
+        if percent >= 75 {
+            barColor = GREEN
+        } else if percent >= 50 {
+            barColor = YELLOW
+        }
+        
+        print(barColor)
+        let j = 0
+        while j < filled {
+            print("█")
+            j = j + 1
+        }
+        print(RESET)
+        
+        j = 0
+        while j < empty {
+            print("░")
+            j = j + 1
+        }
+        
+        println("] " + barColor + str(percent) + "%" + RESET)
+    }
+    
+    println()
+}
+
+# ===========================================
+# Task Operations
+# ===========================================
+
+fn addTask() {
+    println()
+    println(CYAN + ICON_ARROW_RIGHT + " Adding new task" + RESET)
+    println()
+    
+    print("Task title: ")
+    let title = input()
+    
+    print("Priority (high/medium/low): ")
+    let priority = input()
+    
+    # Validate priority
+    if priority != "high" && priority != "medium" && priority != "low" {
+        priority = "medium"
+    }
+    
+    let task = {
+        "id": nextId,
+        "title": title,
+        "priority": priority,
+        "completed": false
+    }
+    
+    tasks[len(tasks)] = task
+    nextId = nextId + 1
+    
+    println()
+    println(GREEN + ICON_CHECK + " Task added successfully!" + RESET)
+    println()
+}
+
+fn markComplete() {
+    if len(tasks) == 0 {
+        println()
+        println(YELLOW + ICON_STAR + " No tasks to complete!" + RESET)
+        println()
+        return
+    }
+    
+    showTasks()
+    
+    print("Enter task ID to mark as complete: ")
+    let id = int(input())
+    
+    let found = false
+    let i = 0
+    while i < len(tasks) {
+        if tasks[i]["id"] == id {
+            tasks[i]["completed"] = true
+            found = true
+            break
+        }
+        i = i + 1
+    }
+    
+    println()
+    if found {
+        println(GREEN + ICON_CHECK + " Task marked as complete!" + RESET)
+    } else {
+        println(RED + ICON_CROSS + " Task not found!" + RESET)
+    }
+    println()
+}
+
+fn deleteTask() {
+    if len(tasks) == 0 {
+        println()
+        println(YELLOW + ICON_STAR + " No tasks to delete!" + RESET)
+        println()
+        return
+    }
+    
+    showTasks()
+    
+    print("Enter task ID to delete: ")
+    let id = int(input())
+    
+    let newTasks = []
+    let found = false
+    let i = 0
+    
+    while i < len(tasks) {
+        if tasks[i]["id"] != id {
+            newTasks[len(newTasks)] = tasks[i]
+        } else {
+            found = true
+        }
+        i = i + 1
+    }
+    
+    tasks = newTasks
+    
+    println()
+    if found {
+        println(GREEN + ICON_CHECK + " Task deleted successfully!" + RESET)
+    } else {
+        println(RED + ICON_CROSS + " Task not found!" + RESET)
+    }
+    println()
+}
+
+# ===========================================
+# Main Application Loop
+# ===========================================
+
+fn main() {
+    let running = true
+    
+    # Add some sample tasks for demo
+    tasks[0] = {"id": 1, "title": "Build KLang CLI library", "priority": "high", "completed": true}
+    tasks[1] = {"id": 2, "title": "Write documentation", "priority": "medium", "completed": false}
+    tasks[2] = {"id": 3, "title": "Add more examples", "priority": "low", "completed": false}
+    nextId = 4
+    
+    while running {
+        clearScreen()
+        showHeader()
+        showMenu()
+        
+        print(CYAN + "Choose an option: " + RESET)
+        let choice = input()
+        
+        if choice == "1" {
+            addTask()
+            print("Press Enter to continue...")
+            input()
+        } else if choice == "2" {
+            showTasks()
+            print("Press Enter to continue...")
+            input()
+        } else if choice == "3" {
+            markComplete()
+            print("Press Enter to continue...")
+            input()
+        } else if choice == "4" {
+            deleteTask()
+            print("Press Enter to continue...")
+            input()
+        } else if choice == "5" {
+            showStats()
+            print("Press Enter to continue...")
+            input()
+        } else if choice == "6" {
+            running = false
+        } else {
+            println()
+            println(RED + ICON_CROSS + " Invalid option! Please try again." + RESET)
+            println()
+            print("Press Enter to continue...")
+            input()
+        }
+    }
+    
+    println()
+    println(GREEN + ICON_CHECK + " Thank you for using KLang Task Manager!" + RESET)
+    println()
+}
+
+# Run the application
+main()
