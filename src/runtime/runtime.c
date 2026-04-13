@@ -387,6 +387,16 @@ void runtime_init(Interpreter *interp) {
     env_set_local(promise_class.as.class_val.static_methods, "reject", v);
     env_set_local(interp->global_env, "Promise", promise_class);
     
+    /* Promise instance methods */
+    v.as.builtin = builtin_Promise_then;
+    env_set_local(interp->global_env, "__promise_then", v);
+    
+    v.as.builtin = builtin_Promise_catch;
+    env_set_local(interp->global_env, "__promise_catch", v);
+    
+    v.as.builtin = builtin_Promise_finally;
+    env_set_local(interp->global_env, "__promise_finally", v);
+    
     /* Manual Memory Management Functions (C/C++ Compatibility) */
     v.as.builtin = builtin_malloc;
     env_set_local(interp->global_env, "malloc", v);
