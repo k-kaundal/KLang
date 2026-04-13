@@ -8,7 +8,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](.)
-[![Tests](https://img.shields.io/badge/tests-100%25-brightgreen)](docs/reports/)
+[![Tests](https://img.shields.io/badge/tests-238/238_passing-brightgreen)](COMPLETION_REPORT.md)
+[![Security](https://img.shields.io/badge/security-A+-brightgreen)](COMPLETION_REPORT.md)
 [![Version](https://img.shields.io/badge/version-1.0.0--rc-blue)](CHANGELOG.md)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -420,6 +421,9 @@ See [Build Modes Guide](docs/BUILD_MODES.md), [HTTP Server Guide](docs/HTTP_SERV
 | Document | Description |
 |----------|-------------|
 | [User Guide](docs/USER_GUIDE.md) | **Start here!** Installation, basics, and tutorials |
+| [Migration from Python](docs/MIGRATION_FROM_PYTHON.md) | **NEW!** Complete guide for Python developers |
+| [Migration from JavaScript](docs/MIGRATION_FROM_JAVASCRIPT.md) | **NEW!** Complete guide for JS/TS developers |
+| [Error Handling Guide](docs/ERROR_HANDLING_GUIDE.md) | **NEW!** Comprehensive error handling patterns |
 | [Server Generators](docs/SERVER_GENERATORS.md) | **NEW!** NestJS-like server creation and code generators |
 | [Build Modes](docs/BUILD_MODES.md) | **NEW!** Build modes and optimization guide |
 | [HTTP Server](docs/HTTP_SERVER.md) | **NEW!** Built-in web server documentation |
@@ -429,6 +433,7 @@ See [Build Modes Guide](docs/BUILD_MODES.md), [HTTP Server Guide](docs/HTTP_SERV
 | [Architecture](docs/architecture/ARCHITECTURE.md) | Technical design and internals |
 | [Contributing](CONTRIBUTING.md) | How to contribute to KLang |
 | [Changelog](CHANGELOG.md) | Version history and updates |
+| [Completion Report](COMPLETION_REPORT.md) | **Project completion status** ✅ |
 
 ---
 
