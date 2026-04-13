@@ -1,0 +1,218 @@
+# ============================================
+# KLang Terminal UI - Layout Engine
+# ============================================
+# Layout management for components (Stack, Grid, Flex)
+
+# ===========================================
+# Stack Layout (Vertical/Horizontal)
+# ===========================================
+
+class Stack extends Component {
+    fn init(props) {
+        super.init(props)
+        this.direction = props["direction"] || "vertical"  # vertical or horizontal
+        this.spacing = props["spacing"] || 0
+        this.align = props["align"] || "start"  # start, center, end
+    }
+    
+    fn render() {
+        let output = ""
+        
+        if this.direction == "vertical" {
+            # Stack children vertically
+            for child in this.children {
+                output = output + child.render()
+                
+                # Add spacing
+                let i = 0
+                while i < this.spacing {
+                    output = output + "\n"
+                    i = i + 1
+                }
+            }
+        } else {
+            # Stack children horizontally
+            # This is more complex in terminal - simplified version
+            for child in this.children {
+                output = output + child.render() + " "
+            }
+            output = output + "\n"
+        }
+        
+        return output
+    }
+}
+
+# ===========================================
+# Grid Layout
+# ===========================================
+
+class Grid extends Component {
+    fn init(props) {
+        super.init(props)
+        this.columns = props["columns"] || 2
+        this.gap = props["gap"] || 1
+    }
+    
+    fn render() {
+        let output = ""
+        let columnWidth = (this.width - ((this.columns - 1) * this.gap)) / this.columns
+        
+        let row = 0
+        let col = 0
+        
+        for child in this.children {
+            child.width = columnWidth
+            
+            if col > 0 {
+                output = output + repeat(" ", this.gap)
+            }
+            
+            output = output + child.render()
+            
+            col = col + 1
+            if col >= this.columns {
+                output = output + "\n"
+                col = 0
+                row = row + 1
+            }
+        }
+        
+        return output
+    }
+}
+
+# ===========================================
+# Split Layout (Two-pane)
+# ===========================================
+
+class Split extends Component {
+    fn init(props) {
+        super.init(props)
+        this.direction = props["direction"] || "horizontal"  # horizontal or vertical
+        this.ratio = props["ratio"] || 50  # Percentage for first pane
+    }
+    
+    fn render() {
+        let output = ""
+        
+        if len(this.children) < 2 {
+            return output
+        }
+        
+        let first = this.children[0]
+        let second = this.children[1]
+        
+        if this.direction == "horizontal" {
+            # Split horizontally (left/right)
+            let firstWidth = (this.width * this.ratio) / 100
+            let secondWidth = this.width - firstWidth
+            
+            first.width = firstWidth
+            second.width = secondWidth
+            
+            # This is simplified - proper implementation would render side-by-side
+            output = output + first.render()
+            output = output + second.render()
+        } else {
+            # Split vertically (top/bottom)
+            let firstHeight = (this.height * this.ratio) / 100
+            let secondHeight = this.height - firstHeight
+            
+            first.height = firstHeight
+            second.height = secondHeight
+            
+            output = output + first.render()
+            output = output + second.render()
+        }
+        
+        return output
+    }
+}
+
+# ===========================================
+# Tabs Layout
+# ===========================================
+
+class Tabs extends Component {
+    fn init(props) {
+        super.init(props)
+        this.activeTab = props["activeTab"] || 0
+        this.tabs = props["tabs"] || []  # Array of {title, content}
+    }
+    
+    fn render() {
+        let output = ""
+        
+        # Render tab headers
+        let i = 0
+        while i < len(this.tabs) {
+            let tab = this.tabs[i]
+            
+            if i == this.activeTab {
+                output = output + BOLD + CYAN + "[ " + tab["title"] + " ]" + RESET + " "
+            } else {
+                output = output + DIM + "[ " + tab["title"] + " ]" + RESET + " "
+            }
+            
+            i = i + 1
+        }
+        output = output + "\n"
+        
+        # Separator
+        output = output + repeat("─", this.width) + "\n"
+        
+        # Render active tab content
+        if this.activeTab < len(this.tabs) {
+            let activeContent = this.tabs[this.activeTab]["content"]
+            output = output + activeContent + "\n"
+        }
+        
+        return output
+    }
+}
+
+# ===========================================
+# Spacer Component
+# ===========================================
+
+class Spacer extends Component {
+    fn init(props) {
+        super.init(props)
+        this.size = props["size"] || 1
+    }
+    
+    fn render() {
+        let output = ""
+        let i = 0
+        while i < this.size {
+            output = output + "\n"
+            i = i + 1
+        }
+        return output
+    }
+}
+
+# ===========================================
+# Divider Component
+# ===========================================
+
+class Divider extends Component {
+    fn init(props) {
+        super.init(props)
+        this.char = props["char"] || "─"
+        this.color = props["color"] || ""
+    }
+    
+    fn render() {
+        let line = repeat(this.char, this.width)
+        
+        if this.color {
+            if this.color == "cyan" { line = CYAN + line + RESET }
+            else if this.color == "blue" { line = BLUE + line + RESET }
+            else if this.color == "yellow" { line = YELLOW + line + RESET }
+        }
+        
+        return line + "\n"
+    }
+}
