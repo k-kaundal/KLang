@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+/* Legacy GC - Deprecated, use gc_enhanced.h for new code */
+
 typedef struct GCObject {
     int marked;
     struct GCObject *next;
@@ -14,12 +16,13 @@ typedef struct {
     size_t total_allocated;
 } GCHeap;
 
-GCHeap *gc_heap_new(void);
-void gc_heap_free(GCHeap *heap);
-void *gc_alloc(GCHeap *heap, size_t size);
-void gc_mark_object(GCObject *obj);
-void gc_sweep(GCHeap *heap);
-void gc_collect(GCHeap *heap);
-void gc_free_all(GCHeap *heap);
+/* Legacy GC functions - use gc_enhanced.h for new code */
+GCHeap *gc_heap_new_legacy(void);
+void gc_heap_free_legacy(GCHeap *heap);
+void *gc_alloc_legacy(GCHeap *heap, size_t size);
+void gc_mark_object_legacy(GCObject *obj);
+void gc_sweep_legacy(GCHeap *heap);
+void gc_collect_legacy(GCHeap *heap);
+void gc_free_all_legacy(GCHeap *heap);
 
 #endif
