@@ -1,0 +1,761 @@
+# ============================================
+# KLang CLI Library
+# ============================================
+# Beautiful command-line interface utilities
+# 100% Pure KLang implementation
+#
+# Features:
+# - Colors and text formatting
+# - Box drawing and borders
+# - Progress bars and spinners
+# - Tables and menus
+# - Interactive prompts
+# - Icons and symbols
+
+# ===========================================
+# ANSI Color Codes
+# ===========================================
+
+# Text colors
+let BLACK = "\x1b[30m"
+let RED = "\x1b[31m"
+let GREEN = "\x1b[32m"
+let YELLOW = "\x1b[33m"
+let BLUE = "\x1b[34m"
+let MAGENTA = "\x1b[35m"
+let CYAN = "\x1b[36m"
+let WHITE = "\x1b[37m"
+let GRAY = "\x1b[90m"
+
+# Bright colors
+let BRIGHT_RED = "\x1b[91m"
+let BRIGHT_GREEN = "\x1b[92m"
+let BRIGHT_YELLOW = "\x1b[93m"
+let BRIGHT_BLUE = "\x1b[94m"
+let BRIGHT_MAGENTA = "\x1b[95m"
+let BRIGHT_CYAN = "\x1b[96m"
+let BRIGHT_WHITE = "\x1b[97m"
+
+# Background colors
+let BG_BLACK = "\x1b[40m"
+let BG_RED = "\x1b[41m"
+let BG_GREEN = "\x1b[42m"
+let BG_YELLOW = "\x1b[43m"
+let BG_BLUE = "\x1b[44m"
+let BG_MAGENTA = "\x1b[45m"
+let BG_CYAN = "\x1b[46m"
+let BG_WHITE = "\x1b[47m"
+
+# Text styles
+let BOLD = "\x1b[1m"
+let DIM = "\x1b[2m"
+let ITALIC = "\x1b[3m"
+let UNDERLINE = "\x1b[4m"
+let BLINK = "\x1b[5m"
+let REVERSE = "\x1b[7m"
+let HIDDEN = "\x1b[8m"
+let STRIKETHROUGH = "\x1b[9m"
+
+# Reset
+let RESET = "\x1b[0m"
+
+# ===========================================
+# Box Drawing Characters
+# ===========================================
+
+# Single line box characters
+let BOX_SINGLE_HORIZONTAL = "─"
+let BOX_SINGLE_VERTICAL = "│"
+let BOX_SINGLE_TOP_LEFT = "┌"
+let BOX_SINGLE_TOP_RIGHT = "┐"
+let BOX_SINGLE_BOTTOM_LEFT = "└"
+let BOX_SINGLE_BOTTOM_RIGHT = "┘"
+let BOX_SINGLE_T_DOWN = "┬"
+let BOX_SINGLE_T_UP = "┴"
+let BOX_SINGLE_T_RIGHT = "├"
+let BOX_SINGLE_T_LEFT = "┤"
+let BOX_SINGLE_CROSS = "┼"
+
+# Double line box characters
+let BOX_DOUBLE_HORIZONTAL = "═"
+let BOX_DOUBLE_VERTICAL = "║"
+let BOX_DOUBLE_TOP_LEFT = "╔"
+let BOX_DOUBLE_TOP_RIGHT = "╗"
+let BOX_DOUBLE_BOTTOM_LEFT = "╚"
+let BOX_DOUBLE_BOTTOM_RIGHT = "╝"
+let BOX_DOUBLE_T_DOWN = "╦"
+let BOX_DOUBLE_T_UP = "╩"
+let BOX_DOUBLE_T_RIGHT = "╠"
+let BOX_DOUBLE_T_LEFT = "╣"
+let BOX_DOUBLE_CROSS = "╬"
+
+# Round box characters
+let BOX_ROUND_TOP_LEFT = "╭"
+let BOX_ROUND_TOP_RIGHT = "╮"
+let BOX_ROUND_BOTTOM_LEFT = "╰"
+let BOX_ROUND_BOTTOM_RIGHT = "╯"
+
+# ===========================================
+# Icons and Symbols
+# ===========================================
+
+let ICON_CHECK = "✓"
+let ICON_CROSS = "✗"
+let ICON_ARROW_RIGHT = "→"
+let ICON_ARROW_LEFT = "←"
+let ICON_ARROW_UP = "↑"
+let ICON_ARROW_DOWN = "↓"
+let ICON_STAR = "★"
+let ICON_HEART = "♥"
+let ICON_WARNING = "⚠"
+let ICON_INFO = "ℹ"
+let ICON_QUESTION = "?"
+let ICON_BULLET = "•"
+let ICON_CIRCLE = "○"
+let ICON_FILLED_CIRCLE = "●"
+let ICON_SQUARE = "□"
+let ICON_FILLED_SQUARE = "■"
+let ICON_DIAMOND = "◆"
+let ICON_GEAR = "⚙"
+let ICON_ROCKET = "🚀"
+let ICON_SPARKLES = "✨"
+let ICON_FIRE = "🔥"
+let ICON_THUMBS_UP = "👍"
+
+# Progress bar symbols
+let PROGRESS_FILLED = "█"
+let PROGRESS_EMPTY = "░"
+let PROGRESS_PARTIAL = "▓"
+
+# Spinner frames
+let SPINNER_DOTS = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+let SPINNER_LINE = ["-", "\\", "|", "/"]
+let SPINNER_ARROW = ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"]
+let SPINNER_DOTS_PULSE = ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"]
+
+# ===========================================
+# Color Functions
+# ===========================================
+
+# Apply color to text
+fn color(text, colorCode) {
+    return colorCode + text + RESET
+}
+
+# Convenience color functions
+fn red(text) {
+    return RED + text + RESET
+}
+
+fn green(text) {
+    return GREEN + text + RESET
+}
+
+fn yellow(text) {
+    return YELLOW + text + RESET
+}
+
+fn blue(text) {
+    return BLUE + text + RESET
+}
+
+fn magenta(text) {
+    return MAGENTA + text + RESET
+}
+
+fn cyan(text) {
+    return CYAN + text + RESET
+}
+
+fn white(text) {
+    return WHITE + text + RESET
+}
+
+fn gray(text) {
+    return GRAY + text + RESET
+}
+
+# Bright colors
+fn brightRed(text) {
+    return BRIGHT_RED + text + RESET
+}
+
+fn brightGreen(text) {
+    return BRIGHT_GREEN + text + RESET
+}
+
+fn brightYellow(text) {
+    return BRIGHT_YELLOW + text + RESET
+}
+
+fn brightBlue(text) {
+    return BRIGHT_BLUE + text + RESET
+}
+
+fn brightCyan(text) {
+    return BRIGHT_CYAN + text + RESET
+}
+
+# Text styles
+fn bold(text) {
+    return BOLD + text + RESET
+}
+
+fn dim(text) {
+    return DIM + text + RESET
+}
+
+fn italic(text) {
+    return ITALIC + text + RESET
+}
+
+fn underline(text) {
+    return UNDERLINE + text + RESET
+}
+
+# Combined styles
+fn boldGreen(text) {
+    return BOLD + GREEN + text + RESET
+}
+
+fn boldRed(text) {
+    return BOLD + RED + text + RESET
+}
+
+fn boldYellow(text) {
+    return BOLD + YELLOW + text + RESET
+}
+
+fn boldBlue(text) {
+    return BOLD + BLUE + text + RESET
+}
+
+fn boldCyan(text) {
+    return BOLD + CYAN + text + RESET
+}
+
+# ===========================================
+# Box Drawing Functions
+# ===========================================
+
+# Draw a horizontal line
+fn drawLine(length, char) {
+    let i = 0
+    let line = ""
+    while i < length {
+        line = line + char
+        i = i + 1
+    }
+    return line
+}
+
+# Draw a box with single lines
+fn drawBox(width, height, title) {
+    # Top border
+    print(BOX_SINGLE_TOP_LEFT)
+    
+    if len(title) > 0 {
+        let titleLen = len(title)
+        let padding = (width - titleLen - 2) / 2
+        print(drawLine(padding, BOX_SINGLE_HORIZONTAL))
+        print(" " + title + " ")
+        print(drawLine(width - padding - titleLen - 2, BOX_SINGLE_HORIZONTAL))
+    } else {
+        print(drawLine(width, BOX_SINGLE_HORIZONTAL))
+    }
+    
+    println(BOX_SINGLE_TOP_RIGHT)
+    
+    # Middle rows
+    let i = 0
+    while i < height {
+        print(BOX_SINGLE_VERTICAL)
+        print(drawLine(width, " "))
+        println(BOX_SINGLE_VERTICAL)
+        i = i + 1
+    }
+    
+    # Bottom border
+    print(BOX_SINGLE_BOTTOM_LEFT)
+    print(drawLine(width, BOX_SINGLE_HORIZONTAL))
+    println(BOX_SINGLE_BOTTOM_RIGHT)
+}
+
+# Draw a box with double lines
+fn drawDoubleBox(width, height, title) {
+    # Top border
+    print(BOX_DOUBLE_TOP_LEFT)
+    
+    if len(title) > 0 {
+        let titleLen = len(title)
+        let padding = (width - titleLen - 2) / 2
+        print(drawLine(padding, BOX_DOUBLE_HORIZONTAL))
+        print(" " + title + " ")
+        print(drawLine(width - padding - titleLen - 2, BOX_DOUBLE_HORIZONTAL))
+    } else {
+        print(drawLine(width, BOX_DOUBLE_HORIZONTAL))
+    }
+    
+    println(BOX_DOUBLE_TOP_RIGHT)
+    
+    # Middle rows
+    let i = 0
+    while i < height {
+        print(BOX_DOUBLE_VERTICAL)
+        print(drawLine(width, " "))
+        println(BOX_DOUBLE_VERTICAL)
+        i = i + 1
+    }
+    
+    # Bottom border
+    print(BOX_DOUBLE_BOTTOM_LEFT)
+    print(drawLine(width, BOX_DOUBLE_HORIZONTAL))
+    println(BOX_DOUBLE_BOTTOM_RIGHT)
+}
+
+# Draw a box with rounded corners
+fn drawRoundBox(width, height, title) {
+    # Top border
+    print(BOX_ROUND_TOP_LEFT)
+    
+    if len(title) > 0 {
+        let titleLen = len(title)
+        let padding = (width - titleLen - 2) / 2
+        print(drawLine(padding, BOX_SINGLE_HORIZONTAL))
+        print(" " + title + " ")
+        print(drawLine(width - padding - titleLen - 2, BOX_SINGLE_HORIZONTAL))
+    } else {
+        print(drawLine(width, BOX_SINGLE_HORIZONTAL))
+    }
+    
+    println(BOX_ROUND_TOP_RIGHT)
+    
+    # Middle rows
+    let i = 0
+    while i < height {
+        print(BOX_SINGLE_VERTICAL)
+        print(drawLine(width, " "))
+        println(BOX_SINGLE_VERTICAL)
+        i = i + 1
+    }
+    
+    # Bottom border
+    print(BOX_ROUND_BOTTOM_LEFT)
+    print(drawLine(width, BOX_SINGLE_HORIZONTAL))
+    println(BOX_ROUND_BOTTOM_RIGHT)
+}
+
+# Draw a simple border around text
+fn boxText(text, padding) {
+    let textLen = len(text)
+    let totalWidth = textLen + (padding * 2)
+    
+    # Top border
+    println(BOX_SINGLE_TOP_LEFT + drawLine(totalWidth, BOX_SINGLE_HORIZONTAL) + BOX_SINGLE_TOP_RIGHT)
+    
+    # Text with padding
+    print(BOX_SINGLE_VERTICAL)
+    print(drawLine(padding, " "))
+    print(text)
+    print(drawLine(padding, " "))
+    println(BOX_SINGLE_VERTICAL)
+    
+    # Bottom border
+    println(BOX_SINGLE_BOTTOM_LEFT + drawLine(totalWidth, BOX_SINGLE_HORIZONTAL) + BOX_SINGLE_BOTTOM_RIGHT)
+}
+
+# ===========================================
+# Progress Bar Functions
+# ===========================================
+
+# Draw a progress bar
+fn progressBar(current, total, width, showPercent) {
+    let percent = (current * 100) / total
+    let filled = (current * width) / total
+    let empty = width - filled
+    
+    # Draw bar
+    print("[")
+    
+    let i = 0
+    while i < filled {
+        print(PROGRESS_FILLED)
+        i = i + 1
+    }
+    
+    i = 0
+    while i < empty {
+        print(PROGRESS_EMPTY)
+        i = i + 1
+    }
+    
+    print("]")
+    
+    if showPercent {
+        print(" " + str(percent) + "%")
+    }
+}
+
+# Draw a colored progress bar
+fn coloredProgressBar(current, total, width, showPercent) {
+    let percent = (current * 100) / total
+    let filled = (current * width) / total
+    let empty = width - filled
+    
+    # Determine color based on progress
+    let barColor = GREEN
+    if percent < 33 {
+        barColor = RED
+    } else if percent < 66 {
+        barColor = YELLOW
+    }
+    
+    # Draw bar
+    print("[")
+    print(barColor)
+    
+    let i = 0
+    while i < filled {
+        print(PROGRESS_FILLED)
+        i = i + 1
+    }
+    
+    print(RESET)
+    
+    i = 0
+    while i < empty {
+        print(PROGRESS_EMPTY)
+        i = i + 1
+    }
+    
+    print("]")
+    
+    if showPercent {
+        print(" " + barColor + str(percent) + "%" + RESET)
+    }
+}
+
+# ===========================================
+# Table Functions
+# ===========================================
+
+# Draw a simple table
+fn drawTable(headers, rows) {
+    let numCols = len(headers)
+    
+    # Calculate column widths
+    let colWidths = []
+    let i = 0
+    while i < numCols {
+        colWidths[i] = len(headers[i])
+        i = i + 1
+    }
+    
+    # Update widths based on data
+    let rowIdx = 0
+    while rowIdx < len(rows) {
+        let row = rows[rowIdx]
+        let colIdx = 0
+        while colIdx < numCols {
+            let cellLen = len(str(row[colIdx]))
+            if cellLen > colWidths[colIdx] {
+                colWidths[colIdx] = cellLen
+            }
+            colIdx = colIdx + 1
+        }
+        rowIdx = rowIdx + 1
+    }
+    
+    # Draw top border
+    print(BOX_SINGLE_TOP_LEFT)
+    i = 0
+    while i < numCols {
+        print(drawLine(colWidths[i] + 2, BOX_SINGLE_HORIZONTAL))
+        if i < numCols - 1 {
+            print(BOX_SINGLE_T_DOWN)
+        }
+        i = i + 1
+    }
+    println(BOX_SINGLE_TOP_RIGHT)
+    
+    # Draw headers
+    print(BOX_SINGLE_VERTICAL + " ")
+    i = 0
+    while i < numCols {
+        print(boldCyan(headers[i]))
+        let padding = colWidths[i] - len(headers[i])
+        print(drawLine(padding, " "))
+        print(" " + BOX_SINGLE_VERTICAL + " ")
+        i = i + 1
+    }
+    println()
+    
+    # Draw separator
+    print(BOX_SINGLE_T_RIGHT)
+    i = 0
+    while i < numCols {
+        print(drawLine(colWidths[i] + 2, BOX_SINGLE_HORIZONTAL))
+        if i < numCols - 1 {
+            print(BOX_SINGLE_CROSS)
+        }
+        i = i + 1
+    }
+    println(BOX_SINGLE_T_LEFT)
+    
+    # Draw rows
+    rowIdx = 0
+    while rowIdx < len(rows) {
+        let row = rows[rowIdx]
+        print(BOX_SINGLE_VERTICAL + " ")
+        
+        let colIdx = 0
+        while colIdx < numCols {
+            let cell = str(row[colIdx])
+            print(cell)
+            let padding = colWidths[colIdx] - len(cell)
+            print(drawLine(padding, " "))
+            print(" " + BOX_SINGLE_VERTICAL + " ")
+            colIdx = colIdx + 1
+        }
+        println()
+        
+        rowIdx = rowIdx + 1
+    }
+    
+    # Draw bottom border
+    print(BOX_SINGLE_BOTTOM_LEFT)
+    i = 0
+    while i < numCols {
+        print(drawLine(colWidths[i] + 2, BOX_SINGLE_HORIZONTAL))
+        if i < numCols - 1 {
+            print(BOX_SINGLE_T_UP)
+        }
+        i = i + 1
+    }
+    println(BOX_SINGLE_BOTTOM_RIGHT)
+}
+
+# ===========================================
+# Header and Banner Functions
+# ===========================================
+
+# Print a fancy header
+fn header(text, style) {
+    let textLen = len(text)
+    let width = textLen + 4
+    
+    println()
+    
+    if style == "double" {
+        println(BOX_DOUBLE_TOP_LEFT + drawLine(width, BOX_DOUBLE_HORIZONTAL) + BOX_DOUBLE_TOP_RIGHT)
+        println(BOX_DOUBLE_VERTICAL + "  " + boldCyan(text) + "  " + BOX_DOUBLE_VERTICAL)
+        println(BOX_DOUBLE_BOTTOM_LEFT + drawLine(width, BOX_DOUBLE_HORIZONTAL) + BOX_DOUBLE_BOTTOM_RIGHT)
+    } else if style == "round" {
+        println(BOX_ROUND_TOP_LEFT + drawLine(width, BOX_SINGLE_HORIZONTAL) + BOX_ROUND_TOP_RIGHT)
+        println(BOX_SINGLE_VERTICAL + "  " + boldCyan(text) + "  " + BOX_SINGLE_VERTICAL)
+        println(BOX_ROUND_BOTTOM_LEFT + drawLine(width, BOX_SINGLE_HORIZONTAL) + BOX_ROUND_BOTTOM_RIGHT)
+    } else {
+        println(BOX_SINGLE_TOP_LEFT + drawLine(width, BOX_SINGLE_HORIZONTAL) + BOX_SINGLE_TOP_RIGHT)
+        println(BOX_SINGLE_VERTICAL + "  " + boldCyan(text) + "  " + BOX_SINGLE_VERTICAL)
+        println(BOX_SINGLE_BOTTOM_LEFT + drawLine(width, BOX_SINGLE_HORIZONTAL) + BOX_SINGLE_BOTTOM_RIGHT)
+    }
+    
+    println()
+}
+
+# Print a banner
+fn banner(text) {
+    let textLen = len(text)
+    let width = textLen + 8
+    
+    println()
+    println(BOLD + CYAN + drawLine(width, "=") + RESET)
+    println(BOLD + CYAN + "    " + text + "    " + RESET)
+    println(BOLD + CYAN + drawLine(width, "=") + RESET)
+    println()
+}
+
+# ===========================================
+# Status and Message Functions
+# ===========================================
+
+# Success message
+fn success(message) {
+    println(GREEN + ICON_CHECK + " " + message + RESET)
+}
+
+# Error message
+fn error(message) {
+    println(RED + ICON_CROSS + " " + message + RESET)
+}
+
+# Warning message
+fn warning(message) {
+    println(YELLOW + ICON_WARNING + " " + message + RESET)
+}
+
+# Info message
+fn info(message) {
+    println(CYAN + ICON_INFO + " " + message + RESET)
+}
+
+# Question prompt
+fn question(message) {
+    print(BLUE + ICON_QUESTION + " " + message + RESET + " ")
+}
+
+# Step indicator
+fn step(number, total, message) {
+    println(CYAN + "[" + str(number) + "/" + str(total) + "]" + RESET + " " + message)
+}
+
+# ===========================================
+# Menu Functions
+# ===========================================
+
+# Display a menu
+fn menu(title, options) {
+    let numOptions = len(options)
+    
+    # Calculate width
+    let maxWidth = len(title)
+    let i = 0
+    while i < numOptions {
+        let optLen = len(str(i + 1) + ". " + options[i])
+        if optLen > maxWidth {
+            maxWidth = optLen
+        }
+        i = i + 1
+    }
+    
+    let width = maxWidth + 4
+    
+    # Draw menu
+    println()
+    println(BOX_SINGLE_TOP_LEFT + drawLine(width, BOX_SINGLE_HORIZONTAL) + BOX_SINGLE_TOP_RIGHT)
+    println(BOX_SINGLE_VERTICAL + "  " + boldCyan(title) + drawLine(width - len(title) - 2, " ") + BOX_SINGLE_VERTICAL)
+    println(BOX_SINGLE_T_RIGHT + drawLine(width, BOX_SINGLE_HORIZONTAL) + BOX_SINGLE_T_LEFT)
+    
+    # Options
+    i = 0
+    while i < numOptions {
+        let option = str(i + 1) + ". " + options[i]
+        print(BOX_SINGLE_VERTICAL + "  " + cyan(option))
+        print(drawLine(width - len(option) - 2, " "))
+        println(BOX_SINGLE_VERTICAL)
+        i = i + 1
+    }
+    
+    println(BOX_SINGLE_BOTTOM_LEFT + drawLine(width, BOX_SINGLE_HORIZONTAL) + BOX_SINGLE_BOTTOM_RIGHT)
+    println()
+}
+
+# ===========================================
+# List Functions
+# ===========================================
+
+# Display a bulleted list
+fn bulletList(items) {
+    let i = 0
+    while i < len(items) {
+        println(cyan(ICON_BULLET) + " " + items[i])
+        i = i + 1
+    }
+}
+
+# Display a numbered list
+fn numberedList(items) {
+    let i = 0
+    while i < len(items) {
+        println(cyan(str(i + 1) + ".") + " " + items[i])
+        i = i + 1
+    }
+}
+
+# Display a checklist
+fn checklist(items, completed) {
+    let i = 0
+    while i < len(items) {
+        if i < len(completed) && completed[i] {
+            println(green(ICON_CHECK) + " " + dim(items[i]))
+        } else {
+            println(gray(ICON_SQUARE) + " " + items[i])
+        }
+        i = i + 1
+    }
+}
+
+# ===========================================
+# Separator Functions
+# ===========================================
+
+# Draw a separator line
+fn separator(width, char) {
+    println(drawLine(width, char))
+}
+
+# Draw a colored separator
+fn coloredSeparator(width, char, colorCode) {
+    println(colorCode + drawLine(width, char) + RESET)
+}
+
+# Draw a section separator
+fn section(title) {
+    println()
+    println(BOLD + CYAN + "━━━ " + title + " ━━━" + RESET)
+    println()
+}
+
+# ===========================================
+# Loading and Animation Functions
+# ===========================================
+
+# Simple loading message
+fn loading(message) {
+    print(CYAN + "⏳ " + message + "..." + RESET)
+}
+
+# Complete a loading message
+fn loadingComplete() {
+    println(" " + GREEN + ICON_CHECK + RESET)
+}
+
+# ===========================================
+# Utility Functions
+# ===========================================
+
+# Center text
+fn center(text, width) {
+    let textLen = len(text)
+    let padding = (width - textLen) / 2
+    return drawLine(padding, " ") + text + drawLine(width - padding - textLen, " ")
+}
+
+# Pad text to width
+fn pad(text, width, char) {
+    let textLen = len(text)
+    if textLen >= width {
+        return text
+    }
+    return text + drawLine(width - textLen, char)
+}
+
+# Clear screen (ANSI escape code)
+fn clearScreen() {
+    print("\x1b[2J\x1b[H")
+}
+
+# Move cursor to position
+fn moveCursor(row, col) {
+    print("\x1b[" + str(row) + ";" + str(col) + "H")
+}
+
+# Hide cursor
+fn hideCursor() {
+    print("\x1b[?25l")
+}
+
+# Show cursor
+fn showCursor() {
+    print("\x1b[?25h")
+}

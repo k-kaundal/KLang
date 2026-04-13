@@ -1,0 +1,217 @@
+# ============================================
+# KLang Terminal UI Engine - Core
+# ============================================
+# A complete UI framework for building interactive terminal applications
+# Similar to how HTML/CSS/JS work in browsers
+
+# Import CLI library for rendering
+# import cli from "../cli"
+
+# ===========================================
+# Core UI Engine State
+# ===========================================
+
+let UI_ENGINE_VERSION = "1.0.0"
+let currentApp = null
+let renderQueue = []
+let componentIdCounter = 0
+
+# ===========================================
+# Component Base Class
+# ===========================================
+
+class Component {
+    fn init(props) {
+        this.props = props
+        this.state = {}
+        this.children = []
+        this.parent = null
+        this.x = 0
+        this.y = 0
+        this.width = 0
+        this.height = 0
+        this.visible = true
+        this.focused = false
+        this.id = this.generateId()
+        this.eventHandlers = {}
+        this.styles = {}
+        this.mounted = false
+    }
+    
+    # Generate unique component ID
+    fn generateId() {
+        componentIdCounter = componentIdCounter + 1
+        return "component_" + str(componentIdCounter)
+    }
+    
+    # Lifecycle: Called when component is created
+    fn onCreate() {
+        # Override in subclasses
+    }
+    
+    # Lifecycle: Called before first render
+    fn onMount() {
+        this.mounted = true
+    }
+    
+    # Lifecycle: Called before component is removed
+    fn onUnmount() {
+        this.mounted = false
+    }
+    
+    # Set component state and trigger re-render
+    fn setState(newState) {
+        # Merge new state with existing
+        for key in newState {
+            this.state[key] = newState[key]
+        }
+        scheduleRender()
+    }
+    
+    # Add child component
+    fn addChild(child) {
+        child.parent = this
+        this.children.push(child)
+        return child
+    }
+    
+    # Add event handler
+    fn on(eventName, handler) {
+        this.eventHandlers[eventName] = handler
+    }
+    
+    # Emit event
+    fn emit(eventName, data) {
+        if this.eventHandlers[eventName] {
+            this.eventHandlers[eventName](data)
+        }
+    }
+    
+    # Apply styles
+    fn applyStyles(styles) {
+        for key in styles {
+            this.styles[key] = styles[key]
+        }
+    }
+    
+    # Render method - must be overridden
+    fn render() {
+        return ""
+    }
+}
+
+# ===========================================
+# Application Class
+# ===========================================
+
+class UIApplication {
+    fn init(config) {
+        this.rootComponent = null
+        this.title = config["title"] || "KLang UI App"
+        this.width = config["width"] || 80
+        this.height = config["height"] || 24
+        this.running = false
+        this.frameCount = 0
+    }
+    
+    # Set root component
+    fn setRoot(component) {
+        this.rootComponent = component
+        component.width = this.width
+        component.height = this.height
+        component.onCreate()
+        component.onMount()
+    }
+    
+    # Start the application
+    fn start() {
+        if this.running {
+            return
+        }
+        
+        this.running = true
+        currentApp = this
+        
+        # Clear screen and hide cursor
+        print("\x1b[2J\x1b[H\x1b[?25l")
+        
+        # Initial render
+        this.render()
+    }
+    
+    # Stop the application
+    fn stop() {
+        this.running = false
+        
+        # Show cursor and clear screen
+        print("\x1b[?25h\x1b[2J\x1b[H")
+        
+        if this.rootComponent {
+            this.rootComponent.onUnmount()
+        }
+    }
+    
+    # Render the application
+    fn render() {
+        if !this.rootComponent {
+            return
+        }
+        
+        # Move cursor to top-left
+        print("\x1b[H")
+        
+        # Render root component
+        let output = this.rootComponent.render()
+        print(output)
+        
+        this.frameCount = this.frameCount + 1
+    }
+}
+
+# ===========================================
+# Global Functions
+# ===========================================
+
+# Schedule a render
+fn scheduleRender() {
+    renderQueue.push(true)
+    if currentApp {
+        currentApp.render()
+    }
+}
+
+# Create application
+fn createApp(config) {
+    return UIApplication(config)
+}
+
+# Repeat string n times
+fn repeat(str, n) {
+    let result = ""
+    let i = 0
+    while i < n {
+        result = result + str
+        i = i + 1
+    }
+    return result
+}
+
+# Pad text to width
+fn padText(text, width, align) {
+    let textLen = len(text)
+    if textLen >= width {
+        return text
+    }
+    
+    let padding = width - textLen
+    
+    if align == "center" {
+        let leftPad = padding / 2
+        let rightPad = padding - leftPad
+        return repeat(" ", leftPad) + text + repeat(" ", rightPad)
+    } else if align == "right" {
+        return repeat(" ", padding) + text
+    } else {
+        return text + repeat(" ", padding)
+    }
+}

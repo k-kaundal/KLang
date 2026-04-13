@@ -1,0 +1,234 @@
+# ============================================
+# KLang UI Engine - Multi-View App Example
+# ============================================
+# Demonstrates building a full app with navigation, multiple views, and interactivity
+
+# This shows:
+# - Multiple views/screens
+# - Navigation between views
+# - Tabs layout
+# - Forms and inputs
+# - Data tables
+# - Real-world app structure
+
+fn main() {
+    println()
+    println("\x1b[1m\x1b[36m" + "╔══════════════════════════════════════════════════════════════════╗" + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "║           KLang UI Engine - Multi-View Application              ║" + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "║           Build Complete Terminal Apps                          ║" + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "╚══════════════════════════════════════════════════════════════════╝" + "\x1b[0m")
+    println()
+    
+    println("\x1b[1m\x1b[33m━━━ Application: Project Manager ━━━\x1b[0m")
+    println()
+    
+    # Main App Container
+    println("┌────────────────────────────────────────────────────────────────────┐")
+    println("│ \x1b[1m\x1b[36mProject Manager\x1b[0m                                      [Settings] [Help] │")
+    println("└────────────────────────────────────────────────────────────────────┘")
+    println()
+    
+    # Tab Navigation
+    println("\x1b[1m\x1b[36m[ Dashboard ]\x1b[0m \x1b[2m[ Projects ]\x1b[0m \x1b[2m[ Tasks ]\x1b[0m \x1b[2m[ Team ]\x1b[0m \x1b[2m[ Reports ]\x1b[0m")
+    println("──────────────────────────────────────────────────────────────────────")
+    println()
+    
+    # Dashboard View
+    renderDashboardView()
+    
+    println()
+    println("\x1b[1m\x1b[33m━━━ View 2: Projects ━━━\x1b[0m")
+    println()
+    
+    # Projects Tab
+    println("\x1b[2m[ Dashboard ]\x1b[0m \x1b[1m\x1b[36m[ Projects ]\x1b[0m \x1b[2m[ Tasks ]\x1b[0m \x1b[2m[ Team ]\x1b[0m \x1b[2m[ Reports ]\x1b[0m")
+    println("──────────────────────────────────────────────────────────────────────")
+    println()
+    
+    renderProjectsView()
+    
+    println()
+    println("\x1b[1m\x1b[33m━━━ View 3: Task Details ━━━\x1b[0m")
+    println()
+    
+    renderTaskDetailsView()
+    
+    println()
+    println("\x1b[32m✓\x1b[0m Multi-view application rendered successfully!")
+    println()
+    
+    showFeatures()
+}
+
+# ===========================================
+# Dashboard View
+# ===========================================
+
+fn renderDashboardView() {
+    # Welcome Section
+    println("┌────────────────────────────────────────────────────────────────────┐")
+    println("│ \x1b[1m\x1b[36mWelcome back, Alice!\x1b[0m                                              │")
+    println("│ \x1b[2mYou have 5 active projects and 12 pending tasks\x1b[0m                    │")
+    println("└────────────────────────────────────────────────────────────────────┘")
+    println()
+    
+    # Quick Actions
+    println("  \x1b[1mQuick Actions:\x1b[0m")
+    println("    \x1b[36m[ + New Project ]\x1b[0m  \x1b[32m[ + New Task ]\x1b[0m  \x1b[33m[ View Reports ]\x1b[0m")
+    println()
+    
+    # Stats Grid
+    println("  ┌─────────────────────┐  ┌─────────────────────┐  ┌────────────────────┐")
+    println("  │ \x1b[1m\x1b[32mActive Projects\x1b[0m     │  │ \x1b[1m\x1b[33mPending Tasks\x1b[0m       │  │ \x1b[1m\x1b[36mTeam Members\x1b[0m       │")
+    println("  │                     │  │                     │  │                    │")
+    println("  │       \x1b[1m\x1b[32m5\x1b[0m            │  │        \x1b[1m\x1b[33m12\x1b[0m          │  │        \x1b[1m\x1b[36m8\x1b[0m          │")
+    println("  │                     │  │                     │  │                    │")
+    println("  └─────────────────────┘  └─────────────────────┘  └────────────────────┘")
+    println()
+    
+    # Recent Activity
+    println("  \x1b[1mRecent Activity:\x1b[0m")
+    println("    • \x1b[2m2 minutes ago\x1b[0m - Bob completed \"API Integration\"")
+    println("    • \x1b[2m15 minutes ago\x1b[0m - Alice started \"Database Migration\"")
+    println("    • \x1b[2m1 hour ago\x1b[0m - Charlie created new project \"Mobile App\"")
+    println("    • \x1b[2m2 hours ago\x1b[0m - Diana updated \"User Dashboard\"")
+    println()
+    
+    # Project Progress
+    println("  \x1b[1mProject Progress:\x1b[0m")
+    println()
+    println("  Website Redesign")
+    println("  [\x1b[32m████████████████████████████████████████\x1b[0m] \x1b[32m100%\x1b[0m ✓ Complete")
+    println()
+    println("  Mobile App")
+    println("  [\x1b[33m████████████████████████░░░░░░░░░░░░░░░░\x1b[0m] \x1b[33m60%\x1b[0m In Progress")
+    println()
+    println("  API Integration")
+    println("  [\x1b[31m████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\x1b[0m] \x1b[31m20%\x1b[0m Just Started")
+}
+
+# ===========================================
+# Projects View
+# ===========================================
+
+fn renderProjectsView() {
+    # Filter and Sort Bar
+    println("  \x1b[1mFilters:\x1b[0m  \x1b[36m[ All ]\x1b[0m  \x1b[2m[ Active ]\x1b[0m  \x1b[2m[ Completed ]\x1b[0m  \x1b[2m[ Archived ]\x1b[0m")
+    println("  \x1b[1mSort by:\x1b[0m  \x1b[36m[ Name ]\x1b[0m  \x1b[2m[ Date ]\x1b[0m  \x1b[2m[ Progress ]\x1b[0m")
+    println()
+    
+    # Projects Table
+    println("┌────────────────────────┬──────────────┬────────────┬─────────────┐")
+    println("│ \x1b[1m\x1b[36mProject Name\x1b[0m           │ \x1b[1m\x1b[36mStatus\x1b[0m       │ \x1b[1m\x1b[36mProgress\x1b[0m   │ \x1b[1m\x1b[36mDue Date\x1b[0m    │")
+    println("├────────────────────────┼──────────────┼────────────┼─────────────┤")
+    println("│ Website Redesign       │ \x1b[32m✓ Complete\x1b[0m   │ 100%       │ 2024-03-15  │")
+    println("│ Mobile App             │ \x1b[33m⚡ Active\x1b[0m    │ 60%        │ 2024-04-30  │")
+    println("│ API Integration        │ \x1b[33m⚡ Active\x1b[0m    │ 20%        │ 2024-05-15  │")
+    println("│ Database Migration     │ \x1b[36m📋 Planned\x1b[0m   │ 0%         │ 2024-06-01  │")
+    println("│ Security Audit         │ \x1b[2m⏸ On Hold\x1b[0m    │ 45%        │ 2024-05-20  │")
+    println("└────────────────────────┴──────────────┴────────────┴─────────────┘")
+    println()
+    
+    # Action Buttons
+    println("  \x1b[36m[ View Details ]\x1b[0m  \x1b[32m[ Edit ]\x1b[0m  \x1b[31m[ Archive ]\x1b[0m  \x1b[33m[ Export ]\x1b[0m")
+}
+
+# ===========================================
+# Task Details View
+# ===========================================
+
+fn renderTaskDetailsView() {
+    println("┌────────────────────────────────────────────────────────────────────┐")
+    println("│ \x1b[1m\x1b[36m← Back to Tasks\x1b[0m                                Task #1247            │")
+    println("└────────────────────────────────────────────────────────────────────┘")
+    println()
+    
+    # Task Header
+    println("  \x1b[1m\x1b[33mImplement User Authentication\x1b[0m")
+    println("  \x1b[2mCreated: 2024-04-10  •  Updated: 2024-04-12  •  Priority: High\x1b[0m")
+    println()
+    
+    # Two-Column Layout
+    println("┌─── Details ─────────────────────┐  ┌─── Activity ────────────────┐")
+    println("│                                  │  │                             │")
+    println("│ \x1b[1mAssigned to:\x1b[0m Alice Johnson      │  │ \x1b[2m2 hours ago\x1b[0m              │")
+    println("│ \x1b[1mProject:\x1b[0m Mobile App             │  │ Alice added a comment   │")
+    println("│ \x1b[1mSprint:\x1b[0m Sprint 5                │  │                             │")
+    println("│ \x1b[1mLabels:\x1b[0m \x1b[31m[Bug]\x1b[0m \x1b[33m[High Priority]\x1b[0m  │  │ \x1b[2m1 day ago\x1b[0m                │")
+    println("│ \x1b[1mEstimate:\x1b[0m 8 hours               │  │ Bob updated status      │")
+    println("│ \x1b[1mSpent:\x1b[0m 5 hours                  │  │                             │")
+    println("│                                  │  │ \x1b[2m2 days ago\x1b[0m               │")
+    println("│ \x1b[1mDescription:\x1b[0m                     │  │ Alice created task      │")
+    println("│ Implement OAuth 2.0              │  │                             │")
+    println("│ authentication for mobile        │  └─────────────────────────────┘")
+    println("│ application. Include social      │")
+    println("│ login options.                   │")
+    println("│                                  │")
+    println("│ \x1b[1mChecklist:\x1b[0m                        │")
+    println("│ \x1b[32m✓\x1b[0m \x1b[2mSetup OAuth provider\x1b[0m         │")
+    println("│ \x1b[32m✓\x1b[0m \x1b[2mCreate login UI\x1b[0m              │")
+    println("│ \x1b[36m□\x1b[0m Implement API endpoints      │")
+    println("│ \x1b[36m□\x1b[0m Add tests                    │")
+    println("│ \x1b[36m□\x1b[0m Update documentation         │")
+    println("│                                  │")
+    println("└──────────────────────────────────┘")
+    println()
+    
+    # Action Buttons
+    println("  \x1b[32m[ Mark Complete ]\x1b[0m  \x1b[33m[ Edit ]\x1b[0m  \x1b[36m[ Add Comment ]\x1b[0m  \x1b[31m[ Delete ]\x1b[0m")
+}
+
+# ===========================================
+# Show Features
+# ===========================================
+
+fn showFeatures() {
+    println("\x1b[1m\x1b[36m" + "━━━ UI Engine Architecture ━━━" + "\x1b[0m")
+    println()
+    println("  \x1b[1m1. Component System\x1b[0m")
+    println("     • Declarative component composition")
+    println("     • Props and state management")
+    println("     • Lifecycle hooks (onCreate, onMount, onUpdate, onUnmount)")
+    println()
+    
+    println("  \x1b[1m2. Built-in Components\x1b[0m")
+    println("     • Container, Panel, Box")
+    println("     • Text, Button, Input")
+    println("     • List, Table, ProgressBar")
+    println("     • Tabs, Split, Grid, Stack")
+    println()
+    
+    println("  \x1b[1m3. Layout Engine\x1b[0m")
+    println("     • Stack layout (vertical/horizontal)")
+    println("     • Grid layout (multi-column)")
+    println("     • Split layout (two-pane)")
+    println("     • Tabs layout (multi-view)")
+    println()
+    
+    println("  \x1b[1m4. Styling System\x1b[0m")
+    println("     • ANSI colors (16 colors + bright variants)")
+    println("     • Text styles (bold, dim, italic, underline)")
+    println("     • Box drawing characters")
+    println("     • Custom component styles")
+    println()
+    
+    println("  \x1b[1m5. Event System\x1b[0m")
+    println("     • Click events")
+    println("     • Keyboard input")
+    println("     • Custom events")
+    println("     • Event bubbling")
+    println()
+    
+    println("  \x1b[1m6. Rendering Engine\x1b[0m")
+    println("     • Virtual rendering pipeline")
+    println("     • Efficient re-rendering")
+    println("     • Component tree traversal")
+    println("     • Terminal output optimization")
+    println()
+    
+    println("\x1b[36mℹ\x1b[0m Build terminal UIs as easily as building web apps!")
+    println()
+}
+
+# Run the demo
+main()

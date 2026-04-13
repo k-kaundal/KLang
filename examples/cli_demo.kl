@@ -1,0 +1,429 @@
+# ============================================
+# KLang CLI Library Demo
+# ============================================
+# Demonstrates the beautiful CLI library features
+# Shows colors, boxes, progress bars, tables, menus, and more
+
+# Import the CLI library
+# Note: In full implementation, this would be: import cli from "stdlib/cli"
+# For now, we'll include the functionality inline or assume it's available
+
+# ===========================================
+# Demo 1: Colors and Text Formatting
+# ===========================================
+
+fn demoColors() {
+    println()
+    println("╔════════════════════════════════════════════════╗")
+    println("║     Colors and Text Formatting Demo           ║")
+    println("╚════════════════════════════════════════════════╝")
+    println()
+    
+    # Basic colors
+    println("\x1b[31m" + "Red text" + "\x1b[0m")
+    println("\x1b[32m" + "Green text" + "\x1b[0m")
+    println("\x1b[33m" + "Yellow text" + "\x1b[0m")
+    println("\x1b[34m" + "Blue text" + "\x1b[0m")
+    println("\x1b[35m" + "Magenta text" + "\x1b[0m")
+    println("\x1b[36m" + "Cyan text" + "\x1b[0m")
+    println()
+    
+    # Bright colors
+    println("\x1b[91m" + "Bright Red" + "\x1b[0m")
+    println("\x1b[92m" + "Bright Green" + "\x1b[0m")
+    println("\x1b[93m" + "Bright Yellow" + "\x1b[0m")
+    println("\x1b[94m" + "Bright Blue" + "\x1b[0m")
+    println("\x1b[96m" + "Bright Cyan" + "\x1b[0m")
+    println()
+    
+    # Text styles
+    println("\x1b[1m" + "Bold text" + "\x1b[0m")
+    println("\x1b[2m" + "Dim text" + "\x1b[0m")
+    println("\x1b[3m" + "Italic text" + "\x1b[0m")
+    println("\x1b[4m" + "Underlined text" + "\x1b[0m")
+    println()
+    
+    # Combined styles
+    println("\x1b[1m\x1b[32m" + "Bold Green" + "\x1b[0m")
+    println("\x1b[1m\x1b[31m" + "Bold Red" + "\x1b[0m")
+    println("\x1b[1m\x1b[33m" + "Bold Yellow" + "\x1b[0m")
+    println()
+}
+
+# ===========================================
+# Demo 2: Box Drawing
+# ===========================================
+
+fn demoBoxes() {
+    println()
+    println("╔════════════════════════════════════════════════╗")
+    println("║           Box Drawing Demo                     ║")
+    println("╚════════════════════════════════════════════════╝")
+    println()
+    
+    # Single line box
+    println("Single Line Box:")
+    println("┌────────────────────────┐")
+    println("│  KLang CLI Library     │")
+    println("│  Beautiful Interfaces  │")
+    println("└────────────────────────┘")
+    println()
+    
+    # Double line box
+    println("Double Line Box:")
+    println("╔════════════════════════╗")
+    println("║  KLang CLI Library     ║")
+    println("║  Beautiful Interfaces  ║")
+    println("╚════════════════════════╝")
+    println()
+    
+    # Rounded box
+    println("Rounded Box:")
+    println("╭────────────────────────╮")
+    println("│  KLang CLI Library     │")
+    println("│  Beautiful Interfaces  │")
+    println("╰────────────────────────╯")
+    println()
+    
+    # Box with title
+    println("Box with Title:")
+    println("┌─────── Welcome ────────┐")
+    println("│  KLang CLI Library     │")
+    println("└────────────────────────┘")
+    println()
+}
+
+# ===========================================
+# Demo 3: Progress Bars
+# ===========================================
+
+fn demoProgressBars() {
+    println()
+    println("╔════════════════════════════════════════════════╗")
+    println("║          Progress Bars Demo                    ║")
+    println("╚════════════════════════════════════════════════╝")
+    println()
+    
+    # Simple progress bar
+    println("Simple Progress Bars:")
+    println("[████████████████████░░░░░░░░░░░░░░░░░░░░] 50%")
+    println("[████████████████████████████████████████] 100%")
+    println()
+    
+    # Colored progress bars
+    println("Colored Progress Bars:")
+    println("\x1b[31m[████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]\x1b[0m \x1b[31m10%\x1b[0m")
+    println("\x1b[33m[████████████████░░░░░░░░░░░░░░░░░░░░░░░░]\x1b[0m \x1b[33m40%\x1b[0m")
+    println("\x1b[32m[████████████████████████████████████████]\x1b[0m \x1b[32m100%\x1b[0m")
+    println()
+    
+    # Progress with different styles
+    println("Different Progress Styles:")
+    println("[▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░] 50%")
+    println("[■■■■■■■■■■■■■■■■■■■■□□□□□□□□□□□□□□□□□□□□] 50%")
+    println()
+}
+
+# ===========================================
+# Demo 4: Tables
+# ===========================================
+
+fn demoTables() {
+    println()
+    println("╔════════════════════════════════════════════════╗")
+    println("║             Tables Demo                        ║")
+    println("╚════════════════════════════════════════════════╝")
+    println()
+    
+    # Simple table
+    println("User Information Table:")
+    println("┌────────────┬──────────────────┬─────────┐")
+    println("│ " + "\x1b[1m\x1b[36m" + "Name" + "\x1b[0m" + "       │ " + "\x1b[1m\x1b[36m" + "Email" + "\x1b[0m" + "            │ " + "\x1b[1m\x1b[36m" + "Role" + "\x1b[0m" + "    │")
+    println("├────────────┼──────────────────┼─────────┤")
+    println("│ Alice      │ alice@klang.dev  │ Admin   │")
+    println("│ Bob        │ bob@klang.dev    │ User    │")
+    println("│ Charlie    │ charlie@klang.dev│ User    │")
+    println("└────────────┴──────────────────┴─────────┘")
+    println()
+    
+    # Status table
+    println("System Status Table:")
+    println("┌────────────────┬──────────┬────────────┐")
+    println("│ " + "\x1b[1m\x1b[36m" + "Component" + "\x1b[0m" + "      │ " + "\x1b[1m\x1b[36m" + "Status" + "\x1b[0m" + "   │ " + "\x1b[1m\x1b[36m" + "Uptime" + "\x1b[0m" + "     │")
+    println("├────────────────┼──────────┼────────────┤")
+    println("│ Web Server     │ " + "\x1b[32m✓ Online\x1b[0m" + " │ 99.99%     │")
+    println("│ Database       │ " + "\x1b[32m✓ Online\x1b[0m" + " │ 99.95%     │")
+    println("│ Cache          │ " + "\x1b[33m⚠ Warning\x1b[0m" + "│ 98.50%     │")
+    println("│ Queue          │ " + "\x1b[31m✗ Offline\x1b[0m" + "│ 0.00%      │")
+    println("└────────────────┴──────────┴────────────┘")
+    println()
+}
+
+# ===========================================
+# Demo 5: Menus
+# ===========================================
+
+fn demoMenus() {
+    println()
+    println("╔════════════════════════════════════════════════╗")
+    println("║              Menus Demo                        ║")
+    println("╚════════════════════════════════════════════════╝")
+    println()
+    
+    # Simple menu
+    println("Main Menu:")
+    println("┌────────────────────────────────┐")
+    println("│  " + "\x1b[1m\x1b[36m" + "Main Menu" + "\x1b[0m" + "                    │")
+    println("├────────────────────────────────┤")
+    println("│  " + "\x1b[36m" + "1. Start Application" + "\x1b[0m" + "       │")
+    println("│  " + "\x1b[36m" + "2. Configure Settings" + "\x1b[0m" + "      │")
+    println("│  " + "\x1b[36m" + "3. View Logs" + "\x1b[0m" + "              │")
+    println("│  " + "\x1b[36m" + "4. Help" + "\x1b[0m" + "                   │")
+    println("│  " + "\x1b[36m" + "5. Exit" + "\x1b[0m" + "                   │")
+    println("└────────────────────────────────┘")
+    println()
+}
+
+# ===========================================
+# Demo 6: Status Messages
+# ===========================================
+
+fn demoStatusMessages() {
+    println()
+    println("╔════════════════════════════════════════════════╗")
+    println("║         Status Messages Demo                   ║")
+    println("╚════════════════════════════════════════════════╝")
+    println()
+    
+    # Success messages
+    println("\x1b[32m✓ Build completed successfully\x1b[0m")
+    println("\x1b[32m✓ All tests passed\x1b[0m")
+    println("\x1b[32m✓ Database connection established\x1b[0m")
+    println()
+    
+    # Error messages
+    println("\x1b[31m✗ Failed to connect to server\x1b[0m")
+    println("\x1b[31m✗ Invalid credentials\x1b[0m")
+    println("\x1b[31m✗ File not found\x1b[0m")
+    println()
+    
+    # Warning messages
+    println("\x1b[33m⚠ Low disk space\x1b[0m")
+    println("\x1b[33m⚠ Deprecated API usage\x1b[0m")
+    println("\x1b[33m⚠ High memory usage\x1b[0m")
+    println()
+    
+    # Info messages
+    println("\x1b[36mℹ Server started on port 3000\x1b[0m")
+    println("\x1b[36mℹ Configuration loaded\x1b[0m")
+    println("\x1b[36mℹ Cache cleared\x1b[0m")
+    println()
+    
+    # Steps
+    println("\x1b[36m[1/5]\x1b[0m Installing dependencies...")
+    println("\x1b[36m[2/5]\x1b[0m Building application...")
+    println("\x1b[36m[3/5]\x1b[0m Running tests...")
+    println("\x1b[36m[4/5]\x1b[0m Packaging...")
+    println("\x1b[36m[5/5]\x1b[0m Complete!")
+    println()
+}
+
+# ===========================================
+# Demo 7: Lists
+# ===========================================
+
+fn demoLists() {
+    println()
+    println("╔════════════════════════════════════════════════╗")
+    println("║              Lists Demo                        ║")
+    println("╚════════════════════════════════════════════════╝")
+    println()
+    
+    # Bulleted list
+    println("Features (Bulleted List):")
+    println("\x1b[36m•\x1b[0m Colors and text formatting")
+    println("\x1b[36m•\x1b[0m Box drawing and borders")
+    println("\x1b[36m•\x1b[0m Progress bars and animations")
+    println("\x1b[36m•\x1b[0m Tables and menus")
+    println("\x1b[36m•\x1b[0m Status messages and icons")
+    println()
+    
+    # Numbered list
+    println("Installation Steps (Numbered List):")
+    println("\x1b[36m1.\x1b[0m Clone the repository")
+    println("\x1b[36m2.\x1b[0m Install dependencies")
+    println("\x1b[36m3.\x1b[0m Build the project")
+    println("\x1b[36m4.\x1b[0m Run tests")
+    println("\x1b[36m5.\x1b[0m Deploy to production")
+    println()
+    
+    # Checklist
+    println("Task Checklist:")
+    println("\x1b[32m✓\x1b[0m \x1b[2mCreate CLI library\x1b[0m")
+    println("\x1b[32m✓\x1b[0m \x1b[2mAdd color support\x1b[0m")
+    println("\x1b[32m✓\x1b[0m \x1b[2mImplement box drawing\x1b[0m")
+    println("\x1b[90m□\x1b[0m Add animations")
+    println("\x1b[90m□\x1b[0m Write documentation")
+    println()
+}
+
+# ===========================================
+# Demo 8: Headers and Banners
+# ===========================================
+
+fn demoHeaders() {
+    println()
+    println("╔════════════════════════════════════════════════╗")
+    println("║        Headers and Banners Demo                ║")
+    println("╚════════════════════════════════════════════════╝")
+    println()
+    
+    # Simple header
+    println("┌────────────────────┐")
+    println("│  " + "\x1b[1m\x1b[36m" + "KLang CLI" + "\x1b[0m" + "        │")
+    println("└────────────────────┘")
+    println()
+    
+    # Banner
+    println("\x1b[1m\x1b[36m" + "==============================" + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "    Beautiful CLI Library    " + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "==============================" + "\x1b[0m")
+    println()
+    
+    # Section separator
+    println()
+    println("\x1b[1m\x1b[36m" + "━━━ Getting Started ━━━" + "\x1b[0m")
+    println()
+}
+
+# ===========================================
+# Demo 9: Icons and Symbols
+# ===========================================
+
+fn demoIcons() {
+    println()
+    println("╔════════════════════════════════════════════════╗")
+    println("║         Icons and Symbols Demo                 ║")
+    println("╚════════════════════════════════════════════════╝")
+    println()
+    
+    println("Common Icons:")
+    println("✓ Check mark")
+    println("✗ Cross mark")
+    println("→ Arrow right")
+    println("← Arrow left")
+    println("↑ Arrow up")
+    println("↓ Arrow down")
+    println("★ Star")
+    println("♥ Heart")
+    println("⚠ Warning")
+    println("ℹ Info")
+    println("? Question")
+    println("• Bullet point")
+    println("○ Circle")
+    println("● Filled circle")
+    println("□ Square")
+    println("■ Filled square")
+    println("◆ Diamond")
+    println("⚙ Gear")
+    println()
+    
+    println("Fun Icons:")
+    println("🚀 Rocket")
+    println("✨ Sparkles")
+    println("🔥 Fire")
+    println("👍 Thumbs up")
+    println()
+}
+
+# ===========================================
+# Demo 10: Complex Example
+# ===========================================
+
+fn demoComplexExample() {
+    println()
+    println("╔═════════════════════════════════════════════════════════╗")
+    println("║              KLang Build System Status                  ║")
+    println("╚═════════════════════════════════════════════════════════╝")
+    println()
+    
+    # Project info
+    println("Project: " + "\x1b[1m\x1b[36m" + "KLang Programming Language" + "\x1b[0m")
+    println("Version: " + "\x1b[1m" + "1.0.0" + "\x1b[0m")
+    println("Status:  " + "\x1b[1m\x1b[32m" + "✓ Healthy" + "\x1b[0m")
+    println()
+    
+    # Build progress
+    println("\x1b[1m\x1b[36m" + "━━━ Build Progress ━━━" + "\x1b[0m")
+    println()
+    println("\x1b[36m[1/4]\x1b[0m Compiling source files...")
+    println("\x1b[32m[████████████████████████████████████████]\x1b[0m \x1b[32m100%\x1b[0m")
+    println()
+    println("\x1b[36m[2/4]\x1b[0m Running tests...")
+    println("\x1b[32m[████████████████████████████████████████]\x1b[0m \x1b[32m100%\x1b[0m")
+    println()
+    println("\x1b[36m[3/4]\x1b[0m Generating documentation...")
+    println("\x1b[33m[████████████████████░░░░░░░░░░░░░░░░░░░░]\x1b[0m \x1b[33m50%\x1b[0m")
+    println()
+    println("\x1b[36m[4/4]\x1b[0m Packaging...")
+    println("\x1b[31m[████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]\x1b[0m \x1b[31m10%\x1b[0m")
+    println()
+    
+    # Test results
+    println("\x1b[1m\x1b[36m" + "━━━ Test Results ━━━" + "\x1b[0m")
+    println()
+    println("┌───────────────────┬─────────┬─────────┬─────────┐")
+    println("│ " + "\x1b[1m\x1b[36m" + "Test Suite" + "\x1b[0m" + "        │ " + "\x1b[1m\x1b[36m" + "Passed" + "\x1b[0m" + "  │ " + "\x1b[1m\x1b[36m" + "Failed" + "\x1b[0m" + "  │ " + "\x1b[1m\x1b[36m" + "Skipped" + "\x1b[0m" + " │")
+    println("├───────────────────┼─────────┼─────────┼─────────┤")
+    println("│ Unit Tests        │ " + "\x1b[32m123\x1b[0m" + "     │ " + "\x1b[31m0\x1b[0m" + "       │ " + "\x1b[33m0\x1b[0m" + "       │")
+    println("│ Integration Tests │ " + "\x1b[32m45\x1b[0m" + "      │ " + "\x1b[31m2\x1b[0m" + "       │ " + "\x1b[33m1\x1b[0m" + "       │")
+    println("│ E2E Tests         │ " + "\x1b[32m12\x1b[0m" + "      │ " + "\x1b[31m0\x1b[0m" + "       │ " + "\x1b[33m3\x1b[0m" + "       │")
+    println("└───────────────────┴─────────┴─────────┴─────────┘")
+    println()
+    
+    # Summary
+    println("\x1b[1m\x1b[36m" + "━━━ Summary ━━━" + "\x1b[0m")
+    println()
+    println("\x1b[32m✓ Build completed in 3m 42s\x1b[0m")
+    println("\x1b[33m⚠ 2 tests failed, 4 skipped\x1b[0m")
+    println("\x1b[36mℹ Documentation is 50% complete\x1b[0m")
+    println()
+}
+
+# ===========================================
+# Main Demo Function
+# ===========================================
+
+fn main() {
+    # Clear screen for better presentation
+    # print("\x1b[2J\x1b[H")
+    
+    # Print main banner
+    println()
+    println("\x1b[1m\x1b[36m" + "═══════════════════════════════════════════════════════════" + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "                  KLang CLI Library Demo                  " + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "           Beautiful Command-Line Interfaces               " + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "═══════════════════════════════════════════════════════════" + "\x1b[0m")
+    
+    # Run all demos
+    demoColors()
+    demoBoxes()
+    demoProgressBars()
+    demoTables()
+    demoMenus()
+    demoStatusMessages()
+    demoLists()
+    demoHeaders()
+    demoIcons()
+    demoComplexExample()
+    
+    # Footer
+    println()
+    println("\x1b[1m\x1b[36m" + "═══════════════════════════════════════════════════════════" + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "                    Demo Complete! 🚀                      " + "\x1b[0m")
+    println("\x1b[1m\x1b[36m" + "═══════════════════════════════════════════════════════════" + "\x1b[0m")
+    println()
+}
+
+# Run the demo
+main()

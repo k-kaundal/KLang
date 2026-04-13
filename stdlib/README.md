@@ -94,6 +94,81 @@ Autonomous agents with memory and actions.
 
 ---
 
+### 🎨 UI & Display Modules
+
+#### cli.kl - Beautiful Command-Line Interfaces (NEW!)
+
+Create stunning terminal applications with colors, boxes, progress bars, tables, and more!
+
+**Features:**
+- 🎨 Full ANSI color support (16 colors + bright variants)
+- 📦 Box drawing (single, double, rounded borders)
+- 📊 Progress bars (simple and auto-colored)
+- 📋 Tables with headers and borders
+- 🎯 Interactive menus
+- ✅ Status messages (success, error, warning, info)
+- 📝 Lists (bulleted, numbered, checklists)
+- 🎪 Headers and banners
+- 🎨 Rich icon set
+- 🔧 Screen control utilities
+
+**Color Functions:**
+- `red(text)`, `green(text)`, `yellow(text)`, `blue(text)`, `cyan(text)`, `magenta(text)`
+- `brightRed(text)`, `brightGreen(text)`, `brightYellow(text)`, `brightBlue(text)`, `brightCyan(text)`
+- `bold(text)`, `dim(text)`, `italic(text)`, `underline(text)`
+- `boldGreen(text)`, `boldRed(text)`, `boldYellow(text)`, `boldBlue(text)`, `boldCyan(text)`
+
+**Box Drawing:**
+- `drawBox(width, height, title)` - Single line box
+- `drawDoubleBox(width, height, title)` - Double line box
+- `drawRoundBox(width, height, title)` - Rounded corner box
+- `boxText(text, padding)` - Simple border around text
+- `drawLine(length, char)` - Horizontal line
+
+**Progress Bars:**
+- `progressBar(current, total, width, showPercent)` - Simple progress bar
+- `coloredProgressBar(current, total, width, showPercent)` - Auto-colored based on progress
+
+**Tables:**
+- `drawTable(headers, rows)` - Beautiful table with headers and borders
+
+**Menus:**
+- `menu(title, options)` - Display menu with numbered options
+
+**Status Messages:**
+- `success(message)` - Green success with ✓
+- `error(message)` - Red error with ✗
+- `warning(message)` - Yellow warning with ⚠
+- `info(message)` - Cyan info with ℹ
+- `question(message)` - Blue question with ?
+- `step(number, total, message)` - Step indicator [n/total]
+
+**Lists:**
+- `bulletList(items)` - Bulleted list with •
+- `numberedList(items)` - Numbered list (1., 2., 3., ...)
+- `checklist(items, completed)` - Checklist with ✓ and □
+
+**Headers & Banners:**
+- `header(text, style)` - Fancy header (styles: "single", "double", "round")
+- `banner(text)` - Large banner
+- `section(title)` - Section separator
+
+**Utilities:**
+- `center(text, width)` - Center text
+- `pad(text, width, char)` - Pad to width
+- `clearScreen()` - Clear terminal
+- `separator(width, char)` - Draw separator
+- `loading(message)` - Show loading message
+- `loadingComplete()` - Mark loading complete
+
+**Examples:**
+See `examples/cli_demo.kl` for a comprehensive demonstration and `examples/cli_task_manager.kl` for a practical task management application.
+
+**Documentation:**
+Full documentation available in [docs/CLI_LIBRARY.md](../docs/CLI_LIBRARY.md)
+
+---
+
 ### math.kl - Mathematical Functions
 
 Integer mathematics functions:

@@ -1,0 +1,434 @@
+# ============================================
+# KLang Terminal UI - Built-in Components
+# ============================================
+# Pre-built UI components for rapid development
+
+# ===========================================
+# Colors and Styles
+# ===========================================
+
+let RED = "\x1b[31m"
+let GREEN = "\x1b[32m"
+let YELLOW = "\x1b[33m"
+let BLUE = "\x1b[34m"
+let CYAN = "\x1b[36m"
+let WHITE = "\x1b[37m"
+let BOLD = "\x1b[1m"
+let DIM = "\x1b[2m"
+let RESET = "\x1b[0m"
+
+# Box characters
+let BOX_H = "─"
+let BOX_V = "│"
+let BOX_TL = "┌"
+let BOX_TR = "┐"
+let BOX_BL = "└"
+let BOX_BR = "┘"
+
+# ===========================================
+# Container Component
+# ===========================================
+
+class Container extends Component {
+    fn init(props) {
+        super.init(props)
+        this.title = props["title"] || ""
+        this.border = props["border"] || true
+        this.padding = props["padding"] || 1
+    }
+    
+    fn render() {
+        let output = ""
+        let innerWidth = this.width - 2  # Account for borders
+        
+        # Top border
+        if this.border {
+            output = output + BOX_TL + repeat(BOX_H, innerWidth) + BOX_TR + "\n"
+            
+            # Title row if present
+            if len(this.title) > 0 {
+                let titleText = " " + this.title + " "
+                let padding = innerWidth - len(titleText)
+                let leftPad = padding / 2
+                let rightPad = padding - leftPad
+                
+                output = output + BOX_V
+                output = output + repeat(" ", leftPad)
+                output = output + BOLD + CYAN + titleText + RESET
+                output = output + repeat(" ", rightPad)
+                output = output + BOX_V + "\n"
+                
+                # Separator
+                output = output + BOX_V + repeat(BOX_H, innerWidth) + BOX_V + "\n"
+            }
+        }
+        
+        # Content area
+        let contentHeight = this.height - 2
+        if len(this.title) > 0 {
+            contentHeight = contentHeight - 2
+        }
+        
+        # Render children
+        for child in this.children {
+            output = output + child.render()
+        }
+        
+        # Fill remaining space
+        let i = 0
+        while i < contentHeight - len(this.children) {
+            if this.border {
+                output = output + BOX_V + repeat(" ", innerWidth) + BOX_V + "\n"
+            } else {
+                output = output + repeat(" ", this.width) + "\n"
+            }
+            i = i + 1
+        }
+        
+        # Bottom border
+        if this.border {
+            output = output + BOX_BL + repeat(BOX_H, innerWidth) + BOX_BR + "\n"
+        }
+        
+        return output
+    }
+}
+
+# ===========================================
+# Text Component
+# ===========================================
+
+class Text extends Component {
+    fn init(props) {
+        super.init(props)
+        this.content = props["content"] || ""
+        this.color = props["color"] || ""
+        this.align = props["align"] || "left"
+        this.bold = props["bold"] || false
+    }
+    
+    fn render() {
+        let text = this.content
+        
+        # Apply color
+        if this.color {
+            if this.color == "red" { text = RED + text + RESET }
+            else if this.color == "green" { text = GREEN + text + RESET }
+            else if this.color == "yellow" { text = YELLOW + text + RESET }
+            else if this.color == "blue" { text = BLUE + text + RESET }
+            else if this.color == "cyan" { text = CYAN + text + RESET }
+        }
+        
+        # Apply bold
+        if this.bold {
+            text = BOLD + text + RESET
+        }
+        
+        # Apply alignment
+        if this.width > 0 {
+            text = padText(text, this.width, this.align)
+        }
+        
+        return text + "\n"
+    }
+}
+
+# ===========================================
+# Button Component
+# ===========================================
+
+class Button extends Component {
+    fn init(props) {
+        super.init(props)
+        this.label = props["label"] || "Button"
+        this.onClick = props["onClick"] || null
+        this.enabled = props["enabled"] || true
+        this.style = props["style"] || "default"  # default, primary, danger
+    }
+    
+    fn render() {
+        let output = ""
+        let buttonWidth = len(this.label) + 4  # Padding
+        
+        # Determine colors based on style
+        let color = RESET
+        if this.style == "primary" { color = CYAN }
+        else if this.style == "danger" { color = RED }
+        else if this.style == "success" { color = GREEN }
+        
+        if !this.enabled {
+            color = DIM
+        }
+        
+        # Button box
+        output = output + color + "[ " + this.label + " ]" + RESET
+        
+        return output
+    }
+}
+
+# ===========================================
+# List Component
+# ===========================================
+
+class List extends Component {
+    fn init(props) {
+        super.init(props)
+        this.items = props["items"] || []
+        this.selectedIndex = props["selectedIndex"] || 0
+        this.showNumbers = props["showNumbers"] || false
+    }
+    
+    fn render() {
+        let output = ""
+        let i = 0
+        
+        while i < len(this.items) {
+            let item = this.items[i]
+            let prefix = ""
+            
+            if this.showNumbers {
+                prefix = str(i + 1) + ". "
+            } else {
+                prefix = "• "
+            }
+            
+            # Highlight selected item
+            if i == this.selectedIndex {
+                output = output + BOLD + CYAN + "▶ " + item + RESET + "\n"
+            } else {
+                output = output + "  " + prefix + item + "\n"
+            }
+            
+            i = i + 1
+        }
+        
+        return output
+    }
+}
+
+# ===========================================
+# ProgressBar Component
+# ===========================================
+
+class ProgressBar extends Component {
+    fn init(props) {
+        super.init(props)
+        this.value = props["value"] || 0  # 0-100
+        this.label = props["label"] || ""
+        this.showPercent = props["showPercent"] || true
+    }
+    
+    fn render() {
+        let output = ""
+        
+        # Label
+        if len(this.label) > 0 {
+            output = output + this.label + "\n"
+        }
+        
+        # Progress bar
+        let barWidth = this.width - 10  # Leave space for percentage
+        let filled = (this.value * barWidth) / 100
+        let empty = barWidth - filled
+        
+        # Determine color based on progress
+        let color = RED
+        if this.value >= 75 { color = GREEN }
+        else if this.value >= 50 { color = YELLOW }
+        
+        output = output + "["
+        output = output + color
+        
+        let i = 0
+        while i < filled {
+            output = output + "█"
+            i = i + 1
+        }
+        
+        output = output + RESET
+        
+        i = 0
+        while i < empty {
+            output = output + "░"
+            i = i + 1
+        }
+        
+        output = output + "]"
+        
+        if this.showPercent {
+            output = output + " " + color + str(this.value) + "%" + RESET
+        }
+        
+        output = output + "\n"
+        
+        return output
+    }
+}
+
+# ===========================================
+# Panel Component
+# ===========================================
+
+class Panel extends Component {
+    fn init(props) {
+        super.init(props)
+        this.title = props["title"] || ""
+        this.color = props["color"] || "cyan"
+    }
+    
+    fn render() {
+        let output = ""
+        let panelWidth = this.width - 2
+        
+        # Top border
+        output = output + BOX_TL + repeat(BOX_H, panelWidth) + BOX_TR + "\n"
+        
+        # Title
+        if len(this.title) > 0 {
+            let titleColor = CYAN
+            if this.color == "red" { titleColor = RED }
+            else if this.color == "green" { titleColor = GREEN }
+            else if this.color == "yellow" { titleColor = YELLOW }
+            
+            output = output + BOX_V + " "
+            output = output + BOLD + titleColor + this.title + RESET
+            output = output + repeat(" ", panelWidth - len(this.title) - 2)
+            output = output + BOX_V + "\n"
+            
+            output = output + BOX_V + repeat(BOX_H, panelWidth) + BOX_V + "\n"
+        }
+        
+        # Children
+        for child in this.children {
+            let childOutput = child.render()
+            # Wrap in panel borders
+            output = output + BOX_V + " " + childOutput
+        }
+        
+        # Bottom border  
+        output = output + BOX_BL + repeat(BOX_H, panelWidth) + BOX_BR + "\n"
+        
+        return output
+    }
+}
+
+# ===========================================
+# Table Component
+# ===========================================
+
+class Table extends Component {
+    fn init(props) {
+        super.init(props)
+        this.headers = props["headers"] || []
+        this.rows = props["rows"] || []
+        this.columnWidths = props["columnWidths"] || []
+    }
+    
+    fn render() {
+        let output = ""
+        let numCols = len(this.headers)
+        
+        # Calculate column widths if not provided
+        if len(this.columnWidths) == 0 {
+            let i = 0
+            while i < numCols {
+                let width = len(this.headers[i])
+                this.columnWidths.push(width)
+                i = i + 1
+            }
+        }
+        
+        # Top border
+        output = output + BOX_TL
+        let i = 0
+        while i < numCols {
+            output = output + repeat(BOX_H, this.columnWidths[i] + 2)
+            if i < numCols - 1 {
+                output = output + "┬"
+            }
+            i = i + 1
+        }
+        output = output + BOX_TR + "\n"
+        
+        # Headers
+        output = output + BOX_V
+        i = 0
+        while i < numCols {
+            output = output + " " + BOLD + CYAN
+            output = output + padText(this.headers[i], this.columnWidths[i], "left")
+            output = output + RESET + " " + BOX_V
+            i = i + 1
+        }
+        output = output + "\n"
+        
+        # Separator
+        output = output + "├"
+        i = 0
+        while i < numCols {
+            output = output + repeat(BOX_H, this.columnWidths[i] + 2)
+            if i < numCols - 1 {
+                output = output + "┼"
+            }
+            i = i + 1
+        }
+        output = output + "┤\n"
+        
+        # Rows
+        let rowIdx = 0
+        while rowIdx < len(this.rows) {
+            let row = this.rows[rowIdx]
+            output = output + BOX_V
+            
+            let colIdx = 0
+            while colIdx < numCols {
+                output = output + " "
+                output = output + padText(str(row[colIdx]), this.columnWidths[colIdx], "left")
+                output = output + " " + BOX_V
+                colIdx = colIdx + 1
+            }
+            output = output + "\n"
+            rowIdx = rowIdx + 1
+        }
+        
+        # Bottom border
+        output = output + BOX_BL
+        i = 0
+        while i < numCols {
+            output = output + repeat(BOX_H, this.columnWidths[i] + 2)
+            if i < numCols - 1 {
+                output = output + "┴"
+            }
+            i = i + 1
+        }
+        output = output + BOX_BR + "\n"
+        
+        return output
+    }
+}
+
+# ===========================================
+# Input Component
+# ===========================================
+
+class Input extends Component {
+    fn init(props) {
+        super.init(props)
+        this.placeholder = props["placeholder"] || "Enter text..."
+        this.value = props["value"] || ""
+        this.onChange = props["onChange"] || null
+    }
+    
+    fn render() {
+        let output = ""
+        let displayValue = this.value
+        
+        if len(displayValue) == 0 {
+            displayValue = DIM + this.placeholder + RESET
+        }
+        
+        output = output + "[ " + displayValue + " ]"
+        
+        return output
+    }
+}

@@ -1,0 +1,322 @@
+# ============================================
+# KLang UI Markup Language (KLUI)
+# ============================================
+# Declarative markup for building UIs (like HTML)
+#
+# Example KLUI syntax:
+# <App title="My App">
+#   <Container border="true">
+#     <Panel title="Welcome">
+#       <Text>Hello World!</Text>
+#     </Panel>
+#   </Container>
+# </App>
+
+# ===========================================
+# KLUI Parser
+# ===========================================
+
+class KLUIParser {
+    fn init() {
+        this.position = 0
+        this.text = ""
+        this.root = null
+    }
+    
+    # Parse KLUI markup string into component tree
+    fn parse(markup) {
+        this.text = markup
+        this.position = 0
+        this.root = this.parseElement()
+        return this.root
+    }
+    
+    # Parse a single element
+    fn parseElement() {
+        # Skip whitespace
+        this.skipWhitespace()
+        
+        # Check for opening tag
+        if !this.match("<") {
+            return null
+        }
+        
+        # Get tag name
+        let tagName = this.parseTagName()
+        
+        # Get attributes
+        let attributes = this.parseAttributes()
+        
+        # Check for self-closing tag
+        if this.match("/>") {
+            return this.createComponent(tagName, attributes, [])
+        }
+        
+        # Expect closing >
+        if !this.match(">") {
+            return null
+        }
+        
+        # Parse children
+        let children = []
+        while !this.peek("</") {
+            let child = this.parseElement()
+            if child {
+                children.push(child)
+            } else {
+                # Parse text content
+                let textContent = this.parseText()
+                if len(textContent) > 0 {
+                    children.push(this.createTextComponent(textContent))
+                }
+            }
+            
+            this.skipWhitespace()
+            
+            if this.position >= len(this.text) {
+                break
+            }
+        }
+        
+        # Parse closing tag
+        this.match("</")
+        this.parseTagName()
+        this.match(">")
+        
+        return this.createComponent(tagName, attributes, children)
+    }
+    
+    # Parse tag name
+    fn parseTagName() {
+        let name = ""
+        while this.position < len(this.text) {
+            let char = substring(this.text, this.position, this.position + 1)
+            if char == " " || char == ">" || char == "/" {
+                break
+            }
+            name = name + char
+            this.position = this.position + 1
+        }
+        return name
+    }
+    
+    # Parse attributes
+    fn parseAttributes() {
+        let attrs = {}
+        
+        while true {
+            this.skipWhitespace()
+            
+            if this.peek(">") || this.peek("/>") {
+                break
+            }
+            
+            # Parse attribute name
+            let attrName = ""
+            while this.position < len(this.text) {
+                let char = substring(this.text, this.position, this.position + 1)
+                if char == "=" || char == " " || char == ">" {
+                    break
+                }
+                attrName = attrName + char
+                this.position = this.position + 1
+            }
+            
+            if len(attrName) == 0 {
+                break
+            }
+            
+            this.skipWhitespace()
+            
+            # Parse attribute value
+            let attrValue = ""
+            if this.match("=") {
+                this.skipWhitespace()
+                if this.match("\"") {
+                    # Quoted value
+                    while this.position < len(this.text) {
+                        let char = substring(this.text, this.position, this.position + 1)
+                        if char == "\"" {
+                            this.position = this.position + 1
+                            break
+                        }
+                        attrValue = attrValue + char
+                        this.position = this.position + 1
+                    }
+                } else {
+                    # Unquoted value
+                    while this.position < len(this.text) {
+                        let char = substring(this.text, this.position, this.position + 1)
+                        if char == " " || char == ">" || char == "/" {
+                            break
+                        }
+                        attrValue = attrValue + char
+                        this.position = this.position + 1
+                    }
+                }
+            } else {
+                attrValue = "true"
+            }
+            
+            attrs[attrName] = attrValue
+        }
+        
+        return attrs
+    }
+    
+    # Parse text content
+    fn parseText() {
+        let text = ""
+        while this.position < len(this.text) {
+            let char = substring(this.text, this.position, this.position + 1)
+            if char == "<" {
+                break
+            }
+            text = text + char
+            this.position = this.position + 1
+        }
+        return trim(text)
+    }
+    
+    # Skip whitespace
+    fn skipWhitespace() {
+        while this.position < len(this.text) {
+            let char = substring(this.text, this.position, this.position + 1)
+            if char != " " && char != "\n" && char != "\t" && char != "\r" {
+                break
+            }
+            this.position = this.position + 1
+        }
+    }
+    
+    # Match string at current position
+    fn match(str) {
+        let strLen = len(str)
+        if this.position + strLen > len(this.text) {
+            return false
+        }
+        
+        let substr = substring(this.text, this.position, this.position + strLen)
+        if substr == str {
+            this.position = this.position + strLen
+            return true
+        }
+        
+        return false
+    }
+    
+    # Peek ahead for string
+    fn peek(str) {
+        let strLen = len(str)
+        if this.position + strLen > len(this.text) {
+            return false
+        }
+        
+        let substr = substring(this.text, this.position, this.position + strLen)
+        return substr == str
+    }
+    
+    # Create component from tag and attributes
+    fn createComponent(tagName, attributes, children) {
+        let component = null
+        
+        # Map tag names to component classes
+        if tagName == "App" {
+            component = Container(attributes)
+        } else if tagName == "Container" {
+            component = Container(attributes)
+        } else if tagName == "Panel" {
+            component = Panel(attributes)
+        } else if tagName == "Text" {
+            component = Text(attributes)
+        } else if tagName == "Button" {
+            component = Button(attributes)
+        } else if tagName == "List" {
+            component = List(attributes)
+        } else if tagName == "Table" {
+            component = Table(attributes)
+        } else if tagName == "ProgressBar" {
+            component = ProgressBar(attributes)
+        } else if tagName == "Stack" {
+            component = Stack(attributes)
+        } else if tagName == "Grid" {
+            component = Grid(attributes)
+        } else if tagName == "Split" {
+            component = Split(attributes)
+        } else if tagName == "Tabs" {
+            component = Tabs(attributes)
+        } else if tagName == "Input" {
+            component = Input(attributes)
+        } else if tagName == "Divider" {
+            component = Divider(attributes)
+        } else if tagName == "Spacer" {
+            component = Spacer(attributes)
+        } else {
+            # Unknown tag - create generic container
+            component = Container(attributes)
+        }
+        
+        # Add children
+        for child in children {
+            component.addChild(child)
+        }
+        
+        return component
+    }
+    
+    # Create text component
+    fn createTextComponent(textContent) {
+        return Text({"content": textContent})
+    }
+}
+
+# ===========================================
+# Helper Functions
+# ===========================================
+
+# Parse KLUI markup into component tree
+fn parseKLUI(markup) {
+    let parser = KLUIParser()
+    return parser.parse(markup)
+}
+
+# Load KLUI from file
+fn loadKLUI(filename) {
+    # In full implementation, would read from file
+    # For now, return placeholder
+    return null
+}
+
+# Render KLUI component tree
+fn renderKLUI(component) {
+    if !component {
+        return ""
+    }
+    return component.render()
+}
+
+# Trim whitespace from string
+fn trim(str) {
+    let start = 0
+    let end = len(str)
+    
+    # Trim start
+    while start < end {
+        let char = substring(str, start, start + 1)
+        if char != " " && char != "\n" && char != "\t" && char != "\r" {
+            break
+        }
+        start = start + 1
+    }
+    
+    # Trim end
+    while end > start {
+        let char = substring(str, end - 1, end)
+        if char != " " && char != "\n" && char != "\t" && char != "\r" {
+            break
+        }
+        end = end - 1
+    }
+    
+    return substring(str, start, end)
+}

@@ -1,0 +1,374 @@
+# ============================================
+# KLang Style Sheets (KLSS)
+# ============================================
+# Styling system for UI components (like CSS)
+#
+# Example KLSS syntax:
+# Panel {
+#   border: true;
+#   color: cyan;
+#   padding: 2;
+# }
+#
+# .primary-button {
+#   style: primary;
+#   bold: true;
+# }
+#
+# #dashboard {
+#   width: 80;
+#   height: 24;
+# }
+
+# ===========================================
+# Style Rule
+# ===========================================
+
+class StyleRule {
+    fn init(selector, properties) {
+        this.selector = selector
+        this.properties = properties
+        this.type = this.parseSelector(selector)
+    }
+    
+    # Parse selector to determine type
+    fn parseSelector(selector) {
+        if startsWith(selector, "#") {
+            return "id"
+        } else if startsWith(selector, ".") {
+            return "class"
+        } else {
+            return "tag"
+        }
+    }
+    
+    # Check if rule matches component
+    fn matches(component) {
+        if this.type == "id" {
+            let id = substring(this.selector, 1, len(this.selector))
+            return component.id == id
+        } else if this.type == "class" {
+            let className = substring(this.selector, 1, len(this.selector))
+            return component.props["class"] == className
+        } else {
+            return component.constructor.name == this.selector
+        }
+    }
+    
+    # Apply rule to component
+    fn apply(component) {
+        if this.matches(component) {
+            component.applyStyles(this.properties)
+        }
+    }
+}
+
+# ===========================================
+# StyleSheet
+# ===========================================
+
+class StyleSheet {
+    fn init() {
+        this.rules = []
+    }
+    
+    # Add a style rule
+    fn addRule(selector, properties) {
+        let rule = StyleRule(selector, properties)
+        this.rules.push(rule)
+    }
+    
+    # Apply stylesheet to component tree
+    fn apply(component) {
+        # Apply rules to this component
+        for rule in this.rules {
+            rule.apply(component)
+        }
+        
+        # Recursively apply to children
+        for child in component.children {
+            this.apply(child)
+        }
+    }
+}
+
+# ===========================================
+# KLSS Parser
+# ===========================================
+
+class KLSSParser {
+    fn init() {
+        this.position = 0
+        this.text = ""
+    }
+    
+    # Parse KLSS into stylesheet
+    fn parse(css) {
+        this.text = css
+        this.position = 0
+        
+        let stylesheet = StyleSheet()
+        
+        while this.position < len(this.text) {
+            this.skipWhitespace()
+            
+            if this.position >= len(this.text) {
+                break
+            }
+            
+            # Parse selector
+            let selector = this.parseSelector()
+            
+            # Parse properties
+            let properties = this.parseProperties()
+            
+            # Add rule
+            stylesheet.addRule(selector, properties)
+        }
+        
+        return stylesheet
+    }
+    
+    # Parse selector
+    fn parseSelector() {
+        let selector = ""
+        
+        this.skipWhitespace()
+        
+        while this.position < len(this.text) {
+            let char = substring(this.text, this.position, this.position + 1)
+            if char == "{" {
+                break
+            }
+            selector = selector + char
+            this.position = this.position + 1
+        }
+        
+        return trim(selector)
+    }
+    
+    # Parse properties block
+    fn parseProperties() {
+        let properties = {}
+        
+        # Expect opening brace
+        this.match("{")
+        
+        while !this.peek("}") && this.position < len(this.text) {
+            this.skipWhitespace()
+            
+            if this.peek("}") {
+                break
+            }
+            
+            # Parse property name
+            let propName = ""
+            while this.position < len(this.text) {
+                let char = substring(this.text, this.position, this.position + 1)
+                if char == ":" || char == " " {
+                    break
+                }
+                propName = propName + char
+                this.position = this.position + 1
+            }
+            
+            this.skipWhitespace()
+            this.match(":")
+            this.skipWhitespace()
+            
+            # Parse property value
+            let propValue = ""
+            while this.position < len(this.text) {
+                let char = substring(this.text, this.position, this.position + 1)
+                if char == ";" || char == "}" {
+                    break
+                }
+                propValue = propValue + char
+                this.position = this.position + 1
+            }
+            
+            properties[trim(propName)] = trim(propValue)
+            
+            # Skip semicolon
+            this.match(";")
+            this.skipWhitespace()
+        }
+        
+        # Expect closing brace
+        this.match("}")
+        
+        return properties
+    }
+    
+    # Skip whitespace
+    fn skipWhitespace() {
+        while this.position < len(this.text) {
+            let char = substring(this.text, this.position, this.position + 1)
+            if char != " " && char != "\n" && char != "\t" && char != "\r" {
+                break
+            }
+            this.position = this.position + 1
+        }
+    }
+    
+    # Match string at current position
+    fn match(str) {
+        let strLen = len(str)
+        if this.position + strLen > len(this.text) {
+            return false
+        }
+        
+        let substr = substring(this.text, this.position, this.position + strLen)
+        if substr == str {
+            this.position = this.position + strLen
+            return true
+        }
+        
+        return false
+    }
+    
+    # Peek ahead for string
+    fn peek(str) {
+        let strLen = len(str)
+        if this.position + strLen > len(this.text) {
+            return false
+        }
+        
+        let substr = substring(this.text, this.position, this.position + strLen)
+        return substr == str
+    }
+}
+
+# ===========================================
+# Theme System
+# ===========================================
+
+class Theme {
+    fn init(name) {
+        this.name = name
+        this.colors = {}
+        this.defaults = {}
+    }
+    
+    # Set color
+    fn setColor(name, value) {
+        this.colors[name] = value
+    }
+    
+    # Get color
+    fn getColor(name) {
+        return this.colors[name]
+    }
+    
+    # Set default style for component type
+    fn setDefault(componentType, properties) {
+        this.defaults[componentType] = properties
+    }
+    
+    # Get default styles for component type
+    fn getDefault(componentType) {
+        return this.defaults[componentType]
+    }
+    
+    # Apply theme to component tree
+    fn apply(component) {
+        # Apply defaults for this component type
+        let defaults = this.getDefault(component.constructor.name)
+        if defaults {
+            component.applyStyles(defaults)
+        }
+        
+        # Recursively apply to children
+        for child in component.children {
+            this.apply(child)
+        }
+    }
+}
+
+# ===========================================
+# Built-in Themes
+# ===========================================
+
+# Dark theme
+fn createDarkTheme() {
+    let theme = Theme("dark")
+    
+    # Colors
+    theme.setColor("primary", "\x1b[36m")
+    theme.setColor("success", "\x1b[32m")
+    theme.setColor("warning", "\x1b[33m")
+    theme.setColor("danger", "\x1b[31m")
+    theme.setColor("info", "\x1b[34m")
+    theme.setColor("muted", "\x1b[2m")
+    
+    # Component defaults
+    theme.setDefault("Panel", {
+        "color": "cyan",
+        "border": "true"
+    })
+    
+    theme.setDefault("Button", {
+        "style": "primary"
+    })
+    
+    return theme
+}
+
+# Light theme
+fn createLightTheme() {
+    let theme = Theme("light")
+    
+    # Colors
+    theme.setColor("primary", "\x1b[34m")
+    theme.setColor("success", "\x1b[32m")
+    theme.setColor("warning", "\x1b[93m")
+    theme.setColor("danger", "\x1b[91m")
+    theme.setColor("info", "\x1b[96m")
+    theme.setColor("muted", "\x1b[90m")
+    
+    return theme
+}
+
+# ===========================================
+# Helper Functions
+# ===========================================
+
+# Parse KLSS into stylesheet
+fn parseKLSS(css) {
+    let parser = KLSSParser()
+    return parser.parse(css)
+}
+
+# Check if string starts with prefix
+fn startsWith(str, prefix) {
+    if len(str) < len(prefix) {
+        return false
+    }
+    return substring(str, 0, len(prefix)) == prefix
+}
+
+# Trim whitespace from string
+fn trim(str) {
+    let start = 0
+    let end = len(str)
+    
+    # Trim start
+    while start < end {
+        let char = substring(str, start, start + 1)
+        if char != " " && char != "\n" && char != "\t" && char != "\r" {
+            break
+        }
+        start = start + 1
+    }
+    
+    # Trim end
+    while end > start {
+        let char = substring(str, end - 1, end)
+        if char != " " && char != "\n" && char != "\t" && char != "\r" {
+            break
+        }
+        end = end - 1
+    }
+    
+    return substring(str, start, end)
+}
