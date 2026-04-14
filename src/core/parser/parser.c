@@ -2233,7 +2233,6 @@ static ASTNode *parse_import(Parser *parser) {
     if (check(parser, TOKEN_STRING)) {
         Token path_tok = consume(parser, TOKEN_STRING);
         char *module_path = strdup(path_tok.value);
-        char *alias;
         Token as_tok, alias_tok;
         ASTNode *result;
         token_free(&path_tok);
@@ -2242,7 +2241,7 @@ static ASTNode *parse_import(Parser *parser) {
         token_free(&as_tok);
         
         alias_tok = consume(parser, TOKEN_IDENT);
-        alias = strdup(alias_tok.value);
+        char *alias = strdup(alias_tok.value);
         token_free(&alias_tok);
         
         result = ast_new_import_namespace(alias, module_path, line);
