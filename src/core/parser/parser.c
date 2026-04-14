@@ -1880,7 +1880,22 @@ static ASTNode *parse_return(Parser *parser) {
     Token t = consume(parser, TOKEN_RETURN);
     ASTNode *value = NULL;
     token_free(&t);
-    if (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF) && !check(parser, TOKEN_SEMICOLON)) {
+    
+    /* CRITICAL FIX: When return is used without braces (single-statement body),
+     * we need to be careful not to consume the next statement as an expression.
+     * Check if the next token can start a new statement.
+     */
+    int is_statement_start = (
+        check(parser, TOKEN_IF) || check(parser, TOKEN_FOR) || check(parser, TOKEN_WHILE) ||
+        check(parser, TOKEN_LET) || check(parser, TOKEN_VAR) || check(parser, TOKEN_CONST) ||
+        check(parser, TOKEN_RETURN) || check(parser, TOKEN_BREAK) || check(parser, TOKEN_CONTINUE) ||
+        check(parser, TOKEN_FN) || check(parser, TOKEN_CLASS) || check(parser, TOKEN_STRUCT) ||
+        check(parser, TOKEN_SWITCH) || check(parser, TOKEN_IMPORT) || check(parser, TOKEN_EXPORT) ||
+        check(parser, TOKEN_UNSAFE)
+    );
+    
+    if (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF) && 
+        !check(parser, TOKEN_SEMICOLON) && !is_statement_start) {
         value = parse_expression(parser);
     }
     return ast_new_return(value, line);
