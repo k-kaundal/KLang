@@ -89,69 +89,91 @@ i++ and ++i operators work in:
 
 ### ✅ Fully Working
 
-1. **All Forms**
-   - `i++` (postfix increment)
-   - `++i` (prefix increment)
-   - `i--` (postfix decrement)
-   - `--i` (prefix decrement)
+1. **All Postfix Forms**
+   - `i++` (postfix increment) ✅
+   - `i--` (postfix decrement) ✅
+   - Works everywhere: expressions, statements, for loops
 
-2. **All Contexts**
-   - Standalone: `counter++;`
-   - Expressions: `x = i++ * 2`
-   - For loops: `for (let i = 0; i < 10; i++)`
-   - Conditionals: `if (i++ > 5)`
-   - Function calls: `foo(i++)`
+2. **Prefix in Expressions**
+   - `++i` (prefix increment) ✅ when used in expressions
+   - `--i` (prefix decrement) ✅ when used in expressions
+   - Example: `let y = ++x` works perfectly
 
-3. **Interpreter Support**
-   - Simple variables
-   - Object properties
-   - Array elements
-   - Both integer and float types
+3. **For Loops**
+   - `for (let i = 0; i < 10; i++)` ✅
+   - `for (let i = 10; i > 0; i--)` ✅
+   - Both postfix and prefix work in for loop increment clause
 
-4. **LLVM Support**
-   - Simple variables
-   - Native code generation
-   - Optimized output
+4. **Interpreter Support (Expressions)**
+   - Simple variables ✅
+   - Object properties ✅
+   - Array elements ✅
+   - Both integer and float types ✅
+
+5. **LLVM Support**
+   - Simple variables ✅
+   - Native code generation ✅
+   - Optimized output ✅
+
+### ❌ Known Issues
+
+1. **Parser Bug: Prefix as Standalone Statement**
+   - `++x;` as a statement **DOES NOT WORK**
+   - `--x;` as a statement **DOES NOT WORK**
+   - Root cause: Parser creates malformed AST
+   - Workaround: Use `let _ = ++x;` or `x = x + 1;`
+   - **Affects both interpreter and LLVM**
+
+2. **LLVM Complex Expressions**
+   - Object property increment (e.g., `obj.count++`) ❌
+   - Array element increment (e.g., `arr[i]++`) ❌
+   - These work in interpreter but not LLVM yet
 
 ### ⚠️ Limited Support
 
 1. **Bytecode VM**
-   - Basic opcode support
-   - No variable storage
-   - Stack-based operations only
-   - Not recommended for production
-
-### ❌ Not Yet Implemented
-
-1. **LLVM Complex Expressions**
-   - Object property increment (e.g., `obj.count++`)
-   - Array element increment (e.g., `arr[i]++`)
-   - These work in interpreter but not LLVM yet
+   - Basic opcode support ✅
+   - No variable storage ❌
+   - Stack-based operations only ⚠️
+   - Not recommended for production ⚠️
 
 ## Usage Examples
 
-### Basic Usage
+### ✅ Working Examples
 ```klang
 let x = 5
-let y = x++  // y = 5, x = 6
-let z = ++x  // z = 7, x = 7
+let y = x++  // y = 5, x = 6 ✅
+let z = ++x  // z = 7, x = 7 ✅ (in expression)
+x++          // x = 8 ✅ (postfix as statement)
+x--          // x = 7 ✅ (postfix as statement)
 ```
 
-### For Loops
+### ❌ Known Issue (Parser Bug)
+```klang
+let x = 5
+++x          // ❌ DOES NOT WORK - parser bug
+--x          // ❌ DOES NOT WORK - parser bug
+
+// Workaround:
+let _ = ++x  // ✅ Works in expression context
+x = x + 1    // ✅ Alternative
+```
+
+### ✅ For Loops
 ```klang
 for (let i = 0; i < 10; i++) {
-    println(i)
+    println(i)  // ✅ Works perfectly
 }
 ```
 
-### Complex Expressions
+### ✅ Complex Expressions
 ```klang
 let a = 10
-let b = (a++ * 2) + (++a * 3)
-// a starts at 10
-// a++ returns 10, a becomes 11, * 2 = 20
-// ++a makes a = 12, returns 12, * 3 = 36
-// b = 20 + 36 = 56
+let b = (a++ * 2) + (++a * 3)  // ❌ Second ++a won't work
+// Better:
+let b = (a++ * 2)  // ✅ This works
+let temp = ++a     // ✅ This works (in expression)
+let b = b + (temp * 3)
 ```
 
 ## Testing & Validation
