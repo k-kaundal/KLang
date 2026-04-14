@@ -116,12 +116,28 @@ Note: Earlier versions of stdlib files used `i = i + 1` syntax, but `i++` has al
 
 ## Verification
 
-The feature has been verified to be working by examining:
-- ✅ Lexer tokenization
-- ✅ Parser handling (both prefix and postfix)
-- ✅ AST node representation
-- ✅ Interpreter evaluation
-- ✅ Existing usage in test files (test_memory_stress.kl uses `count++`)
+The feature has been verified to be working across multiple backends:
+- ✅ **Lexer**: Tokenizes `++` and `--` correctly
+- ✅ **Parser**: Handles both prefix and postfix forms
+- ✅ **AST**: Proper node representation
+- ✅ **Interpreter**: Full evaluation support
+- ✅ **LLVM Backend**: Compiles to native code
+- ⚠️ **Bytecode VM**: Basic support (limited)
+- ✅ **Existing usage**: test_memory_stress.kl uses `count++`
+
+### Validation
+
+Run the comprehensive validation script:
+```bash
+./tests/validate_increment.sh
+```
+
+This validates:
+1. Parser tokenization
+2. Interpreter execution
+3. For loop integration
+4. LLVM backend compilation
+5. Bytecode VM opcodes
 
 ## Conclusion
 

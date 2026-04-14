@@ -1,0 +1,41 @@
+# Test increment and decrement for LLVM compilation
+# This file tests i++ and ++i operators for LLVM backend
+
+fn test_postfix() {
+    let x = 5
+    println("Initial x: " + x)
+    
+    let y = x++
+    println("After x++, y = " + y + ", x = " + x)
+    
+    let z = x--
+    println("After x--, z = " + z + ", x = " + x)
+}
+
+fn test_prefix() {
+    let a = 10
+    println("Initial a: " + a)
+    
+    let b = ++a
+    println("After ++a, b = " + b + ", a = " + a)
+    
+    let c = --a
+    println("After --a, c = " + c + ", a = " + a)
+}
+
+# Test with simple numeric values
+let counter = 0
+println("counter = " + counter)
+counter++
+println("After counter++: " + counter)
+++counter
+println("After ++counter: " + counter)
+counter--
+println("After counter--: " + counter)
+--counter
+println("After --counter: " + counter)
+
+test_postfix()
+test_prefix()
+
+println("All LLVM increment tests passed!")
