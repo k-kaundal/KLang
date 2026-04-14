@@ -110,6 +110,18 @@ int vm_execute(VM *vm, Chunk *chunk) {
                 if (vm->stack_top > 0)
                     printf("%lld\n", vm->stack[vm->stack_top - 1]);
                 break;
+            case OP_INC:
+                /* Increment top of stack */
+                if (vm->stack_top > 0) {
+                    vm->stack[vm->stack_top - 1]++;
+                }
+                break;
+            case OP_DEC:
+                /* Decrement top of stack */
+                if (vm->stack_top > 0) {
+                    vm->stack[vm->stack_top - 1]--;
+                }
+                break;
             case OP_HALT:
                 return 0;
             default:
