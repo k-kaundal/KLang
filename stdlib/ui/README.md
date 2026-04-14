@@ -6,21 +6,36 @@ Build beautiful, interactive terminal applications with a web-like development e
 
 The KLang Terminal UI Engine is a complete framework for building terminal user interfaces, bringing the ease and power of web development (HTML/CSS/React) to the command line.
 
+**NEW in v1.1:** Interactive UI Server with full mouse and keyboard support for browser-like terminal applications!
+
 ```klang
-# Define UI with markup (like HTML)
+# Interactive server with real mouse/keyboard events
+import "stdlib/ui/server.kl" as server
+
+let app = server.createServer({title: "My App"})
+let btn = server.createButton("Click Me!", {x: 10, y: 5})
+btn.on("click", () => println("Clicked!"))
+app.addComponent(btn)
+app.start()
+
+# Or use declarative markup (like HTML)
 <App title="My Dashboard">
   <Panel title="Welcome" color="cyan">
     <Text bold="true">Hello, Terminal UI!</Text>
     <ProgressBar label="Loading" value="75" />
   </Panel>
 </App>
-
-# Style with CSS-like syntax
-Panel { border: true; color: cyan; }
-.primary { style: primary; bold: true; }
 ```
 
 ## ✨ Features
+
+### 🖱️ **Interactive UI Server** (NEW!)
+- Full mouse support (click, hover, drag)
+- Keyboard navigation (Tab, arrows, shortcuts)
+- Interactive components (buttons, inputs, selects, checkboxes)
+- Real-time event handling
+- State management
+- 60 FPS rendering
 
 ### 🎨 **Declarative UI**
 - KLUI markup language (like HTML)
@@ -57,17 +72,60 @@ Panel { border: true; color: cyan; }
 
 ## 🚀 Quick Start
 
+### Interactive UI Server (NEW!)
+
+```klang
+import "stdlib/ui/server.kl" as server
+
+# Create server
+let app = server.createServer({
+    title: "Interactive App",
+    width: 80,
+    height: 24
+})
+
+# Add interactive button
+let btn = server.createButton("Click Me!", {
+    x: 10,
+    y: 5,
+    style: "primary"
+})
+
+btn.on("click", (e) => {
+    println("Button clicked!")
+})
+
+# Add input field
+let input = server.createInput("Enter text...", {
+    x: 10,
+    y: 8,
+    width: 40
+})
+
+input.on("submit", (e) => {
+    println("Submitted:", e.data.value)
+})
+
+app.addComponent(btn)
+app.addComponent(input)
+app.start()
+```
+
+See [Interactive UI Server Guide](../../docs/INTERACTIVE_UI_SERVER.md) for full documentation.
+
 ### Installation
 
 The UI Engine is part of the KLang standard library in `stdlib/ui/`:
 
 ```
 stdlib/ui/
-├── engine.kl      # Core framework
-├── components.kl  # Built-in components
-├── layout.kl      # Layout system
-├── parser.kl      # KLUI markup parser
-└── styles.kl      # KLSS styling system
+├── engine.kl        # Core framework
+├── components.kl    # Built-in components
+├── layout.kl        # Layout system
+├── parser.kl        # KLUI markup parser
+├── styles.kl        # KLSS styling system
+├── interactive.kl   # Interactive components (NEW!)
+└── server.kl        # UI server with events (NEW!)
 ```
 
 ### Hello World
@@ -317,7 +375,13 @@ theme.apply(rootComponent)
 Run the example applications:
 
 ```bash
-# Dashboard demo
+# Interactive UI demos (NEW!)
+klang run examples/interactive_ui_server.kl
+klang run examples/todo_app_interactive.kl
+klang run examples/dashboard_interactive.kl
+klang run examples/file_browser_interactive.kl
+
+# Declarative UI demos
 klang run examples/ui_dashboard_demo.kl
 
 # Multi-view application
@@ -432,8 +496,10 @@ theme.apply(rootComponent)
 - [x] Layout engine
 - [x] Basic components
 - [x] Documentation
-- [ ] Mouse input support
-- [ ] Keyboard navigation
+- [x] Mouse input support
+- [x] Keyboard navigation
+- [x] Interactive components (buttons, inputs, etc.)
+- [x] Event system
 - [ ] Form validation
 - [ ] Animations
 - [ ] More components

@@ -1,0 +1,329 @@
+#!/usr/bin/env klang
+# ============================================
+# Interactive Dashboard Example
+# ============================================
+# Real-time dashboard with multiple panels
+# Demonstrates complex layouts and interactions
+
+import "stdlib/ui/server.kl" as server
+import "stdlib/ui/interactive.kl" as ui
+import "stdlib/cli.kl" as cli
+
+class Dashboard {
+    constructor() {
+        this.server = null
+        this.cpuUsage = 45
+        this.memoryUsage = 67
+        this.networkSpeed = 125
+        this.activeConnections = 23
+    }
+    
+    start() {
+        this.server = server.createServer({
+            title: "System Dashboard - Real-time Monitoring",
+            width: 100,
+            height: 30,
+            fps: 30
+        })
+        
+        this.setupUI()
+        this.server.start()
+    }
+    
+    setupUI() {
+        # Header
+        let header = ui.InteractiveComponent({
+            x: 2,
+            y: 2,
+            enabled: false
+        })
+        header.render = () => {
+            return cli.BOLD + cli.BRIGHT_CYAN + "🖥️  SYSTEM MONITORING DASHBOARD" + cli.RESET + "\n" +
+                   cli.DIM + "Real-time system metrics and controls" + cli.RESET
+        }
+        this.server.addComponent(header)
+        
+        # CPU Panel
+        this.cpuPanel = ui.InteractiveComponent({
+            x: 2,
+            y: 5,
+            width: 45,
+            height: 8,
+            enabled: false
+        })
+        this.cpuPanel.render = () => this.renderCPUPanel()
+        this.server.addComponent(this.cpuPanel)
+        
+        # Memory Panel
+        this.memoryPanel = ui.InteractiveComponent({
+            x: 50,
+            y: 5,
+            width: 45,
+            height: 8,
+            enabled: false
+        })
+        this.memoryPanel.render = () => this.renderMemoryPanel()
+        this.server.addComponent(this.memoryPanel)
+        
+        # Network Panel
+        this.networkPanel = ui.InteractiveComponent({
+            x: 2,
+            y: 14,
+            width: 45,
+            height: 8,
+            enabled: false
+        })
+        this.networkPanel.render = () => this.renderNetworkPanel()
+        this.server.addComponent(this.networkPanel)
+        
+        # Connections Panel
+        this.connectionsPanel = ui.InteractiveComponent({
+            x: 50,
+            y: 14,
+            width: 45,
+            height: 8,
+            enabled: false
+        })
+        this.connectionsPanel.render = () => this.renderConnectionsPanel()
+        this.server.addComponent(this.connectionsPanel)
+        
+        # Control buttons
+        let refreshBtn = server.createButton("Refresh", {
+            x: 2,
+            y: 23,
+            style: "primary"
+        })
+        refreshBtn.on("click", () => {
+            this.refreshData()
+        })
+        this.server.addComponent(refreshBtn)
+        
+        let resetBtn = server.createButton("Reset Stats", {
+            x: 18,
+            y: 23,
+            style: "default"
+        })
+        resetBtn.on("click", () => {
+            this.resetStats()
+        })
+        this.server.addComponent(resetBtn)
+        
+        let exportBtn = server.createButton("Export Data", {
+            x: 36,
+            y: 23,
+            style: "success"
+        })
+        exportBtn.on("click", () => {
+            this.showModal("Export completed successfully!")
+        })
+        this.server.addComponent(exportBtn)
+        
+        # Auto-refresh toggle
+        this.autoRefresh = server.createCheckbox("Auto-refresh (5s)", {
+            x: 55,
+            y: 23,
+            checked: false
+        })
+        this.autoRefresh.on("change", (e) => {
+            if (e.data.checked) {
+                # Start auto-refresh timer
+            } else {
+                # Stop auto-refresh timer
+            }
+        })
+        this.server.addComponent(this.autoRefresh)
+        
+        # Status bar
+        this.statusBar = ui.InteractiveComponent({
+            x: 2,
+            y: 26,
+            enabled: false
+        })
+        this.statusBar.render = () => {
+            let timestamp = "Last updated: " + this.getTimestamp()
+            return cli.DIM + timestamp + cli.RESET
+        }
+        this.server.addComponent(this.statusBar)
+    }
+    
+    renderCPUPanel() {
+        let lines = []
+        let title = " CPU Usage "
+        let topBorder = cli.BOX_DOUBLE_TOP_LEFT + 
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(3) + 
+                       cli.BOLD + cli.CYAN + title + cli.RESET +
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(36 - len(title)) +
+                       cli.BOX_DOUBLE_TOP_RIGHT
+        
+        lines.push(topBorder)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        
+        # Progress bar
+        let barWidth = 40
+        let filled = Math.floor(barWidth * this.cpuUsage / 100)
+        let empty = barWidth - filled
+        
+        let color = this.cpuUsage < 60 ? cli.GREEN : 
+                   this.cpuUsage < 80 ? cli.YELLOW : cli.RED
+        
+        let bar = cli.BOX_DOUBLE_VERTICAL + " " +
+                 color + "█".repeat(filled) + cli.RESET +
+                 cli.DIM + "░".repeat(empty) + cli.RESET + " " +
+                 cli.BOX_DOUBLE_VERTICAL
+        lines.push(bar)
+        
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + "   " + 
+                  cli.BOLD + color + str(this.cpuUsage) + "%" + cli.RESET +
+                  " ".repeat(36) +
+                  cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        
+        let bottomBorder = cli.BOX_DOUBLE_BOTTOM_LEFT + 
+                          cli.BOX_DOUBLE_HORIZONTAL.repeat(41) + 
+                          cli.BOX_DOUBLE_BOTTOM_RIGHT
+        lines.push(bottomBorder)
+        
+        return lines.join("\n")
+    }
+    
+    renderMemoryPanel() {
+        let lines = []
+        let title = " Memory Usage "
+        let topBorder = cli.BOX_DOUBLE_TOP_LEFT + 
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(3) + 
+                       cli.BOLD + cli.MAGENTA + title + cli.RESET +
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(36 - len(title)) +
+                       cli.BOX_DOUBLE_TOP_RIGHT
+        
+        lines.push(topBorder)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        
+        # Progress bar
+        let barWidth = 40
+        let filled = Math.floor(barWidth * this.memoryUsage / 100)
+        let empty = barWidth - filled
+        
+        let color = this.memoryUsage < 60 ? cli.GREEN : 
+                   this.memoryUsage < 80 ? cli.YELLOW : cli.RED
+        
+        let bar = cli.BOX_DOUBLE_VERTICAL + " " +
+                 color + "█".repeat(filled) + cli.RESET +
+                 cli.DIM + "░".repeat(empty) + cli.RESET + " " +
+                 cli.BOX_DOUBLE_VERTICAL
+        lines.push(bar)
+        
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + "   " + 
+                  cli.BOLD + color + str(this.memoryUsage) + "%" + cli.RESET + 
+                  cli.DIM + " (6.7GB / 10GB)" + cli.RESET +
+                  " ".repeat(16) +
+                  cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        
+        let bottomBorder = cli.BOX_DOUBLE_BOTTOM_LEFT + 
+                          cli.BOX_DOUBLE_HORIZONTAL.repeat(41) + 
+                          cli.BOX_DOUBLE_BOTTOM_RIGHT
+        lines.push(bottomBorder)
+        
+        return lines.join("\n")
+    }
+    
+    renderNetworkPanel() {
+        let lines = []
+        let title = " Network Activity "
+        let topBorder = cli.BOX_DOUBLE_TOP_LEFT + 
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(3) + 
+                       cli.BOLD + cli.BLUE + title + cli.RESET +
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(36 - len(title)) +
+                       cli.BOX_DOUBLE_TOP_RIGHT
+        
+        lines.push(topBorder)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + "   " + 
+                  cli.GREEN + "↓ Download: " + cli.BOLD + str(this.networkSpeed) + " MB/s" + 
+                  cli.RESET + " ".repeat(18) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + "   " + 
+                  cli.CYAN + "↑ Upload:   " + cli.BOLD + str(Math.floor(this.networkSpeed / 2)) + " MB/s" + 
+                  cli.RESET + " ".repeat(19) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + "   Total: " + 
+                  cli.BOLD + str(this.networkSpeed * 1.5) + " MB/s" + cli.RESET +
+                  " ".repeat(21) + cli.BOX_DOUBLE_VERTICAL)
+        
+        let bottomBorder = cli.BOX_DOUBLE_BOTTOM_LEFT + 
+                          cli.BOX_DOUBLE_HORIZONTAL.repeat(41) + 
+                          cli.BOX_DOUBLE_BOTTOM_RIGHT
+        lines.push(bottomBorder)
+        
+        return lines.join("\n")
+    }
+    
+    renderConnectionsPanel() {
+        let lines = []
+        let title = " Active Connections "
+        let topBorder = cli.BOX_DOUBLE_TOP_LEFT + 
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(3) + 
+                       cli.BOLD + cli.YELLOW + title + cli.RESET +
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(36 - len(title)) +
+                       cli.BOX_DOUBLE_TOP_RIGHT
+        
+        lines.push(topBorder)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + "   " + 
+                  cli.BRIGHT_CYAN + "•" + cli.RESET + " HTTP Connections:  " + 
+                  cli.BOLD + str(this.activeConnections) + cli.RESET +
+                  " ".repeat(15) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + "   " + 
+                  cli.BRIGHT_GREEN + "•" + cli.RESET + " WebSocket:         " + 
+                  cli.BOLD + str(Math.floor(this.activeConnections / 2)) + cli.RESET +
+                  " ".repeat(16) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + "   " + 
+                  cli.BRIGHT_YELLOW + "•" + cli.RESET + " Database:          " + 
+                  cli.BOLD + str(Math.floor(this.activeConnections / 3)) + cli.RESET +
+                  " ".repeat(16) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + " ".repeat(41) + cli.BOX_DOUBLE_VERTICAL)
+        
+        let bottomBorder = cli.BOX_DOUBLE_BOTTOM_LEFT + 
+                          cli.BOX_DOUBLE_HORIZONTAL.repeat(41) + 
+                          cli.BOX_DOUBLE_BOTTOM_RIGHT
+        lines.push(bottomBorder)
+        
+        return lines.join("\n")
+    }
+    
+    refreshData() {
+        # Simulate data refresh
+        this.cpuUsage = Math.floor(Math.random() * 100)
+        this.memoryUsage = Math.floor(Math.random() * 100)
+        this.networkSpeed = Math.floor(Math.random() * 200)
+        this.activeConnections = Math.floor(Math.random() * 50)
+        
+        this.server.render()
+    }
+    
+    resetStats() {
+        this.cpuUsage = 0
+        this.memoryUsage = 0
+        this.networkSpeed = 0
+        this.activeConnections = 0
+        
+        this.server.render()
+    }
+    
+    showModal(message) {
+        # Show success message in status bar
+        # (Modal would require more complex overlay rendering)
+    }
+    
+    getTimestamp() {
+        return "2026-04-13 13:21:09"
+    }
+}
+
+fn main() {
+    let dashboard = Dashboard()
+    dashboard.start()
+}
+
+main()

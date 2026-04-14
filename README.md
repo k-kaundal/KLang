@@ -345,6 +345,55 @@ klang generate middleware cors
 
 See [Server Generators Guide](docs/SERVER_GENERATORS.md) for details.
 
+### Interactive Terminal UI Server 🆕
+
+Build **browser-like interactive UIs** directly in the terminal with real buttons, inputs, and mouse/keyboard support:
+
+```bash
+# Run interactive UI application
+klang run examples/interactive_ui_server.kl
+
+# Start UI server with hot reload
+klang serve-ui --hot-reload myapp.kl
+```
+
+Create interactive terminal applications:
+
+```klang
+import "stdlib/ui/server.kl" as server
+
+# Create UI server
+let app = server.createServer({
+    title: "My Interactive App",
+    width: 80,
+    height: 24
+})
+
+# Add interactive button
+let btn = server.createButton("Click Me!", {
+    x: 10,
+    y: 5,
+    style: "primary"
+})
+
+btn.on("click", (e) => {
+    println("Button clicked!")
+})
+
+app.addComponent(btn)
+app.start()
+```
+
+**Features:**
+- 🖱️ Full mouse support (click, hover, drag)
+- ⌨️ Keyboard navigation (Tab, arrows, shortcuts)
+- 🎨 Rich interactive components (buttons, inputs, checkboxes, selects)
+- 🔄 Real-time state updates
+- 📊 Event-driven architecture
+- ⚡ 60 FPS rendering
+
+See [Interactive UI Server Guide](docs/INTERACTIVE_UI_SERVER.md) for details.
+
 ### Built-in HTTP Server
 
 Start a web server instantly:
@@ -424,6 +473,7 @@ See [Build Modes Guide](docs/BUILD_MODES.md), [HTTP Server Guide](docs/HTTP_SERV
 | [Migration from Python](docs/MIGRATION_FROM_PYTHON.md) | **NEW!** Complete guide for Python developers |
 | [Migration from JavaScript](docs/MIGRATION_FROM_JAVASCRIPT.md) | **NEW!** Complete guide for JS/TS developers |
 | [Error Handling Guide](docs/ERROR_HANDLING_GUIDE.md) | **NEW!** Comprehensive error handling patterns |
+| [Interactive UI Server](docs/INTERACTIVE_UI_SERVER.md) | **NEW!** Browser-like interactive terminal UIs |
 | [Server Generators](docs/SERVER_GENERATORS.md) | **NEW!** NestJS-like server creation and code generators |
 | [Build Modes](docs/BUILD_MODES.md) | **NEW!** Build modes and optimization guide |
 | [HTTP Server](docs/HTTP_SERVER.md) | **NEW!** Built-in web server documentation |

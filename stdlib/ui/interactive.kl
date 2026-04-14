@@ -1,0 +1,589 @@
+# ============================================
+# KLang Interactive Terminal UI Library
+# ============================================
+# Interactive components with event handling
+# Real browser-like experience in the terminal
+#
+# Features:
+# - Interactive buttons with click events
+# - Text inputs with real-time editing
+# - Selects/dropdowns with keyboard navigation
+# - Checkboxes and radio buttons
+# - Mouse and keyboard event handling
+# - State management and two-way binding
+
+import "stdlib/cli.kl" as cli
+
+# ===========================================
+# Event System
+# ===========================================
+
+class Event {
+    constructor(type, data) {
+        this.type = type
+        this.data = data
+        this.timestamp = Date.now()
+        this.propagation = true
+    }
+    
+    stopPropagation() {
+        this.propagation = false
+    }
+}
+
+class EventEmitter {
+    constructor() {
+        this.listeners = {}
+    }
+    
+    on(event, handler) {
+        if (!this.listeners[event]) {
+            this.listeners[event] = []
+        }
+        this.listeners[event].push(handler)
+        return this
+    }
+    
+    off(event, handler) {
+        if (!this.listeners[event]) return this
+        
+        if (handler) {
+            this.listeners[event] = this.listeners[event].filter(h => h != handler)
+        } else {
+            delete this.listeners[event]
+        }
+        return this
+    }
+    
+    emit(event, data) {
+        if (!this.listeners[event]) return
+        
+        let evt = Event(event, data)
+        for (let handler of this.listeners[event]) {
+            if (!evt.propagation) break
+            handler(evt)
+        }
+    }
+}
+
+# ===========================================
+# Interactive Component Base
+# ===========================================
+
+class InteractiveComponent extends EventEmitter {
+    constructor(props) {
+        super()
+        this.props = props || {}
+        this.state = {}
+        this.focused = false
+        this.hovered = false
+        this.x = props.x || 0
+        this.y = props.y || 0
+        this.width = props.width || 20
+        this.height = props.height || 1
+        this.visible = props.visible != false
+        this.enabled = props.enabled != false
+        this.id = props.id || this.generateId()
+    }
+    
+    generateId() {
+        return "component_" + Math.floor(Math.random() * 1000000)
+    }
+    
+    setState(newState) {
+        this.state = Object.assign({}, this.state, newState)
+        this.emit("stateChange", this.state)
+        this.render()
+    }
+    
+    focus() {
+        this.focused = true
+        this.emit("focus", {})
+        this.render()
+    }
+    
+    blur() {
+        this.focused = false
+        this.emit("blur", {})
+        this.render()
+    }
+    
+    handleClick(x, y) {
+        if (!this.enabled) return
+        this.emit("click", {x: x, y: y})
+    }
+    
+    handleKeyPress(key) {
+        if (!this.enabled) return
+        this.emit("keypress", {key: key})
+    }
+    
+    handleMouseEnter() {
+        this.hovered = true
+        this.emit("mouseenter", {})
+        this.render()
+    }
+    
+    handleMouseLeave() {
+        this.hovered = false
+        this.emit("mouseleave", {})
+        this.render()
+    }
+    
+    isPointInside(x, y) {
+        return x >= this.x && x < this.x + this.width &&
+               y >= this.y && y < this.y + this.height
+    }
+    
+    render() {
+        # Override in subclasses
+        return ""
+    }
+}
+
+# ===========================================
+# Button Component
+# ===========================================
+
+class Button extends InteractiveComponent {
+    constructor(props) {
+        super(props)
+        this.label = props.label || "Button"
+        this.style = props.style || "default"
+        this.width = props.width || len(this.label) + 4
+    }
+    
+    render() {
+        let color = cli.CYAN
+        let bgColor = ""
+        
+        if (this.style == "primary") {
+            color = cli.BRIGHT_CYAN
+        } else if (this.style == "danger") {
+            color = cli.RED
+        } else if (this.style == "success") {
+            color = cli.GREEN
+        }
+        
+        let prefix = "[ "
+        let suffix = " ]"
+        
+        if (this.focused) {
+            prefix = cli.BOLD + "> " + color
+            suffix = cli.RESET + " <"
+        } else if (this.hovered) {
+            prefix = cli.UNDERLINE + "[ " + color
+            suffix = cli.RESET + " ]"
+        } else {
+            prefix = "[ " + color
+            suffix = cli.RESET + " ]"
+        }
+        
+        if (!this.enabled) {
+            prefix = cli.DIM + "[ "
+            suffix = " ]" + cli.RESET
+        }
+        
+        return prefix + this.label + suffix
+    }
+}
+
+# ===========================================
+# Input Component
+# ===========================================
+
+class Input extends InteractiveComponent {
+    constructor(props) {
+        super(props)
+        this.value = props.value || ""
+        this.placeholder = props.placeholder || ""
+        this.type = props.type || "text"
+        this.maxLength = props.maxLength || 100
+        this.cursorPos = len(this.value)
+    }
+    
+    handleKeyPress(key) {
+        super.handleKeyPress(key)
+        
+        if (key == "Enter") {
+            this.emit("submit", {value: this.value})
+        } else if (key == "Backspace") {
+            if (this.cursorPos > 0) {
+                this.value = this.value.substring(0, this.cursorPos - 1) + 
+                            this.value.substring(this.cursorPos)
+                this.cursorPos = this.cursorPos - 1
+                this.emit("change", {value: this.value})
+                this.render()
+            }
+        } else if (key == "Delete") {
+            if (this.cursorPos < len(this.value)) {
+                this.value = this.value.substring(0, this.cursorPos) + 
+                            this.value.substring(this.cursorPos + 1)
+                this.emit("change", {value: this.value})
+                this.render()
+            }
+        } else if (key == "ArrowLeft") {
+            this.cursorPos = Math.max(0, this.cursorPos - 1)
+            this.render()
+        } else if (key == "ArrowRight") {
+            this.cursorPos = Math.min(len(this.value), this.cursorPos + 1)
+            this.render()
+        } else if (key == "Home") {
+            this.cursorPos = 0
+            this.render()
+        } else if (key == "End") {
+            this.cursorPos = len(this.value)
+            this.render()
+        } else if (len(key) == 1 && len(this.value) < this.maxLength) {
+            this.value = this.value.substring(0, this.cursorPos) + key + 
+                        this.value.substring(this.cursorPos)
+            this.cursorPos = this.cursorPos + 1
+            this.emit("change", {value: this.value})
+            this.render()
+        }
+    }
+    
+    render() {
+        let displayValue = this.value
+        if (len(displayValue) == 0 && !this.focused) {
+            displayValue = cli.DIM + this.placeholder + cli.RESET
+        }
+        
+        let padding = Math.max(0, this.width - len(this.value) - 2)
+        let paddingStr = " ".repeat(padding)
+        
+        if (this.focused) {
+            let beforeCursor = this.value.substring(0, this.cursorPos)
+            let atCursor = this.cursorPos < len(this.value) ? 
+                          this.value[this.cursorPos] : " "
+            let afterCursor = this.cursorPos < len(this.value) ?
+                            this.value.substring(this.cursorPos + 1) : ""
+            
+            return cli.BOLD + "[" + cli.RESET + 
+                   beforeCursor + 
+                   cli.REVERSE + atCursor + cli.RESET + 
+                   afterCursor + paddingStr +
+                   cli.BOLD + "]" + cli.RESET
+        } else {
+            return "[" + displayValue + paddingStr + "]"
+        }
+    }
+}
+
+# ===========================================
+# Checkbox Component
+# ===========================================
+
+class Checkbox extends InteractiveComponent {
+    constructor(props) {
+        super(props)
+        this.checked = props.checked || false
+        this.label = props.label || ""
+        this.width = props.width || len(this.label) + 5
+    }
+    
+    handleClick(x, y) {
+        super.handleClick(x, y)
+        this.toggle()
+    }
+    
+    handleKeyPress(key) {
+        super.handleKeyPress(key)
+        if (key == " " || key == "Enter") {
+            this.toggle()
+        }
+    }
+    
+    toggle() {
+        this.checked = !this.checked
+        this.emit("change", {checked: this.checked})
+        this.render()
+    }
+    
+    render() {
+        let box = this.checked ? "[✓]" : "[ ]"
+        # Fallback for terminals without Unicode support: use X instead of ✓
+        # let box = this.checked ? "[X]" : "[ ]"
+        let color = this.checked ? cli.GREEN : cli.RESET
+        
+        if (this.focused) {
+            box = cli.BOLD + box + cli.RESET
+        }
+        
+        if (!this.enabled) {
+            color = cli.DIM
+        }
+        
+        return color + box + cli.RESET + " " + this.label
+    }
+}
+
+# ===========================================
+# Select/Dropdown Component
+# ===========================================
+
+class Select extends InteractiveComponent {
+    constructor(props) {
+        super(props)
+        this.options = props.options || []
+        this.selectedIndex = props.selectedIndex || 0
+        this.label = props.label || ""
+        this.expanded = false
+        this.width = props.width || this.calculateWidth()
+        this.height = this.expanded ? len(this.options) + 1 : 1
+    }
+    
+    calculateWidth() {
+        let maxLen = len(this.label)
+        for (let option of this.options) {
+            maxLen = Math.max(maxLen, len(option))
+        }
+        return maxLen + 4
+    }
+    
+    handleClick(x, y) {
+        super.handleClick(x, y)
+        this.toggle()
+    }
+    
+    handleKeyPress(key) {
+        super.handleKeyPress(key)
+        
+        if (key == "Enter" || key == " ") {
+            this.toggle()
+        } else if (key == "ArrowDown") {
+            if (this.expanded) {
+                this.selectedIndex = Math.min(len(this.options) - 1, this.selectedIndex + 1)
+                this.render()
+            } else {
+                this.toggle()
+            }
+        } else if (key == "ArrowUp") {
+            if (this.expanded) {
+                this.selectedIndex = Math.max(0, this.selectedIndex - 1)
+                this.render()
+            }
+        } else if (key == "Escape") {
+            if (this.expanded) {
+                this.expanded = false
+                this.height = 1
+                this.render()
+            }
+        }
+    }
+    
+    toggle() {
+        this.expanded = !this.expanded
+        this.height = this.expanded ? len(this.options) + 1 : 1
+        this.emit("toggle", {expanded: this.expanded})
+        this.render()
+    }
+    
+    select(index) {
+        this.selectedIndex = index
+        this.expanded = false
+        this.height = 1
+        this.emit("change", {value: this.options[index], index: index})
+        this.render()
+    }
+    
+    render() {
+        let lines = []
+        let selected = this.options[this.selectedIndex] || ""
+        
+        # Main select box
+        let indicator = this.expanded ? "▲" : "▼"
+        let mainLine = "[" + selected + "] " + indicator
+        
+        if (this.focused) {
+            mainLine = cli.BOLD + cli.CYAN + mainLine + cli.RESET
+        }
+        
+        lines.push(mainLine)
+        
+        # Dropdown options
+        if (this.expanded) {
+            for (let i = 0; i < len(this.options); i++) {
+                let option = this.options[i]
+                let prefix = "  "
+                
+                if (i == this.selectedIndex) {
+                    prefix = cli.REVERSE + "> " + cli.RESET
+                }
+                
+                lines.push(prefix + option)
+            }
+        }
+        
+        return lines.join("\n")
+    }
+}
+
+# ===========================================
+# Radio Button Group
+# ===========================================
+
+class RadioGroup extends InteractiveComponent {
+    constructor(props) {
+        super(props)
+        this.options = props.options || []
+        this.selectedIndex = props.selectedIndex || 0
+        this.label = props.label || ""
+        this.height = len(this.options)
+    }
+    
+    handleKeyPress(key) {
+        super.handleKeyPress(key)
+        
+        if (key == "ArrowDown") {
+            this.selectedIndex = (this.selectedIndex + 1) % len(this.options)
+            this.emit("change", {value: this.options[this.selectedIndex], index: this.selectedIndex})
+            this.render()
+        } else if (key == "ArrowUp") {
+            this.selectedIndex = (this.selectedIndex - 1 + len(this.options)) % len(this.options)
+            this.emit("change", {value: this.options[this.selectedIndex], index: this.selectedIndex})
+            this.render()
+        } else if (key == " " || key == "Enter") {
+            this.emit("change", {value: this.options[this.selectedIndex], index: this.selectedIndex})
+        }
+    }
+    
+    select(index) {
+        this.selectedIndex = index
+        this.emit("change", {value: this.options[index], index: index})
+        this.render()
+    }
+    
+    render() {
+        let lines = []
+        
+        if (this.label) {
+            lines.push(cli.BOLD + this.label + cli.RESET)
+        }
+        
+        for (let i = 0; i < len(this.options); i++) {
+            let option = this.options[i]
+            let radio = i == this.selectedIndex ? "(•)" : "( )"
+            let color = i == this.selectedIndex ? cli.GREEN : cli.RESET
+            
+            if (this.focused && i == this.selectedIndex) {
+                radio = cli.BOLD + radio + cli.RESET
+            }
+            
+            lines.push(color + radio + cli.RESET + " " + option)
+        }
+        
+        return lines.join("\n")
+    }
+}
+
+# ===========================================
+# Modal/Dialog Component
+# ===========================================
+
+class Modal extends InteractiveComponent {
+    constructor(props) {
+        super(props)
+        this.title = props.title || "Dialog"
+        this.content = props.content || ""
+        this.buttons = props.buttons || ["OK", "Cancel"]
+        this.selectedButton = 0
+        this.width = props.width || 50
+        this.height = props.height || 10
+        this.visible = false
+    }
+    
+    show() {
+        this.visible = true
+        this.emit("show", {})
+        this.render()
+    }
+    
+    hide() {
+        this.visible = false
+        this.emit("hide", {})
+        this.render()
+    }
+    
+    handleKeyPress(key) {
+        super.handleKeyPress(key)
+        
+        if (key == "ArrowLeft") {
+            this.selectedButton = Math.max(0, this.selectedButton - 1)
+            this.render()
+        } else if (key == "ArrowRight") {
+            this.selectedButton = Math.min(len(this.buttons) - 1, this.selectedButton + 1)
+            this.render()
+        } else if (key == "Enter") {
+            this.emit("buttonClick", {
+                button: this.buttons[this.selectedButton],
+                index: this.selectedButton
+            })
+            this.hide()
+        } else if (key == "Escape") {
+            this.emit("cancel", {})
+            this.hide()
+        }
+    }
+    
+    render() {
+        if (!this.visible) return ""
+        
+        let lines = []
+        let topBorder = cli.BOX_DOUBLE_TOP_LEFT + 
+                       cli.BOX_DOUBLE_HORIZONTAL.repeat(this.width - 2) + 
+                       cli.BOX_DOUBLE_TOP_RIGHT
+        let bottomBorder = cli.BOX_DOUBLE_BOTTOM_LEFT + 
+                          cli.BOX_DOUBLE_HORIZONTAL.repeat(this.width - 2) + 
+                          cli.BOX_DOUBLE_BOTTOM_RIGHT
+        
+        lines.push(topBorder)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " " + cli.BOLD + this.title + cli.RESET + 
+                  " ".repeat(this.width - len(this.title) - 3) + cli.BOX_DOUBLE_VERTICAL)
+        lines.push(cli.BOX_DOUBLE_VERTICAL + cli.BOX_DOUBLE_HORIZONTAL.repeat(this.width - 2) + 
+                  cli.BOX_DOUBLE_VERTICAL)
+        
+        # Content
+        let contentLines = this.content.split("\n")
+        for (let line of contentLines) {
+            let padding = " ".repeat(Math.max(0, this.width - len(line) - 3))
+            lines.push(cli.BOX_DOUBLE_VERTICAL + " " + line + padding + cli.BOX_DOUBLE_VERTICAL)
+        }
+        
+        # Empty line before buttons
+        lines.push(cli.BOX_DOUBLE_VERTICAL + " ".repeat(this.width - 2) + cli.BOX_DOUBLE_VERTICAL)
+        
+        # Buttons
+        let buttonRow = cli.BOX_DOUBLE_VERTICAL + " "
+        for (let i = 0; i < len(this.buttons); i++) {
+            let btn = this.buttons[i]
+            if (i == this.selectedButton) {
+                buttonRow = buttonRow + cli.BOLD + cli.CYAN + "[ " + btn + " ]" + cli.RESET + " "
+            } else {
+                buttonRow = buttonRow + "[ " + btn + " ] "
+            }
+        }
+        let btnPadding = " ".repeat(Math.max(0, this.width - len(buttonRow) + 10))
+        lines.push(buttonRow + btnPadding + cli.BOX_DOUBLE_VERTICAL)
+        
+        lines.push(bottomBorder)
+        
+        return lines.join("\n")
+    }
+}
+
+# ===========================================
+# Export Components
+# ===========================================
+
+export {
+    Event,
+    EventEmitter,
+    InteractiveComponent,
+    Button,
+    Input,
+    Checkbox,
+    Select,
+    RadioGroup,
+    Modal
+}

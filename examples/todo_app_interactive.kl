@@ -1,0 +1,269 @@
+#!/usr/bin/env klang
+# ============================================
+# Interactive Todo App Example
+# ============================================
+# Full-featured todo application with:
+# - Add/remove tasks
+# - Mark tasks as complete
+# - Filter tasks
+# - Real-time updates
+# Demonstrates complete CRUD operations in terminal UI
+
+import "stdlib/ui/server.kl" as server
+import "stdlib/ui/interactive.kl" as ui
+import "stdlib/cli.kl" as cli
+
+class TodoApp {
+    constructor() {
+        this.tasks = []
+        this.filter = "all"  # all, active, completed
+        this.server = null
+    }
+    
+    start() {
+        this.server = server.createServer({
+            title: "Todo App - Interactive Terminal UI",
+            width: 80,
+            height: 30,
+            fps: 30
+        })
+        
+        this.setupUI()
+        this.server.start()
+    }
+    
+    setupUI() {
+        # Title
+        let title = ui.InteractiveComponent({
+            x: 2,
+            y: 2,
+            enabled: false
+        })
+        title.render = () => {
+            return cli.BOLD + cli.BRIGHT_CYAN + "📝 TODO LIST" + cli.RESET + "\n" +
+                   cli.DIM + "Manage your tasks efficiently" + cli.RESET
+        }
+        this.server.addComponent(title)
+        
+        # Input for new task
+        let input = server.createInput("What needs to be done?", {
+            x: 2,
+            y: 5,
+            width: 50
+        })
+        input.on("submit", (e) => {
+            if (e.data.value.trim()) {
+                this.addTask(e.data.value)
+                input.value = ""
+                input.cursorPos = 0
+                input.render()
+                this.updateTaskList()
+            }
+        })
+        this.server.addComponent(input)
+        
+        # Add button
+        let addBtn = server.createButton("Add Task", {
+            x: 54,
+            y: 5,
+            style: "primary"
+        })
+        addBtn.on("click", () => {
+            if (input.value.trim()) {
+                this.addTask(input.value)
+                input.value = ""
+                input.cursorPos = 0
+                input.render()
+                this.updateTaskList()
+            }
+        })
+        this.server.addComponent(addBtn)
+        
+        # Filter buttons
+        let filterAll = server.createButton("All", {
+            x: 2,
+            y: 8,
+            style: this.filter == "all" ? "primary" : "default"
+        })
+        filterAll.on("click", () => {
+            this.filter = "all"
+            this.updateTaskList()
+        })
+        this.server.addComponent(filterAll)
+        
+        let filterActive = server.createButton("Active", {
+            x: 12,
+            y: 8,
+            style: this.filter == "active" ? "primary" : "default"
+        })
+        filterActive.on("click", () => {
+            this.filter = "active"
+            this.updateTaskList()
+        })
+        this.server.addComponent(filterActive)
+        
+        let filterCompleted = server.createButton("Completed", {
+            x: 25,
+            y: 8,
+            style: this.filter == "completed" ? "primary" : "default"
+        })
+        filterCompleted.on("click", () => {
+            this.filter = "completed"
+            this.updateTaskList()
+        })
+        this.server.addComponent(filterCompleted)
+        
+        # Clear completed button
+        let clearBtn = server.createButton("Clear Completed", {
+            x: 42,
+            y: 8,
+            style: "danger"
+        })
+        clearBtn.on("click", () => {
+            this.clearCompleted()
+            this.updateTaskList()
+        })
+        this.server.addComponent(clearBtn)
+        
+        # Task list area
+        this.taskListComponent = ui.InteractiveComponent({
+            x: 2,
+            y: 11,
+            width: 76,
+            height: 15,
+            enabled: false
+        })
+        this.taskListComponent.render = () => this.renderTaskList()
+        this.server.addComponent(this.taskListComponent)
+        
+        # Stats area
+        this.statsComponent = ui.InteractiveComponent({
+            x: 2,
+            y: 27,
+            enabled: false
+        })
+        this.statsComponent.render = () => this.renderStats()
+        this.server.addComponent(this.statsComponent)
+        
+        # Add sample tasks
+        this.addTask("Learn KLang interactive UI")
+        this.addTask("Build amazing terminal apps")
+        this.addTask("Deploy to production")
+        this.updateTaskList()
+    }
+    
+    addTask(text) {
+        this.tasks.push({
+            id: Date.now(),
+            text: text,
+            completed: false,
+            createdAt: Date.now()
+        })
+    }
+    
+    toggleTask(id) {
+        for (let task of this.tasks) {
+            if (task.id == id) {
+                task.completed = !task.completed
+                break
+            }
+        }
+    }
+    
+    removeTask(id) {
+        this.tasks = this.tasks.filter(task => task.id != id)
+    }
+    
+    clearCompleted() {
+        this.tasks = this.tasks.filter(task => !task.completed)
+    }
+    
+    getFilteredTasks() {
+        if (this.filter == "active") {
+            return this.tasks.filter(task => !task.completed)
+        } else if (this.filter == "completed") {
+            return this.tasks.filter(task => task.completed)
+        }
+        return this.tasks
+    }
+    
+    renderTaskList() {
+        let filtered = this.getFilteredTasks()
+        
+        if (len(filtered) == 0) {
+            return cli.DIM + "No tasks to show. Add one above!" + cli.RESET
+        }
+        
+        let lines = []
+        let topBorder = cli.BOX_SINGLE_TOP_LEFT + 
+                       cli.BOX_SINGLE_HORIZONTAL.repeat(74) + 
+                       cli.BOX_SINGLE_TOP_RIGHT
+        lines.push(topBorder)
+        
+        for (let i = 0; i < len(filtered); i++) {
+            let task = filtered[i]
+            let checkbox = task.completed ? 
+                          cli.GREEN + "[✓]" + cli.RESET : 
+                          "[ ]"
+            
+            let text = task.text
+            if (task.completed) {
+                text = cli.DIM + cli.STRIKETHROUGH + text + cli.RESET
+            }
+            
+            let line = cli.BOX_SINGLE_VERTICAL + " " + 
+                      checkbox + " " + 
+                      text
+            
+            # Padding
+            let padding = 69 - len(task.text)
+            line = line + " ".repeat(Math.max(0, padding)) + 
+                   cli.BOX_SINGLE_VERTICAL
+            
+            lines.push(line)
+            
+            # Separator
+            if (i < len(filtered) - 1) {
+                lines.push(cli.BOX_SINGLE_VERTICAL + 
+                          cli.BOX_SINGLE_HORIZONTAL.repeat(74) + 
+                          cli.BOX_SINGLE_VERTICAL)
+            }
+        }
+        
+        let bottomBorder = cli.BOX_SINGLE_BOTTOM_LEFT + 
+                          cli.BOX_SINGLE_HORIZONTAL.repeat(74) + 
+                          cli.BOX_SINGLE_BOTTOM_RIGHT
+        lines.push(bottomBorder)
+        
+        return lines.join("\n")
+    }
+    
+    renderStats() {
+        let total = len(this.tasks)
+        let completed = this.tasks.filter(t => t.completed).length
+        let active = total - completed
+        
+        return cli.BOLD + "Stats:" + cli.RESET + " " +
+               cli.CYAN + str(total) + cli.RESET + " total | " +
+               cli.GREEN + str(completed) + cli.RESET + " completed | " +
+               cli.YELLOW + str(active) + cli.RESET + " active"
+    }
+    
+    updateTaskList() {
+        if (this.taskListComponent) {
+            this.taskListComponent.render()
+        }
+        if (this.statsComponent) {
+            this.statsComponent.render()
+        }
+        this.server.render()
+    }
+}
+
+# Run the app
+fn main() {
+    let app = TodoApp()
+    app.start()
+}
+
+main()
