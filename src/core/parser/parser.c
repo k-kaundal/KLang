@@ -54,7 +54,16 @@ static Token consume(Parser *parser, TokenType type) {
             parser->current.line, token_type_name(type),
             token_type_name(parser->current.type), parser->current.value);
     parser->had_error = 1;
-    return parser->current;
+    
+    /* CRITICAL FIX: Return a dummy token to prevent double-free
+     * The caller will free this token, so we must NOT return parser->current
+     * which is still owned by the parser and will be freed later.
+     */
+    Token dummy;
+    dummy.type = type;  /* Expected type */
+    dummy.value = strdup("");  /* Empty string - safe to free */
+    dummy.line = parser->current.line;
+    return dummy;
 }
 
 /* Parse a template literal and convert ${...} into expression nodes */
@@ -1435,12 +1444,32 @@ static ASTNode *parse_if(Parser *parser) {
     ASTNode *else_block = NULL;
     token_free(&t);
     cond = parse_expression(parser);
-    then_block = parse_block(parser);
+    
+    /* CRITICAL FIX: Allow single-statement bodies (no braces required)
+     * If we see '{', parse as block. Otherwise, parse single statement.
+     */
+    if (check(parser, TOKEN_LBRACE)) {
+        then_block = parse_block(parser);
+    } else {
+        /* Single statement - wrap in a block */
+        then_block = ast_new_block(line);
+        ASTNode *stmt = parse_statement(parser);
+        if (stmt) nodelist_push(&then_block->data.block.stmts, stmt);
+    }
+    
     if (match(parser, TOKEN_ELSE)) {
         if (check(parser, TOKEN_IF)) {
             else_block = parse_if(parser);
         } else {
-            else_block = parse_block(parser);
+            /* Same logic for else block */
+            if (check(parser, TOKEN_LBRACE)) {
+                else_block = parse_block(parser);
+            } else {
+                /* Single statement - wrap in a block */
+                else_block = ast_new_block(line);
+                ASTNode *stmt = parse_statement(parser);
+                if (stmt) nodelist_push(&else_block->data.block.stmts, stmt);
+            }
         }
     }
     return ast_new_if(cond, then_block, else_block, line);
@@ -1453,7 +1482,19 @@ static ASTNode *parse_while(Parser *parser) {
     ASTNode *body;
     token_free(&t);
     cond = parse_expression(parser);
-    body = parse_block(parser);
+    
+    /* CRITICAL FIX: Allow single-statement bodies (no braces required)
+     * If we see '{', parse as block. Otherwise, parse single statement.
+     */
+    if (check(parser, TOKEN_LBRACE)) {
+        body = parse_block(parser);
+    } else {
+        /* Single statement - wrap in a block */
+        body = ast_new_block(line);
+        ASTNode *stmt = parse_statement(parser);
+        if (stmt) nodelist_push(&body->data.block.stmts, stmt);
+    }
+    
     return ast_new_while(cond, body, line);
 }
 
