@@ -1885,7 +1885,7 @@ static ASTNode *parse_return(Parser *parser) {
      * we need to be careful not to consume the next statement as an expression.
      * Check if the next token can start a new statement.
      */
-    int is_statement_start = (
+    int next_token_starts_statement = (
         check(parser, TOKEN_IF) || check(parser, TOKEN_FOR) || check(parser, TOKEN_WHILE) ||
         check(parser, TOKEN_LET) || check(parser, TOKEN_VAR) || check(parser, TOKEN_CONST) ||
         check(parser, TOKEN_RETURN) || check(parser, TOKEN_BREAK) || check(parser, TOKEN_CONTINUE) ||
@@ -1895,7 +1895,7 @@ static ASTNode *parse_return(Parser *parser) {
     );
     
     if (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF) && 
-        !check(parser, TOKEN_SEMICOLON) && !is_statement_start) {
+        !check(parser, TOKEN_SEMICOLON) && !next_token_starts_statement) {
         value = parse_expression(parser);
     }
     return ast_new_return(value, line);
@@ -2156,8 +2156,15 @@ static ASTNode *parse_class_def(Parser *parser) {
             Token class_tok = consume(parser, TOKEN_IDENT);
             
             /* Combine module.ClassName into a single string */
-            char *qualified_name = malloc(strlen(parent_name) + strlen(class_tok.value) + 2);
-            sprintf(qualified_name, "%s.%s", parent_name, class_tok.value);
+            size_t qualified_len = strlen(parent_name) + strlen(class_tok.value) + 2;
+            char *qualified_name = malloc(qualified_len);
+            if (qualified_name == NULL) {
+                fprintf(stderr, "Fatal error: memory allocation failed for qualified class name\n");
+                free(parent_name);
+                token_free(&class_tok);
+                exit(1);
+            }
+            snprintf(qualified_name, qualified_len, "%s.%s", parent_name, class_tok.value);
             free(parent_name);
             parent_name = qualified_name;
             token_free(&class_tok);

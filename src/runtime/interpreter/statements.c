@@ -205,7 +205,7 @@ Value eval_if(Interpreter *interp, ASTNode *node, Env *env) {
     value_free(&cond);
     if (truthy) {
         // For blocks, eval directly without creating new scope
-        // (scope is managed by eval_block_stmt if needed)
+        // (scope is managed by eval_block if needed)
         if (node->data.if_stmt.then_block->type == NODE_BLOCK)
             return eval_block(interp, node->data.if_stmt.then_block, env);
         else

@@ -497,7 +497,11 @@ void value_free(Value *v) {
             if (v->as.object_val->fields) {
                 env_free(v->as.object_val->fields);
             }
-            // Don't free methods - they're shared with the class
+            /* Don't free methods - they're shared with the class
+             * Methods point to the class's method environment to enable inheritance
+             * and avoid duplicating method definitions across instances.
+             * The class itself owns and manages the method environment lifetime.
+             */
             free(v->as.object_val);
             v->as.object_val = NULL;  // Only null out if we actually freed it
         } else {
