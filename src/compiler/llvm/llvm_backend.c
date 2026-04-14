@@ -342,8 +342,14 @@ LLVMValueRef llvm_compile_expr(LLVMCompilerContext *ctx, ASTNode *node) {
             const char *op = node->data.postfix.op;
             int is_postfix = node->data.postfix.is_postfix;
             
+            // Handle nested postfix (when --x appears as a statement, parser might nest it)
+            if (operand_node && operand_node->type == NODE_POSTFIX) {
+                // Use the inner postfix node instead
+                return llvm_compile_expr(ctx, operand_node);
+            }
+            
             // Only support simple identifiers for now
-            if (operand_node->type != NODE_IDENT) {
+            if (!operand_node || operand_node->type != NODE_IDENT) {
                 fprintf(stderr, "Increment/decrement only supported for simple variables in LLVM backend\n");
                 ctx->has_error = 1;
                 return NULL;

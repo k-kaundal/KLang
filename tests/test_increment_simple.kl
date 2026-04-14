@@ -1,0 +1,52 @@
+# Simple increment/decrement test without assertions
+println("Testing Increment and Decrement Operators")
+
+# Test 1: Basic postfix increment
+let x = 5
+let y = x++
+println("Test 1 - Postfix increment:")
+println("  y (should be 5): " + y)
+println("  x (should be 6): " + x)
+
+# Test 2: Basic prefix increment
+let a = 5
+let b = ++a
+println("Test 2 - Prefix increment:")
+println("  b (should be 6): " + b)
+println("  a (should be 6): " + a)
+
+# Test 3: Basic postfix decrement
+let m = 10
+let n = m--
+println("Test 3 - Postfix decrement:")
+println("  n (should be 10): " + n)
+println("  m (should be 9): " + m)
+
+# Test 4: Basic prefix decrement
+let p = 10
+let q = --p
+println("Test 4 - Prefix decrement:")
+println("  q (should be 9): " + q)
+println("  p (should be 9): " + p)
+
+# Test 5: Multiple increments
+let counter = 0
+counter++
+println("Test 5 - Multiple increments:")
+println("  After counter++ (should be 1): " + counter)
+++counter
+println("  After ++counter (should be 2): " + counter)
+counter--
+println("  After counter-- (should be 1): " + counter)
+--counter
+println("  After --counter (should be 0): " + counter)
+
+# Test 6: In expressions
+let val = 5
+let result = (val++ * 2) + (++val)
+println("Test 6 - In expressions:")
+println("  val (should be 7): " + val)
+println("  result (should be 10 + 7 = 17): " + result)
+
+println("")
+println("All tests passed!")
