@@ -200,7 +200,7 @@ class TodoApp {
                        cli.BOX_SINGLE_TOP_RIGHT
         lines.push(topBorder)
         
-        for (let i = 0; i < len(filtered); i++) {
+        for (let i = 0; i < len(filtered); i = i + 1) {
             let task = filtered[i]
             let checkbox = task.completed ? 
                           cli.GREEN + "[✓]" + cli.RESET : 

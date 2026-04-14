@@ -106,9 +106,9 @@ class ScreenBuffer {
     
     clear() {
         this.buffer = []
-        for (let i = 0; i < this.height; i++) {
+        for (let i = 0; i < this.height; i = i + 1) {
             let row = []
-            for (let j = 0; j < this.width; j++) {
+            for (let j = 0; j < this.width; j = j + 1) {
                 row.push({char: " ", style: ""})
             }
             this.buffer.push(row)
@@ -118,7 +118,7 @@ class ScreenBuffer {
     write(x, y, text, style) {
         if (y < 0 || y >= this.height) return
         
-        for (let i = 0; i < len(text); i++) {
+        for (let i = 0; i < len(text); i = i + 1) {
             let col = x + i
             if (col >= 0 && col < this.width) {
                 this.buffer[y][col] = {
@@ -130,7 +130,7 @@ class ScreenBuffer {
     }
     
     writeLines(x, y, lines, style) {
-        for (let i = 0; i < len(lines); i++) {
+        for (let i = 0; i < len(lines); i = i + 1) {
             this.write(x, y + i, lines[i], style)
         }
     }

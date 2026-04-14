@@ -132,7 +132,7 @@ class FileBrowser {
         lines.push(separator)
         
         # File entries
-        for (let i = 0; i < len(this.files); i++) {
+        for (let i = 0; i < len(this.files); i = i + 1) {
             let file = this.files[i]
             let icon = file.type == "dir" ? "📁" : "📄"
             let name = file.name
@@ -166,7 +166,7 @@ class FileBrowser {
         
         # Empty rows
         let emptyRows = 12 - len(this.files)
-        for (let i = 0; i < emptyRows; i++) {
+        for (let i = 0; i < emptyRows; i = i + 1) {
             lines.push(cli.BOX_DOUBLE_VERTICAL + " ".repeat(94) + cli.BOX_DOUBLE_VERTICAL)
         }
         

@@ -403,7 +403,7 @@ class Select extends InteractiveComponent {
         
         # Dropdown options
         if (this.expanded) {
-            for (let i = 0; i < len(this.options); i++) {
+            for (let i = 0; i < len(this.options); i = i + 1) {
                 let option = this.options[i]
                 let prefix = "  "
                 
@@ -461,7 +461,7 @@ class RadioGroup extends InteractiveComponent {
             lines.push(cli.BOLD + this.label + cli.RESET)
         }
         
-        for (let i = 0; i < len(this.options); i++) {
+        for (let i = 0; i < len(this.options); i = i + 1) {
             let option = this.options[i]
             let radio = i == this.selectedIndex ? "(•)" : "( )"
             let color = i == this.selectedIndex ? cli.GREEN : cli.RESET
@@ -555,7 +555,7 @@ class Modal extends InteractiveComponent {
         
         # Buttons
         let buttonRow = cli.BOX_DOUBLE_VERTICAL + " "
-        for (let i = 0; i < len(this.buttons); i++) {
+        for (let i = 0; i < len(this.buttons); i = i + 1) {
             let btn = this.buttons[i]
             if (i == this.selectedButton) {
                 buttonRow = buttonRow + cli.BOLD + cli.CYAN + "[ " + btn + " ]" + cli.RESET + " "
