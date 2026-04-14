@@ -69,12 +69,17 @@ println()
 # ===========================================
 println("6. Using in For Loops:")
 println("  Counting up with i++:")
-for (let i = 0; i < 5; i = i + 1) {
+for (let i = 0; i < 5; i++) {
     println("    i = " + i)
 }
 
 println("\n  Counting down with i--:")
-for (let i = 5; i > 0; i = i - 1) {
+for (let i = 5; i > 0; i--) {
+    println("    i = " + i)
+}
+
+println("\n  Using prefix ++i:")
+for (let i = 0; i < 5; ++i) {
     println("    i = " + i)
 }
 println()

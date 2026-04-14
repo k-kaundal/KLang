@@ -76,16 +76,26 @@ println(obj.counter)  // Prints: 2
 
 ### In For Loops
 
-While you can use `++` and `--` in for loops, KLang currently requires the full expression syntax:
+You can use `++` and `--` operators in for loop increment clauses:
 
 ```klang
-# This works:
-for (let i = 0; i < 10; i = i + 1) {
+# Using postfix increment
+for (let i = 0; i < 10; i++) {
     println(i)
 }
 
-# Future enhancement (may be supported):
-for (let i = 0; i < 10; i++) {
+# Using postfix decrement
+for (let i = 10; i > 0; i--) {
+    println(i)
+}
+
+# Using prefix increment
+for (let i = 0; i < 10; ++i) {
+    println(i)
+}
+
+# Traditional syntax also works
+for (let i = 0; i < 10; i = i + 1) {
     println(i)
 }
 ```
@@ -132,7 +142,7 @@ let result = x++ + ++x  // result = 5 + 7 = 12, x = 7
 3. **Return Values**: 
    - Postfix returns the OLD value
    - Prefix returns the NEW value
-4. **For Loop Syntax**: Currently, for loops require explicit increment syntax (`i = i + 1`), though `++` and `--` work in other contexts
+4. **For Loop Support**: Both `i++` and `i = i + 1` syntax work in for loops
 
 ## Implementation Details
 
