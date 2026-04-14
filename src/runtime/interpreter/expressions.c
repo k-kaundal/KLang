@@ -1779,9 +1779,13 @@ Value eval_new(Interpreter *interp, ASTNode *node, Env *env) {
         field_entry = field_entry->next;
     }
     
-    // Call init method if it exists
-    Value *init_method = env_get(class_val->as.class_val.methods, "init");
-    if (init_method && init_method->type == VAL_FUNCTION) {
+    // Call constructor or init method if it exists
+    Value *ctor_method = env_get(class_val->as.class_val.methods, "constructor");
+    if (!ctor_method || ctor_method->type != VAL_FUNCTION) {
+        // Fallback to "init" for backward compatibility
+        ctor_method = env_get(class_val->as.class_val.methods, "init");
+    }
+    if (ctor_method && ctor_method->type == VAL_FUNCTION) {
         int argc = node->data.new_expr.args.count;
         Value *args = malloc((argc > 0 ? argc : 1) * sizeof(Value));
         int i;
@@ -1789,13 +1793,13 @@ Value eval_new(Interpreter *interp, ASTNode *node, Env *env) {
             args[i] = eval_node_env(interp, node->data.new_expr.args.items[i], env);
         
         // Create call environment with 'this' bound
-        Env *call_env = env_new(init_method->as.func_val.closure);
+        Env *call_env = env_new(ctor_method->as.func_val.closure);
         env_set_local(call_env, "this", obj);
-        for (i = 0; i < init_method->as.func_val.param_count && i < argc; i++)
-            env_set_local(call_env, init_method->as.func_val.param_names[i], args[i]);
+        for (i = 0; i < ctor_method->as.func_val.param_count && i < argc; i++)
+            env_set_local(call_env, ctor_method->as.func_val.param_names[i], args[i]);
         
-        Value init_result = eval_block(interp, init_method->as.func_val.body, call_env);
-        value_free(&init_result);
+        Value ctor_result = eval_block(interp, ctor_method->as.func_val.body, call_env);
+        value_free(&ctor_result);
         
         
         env_release(call_env);

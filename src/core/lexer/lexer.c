@@ -257,6 +257,7 @@ Token lexer_next_token(Lexer *lexer) {
             else if (strcmp(buf, "extends") == 0) type = TOKEN_EXTENDS;
             else if (strcmp(buf, "super") == 0) type = TOKEN_SUPER;
             else if (strcmp(buf, "static") == 0) type = TOKEN_STATIC;
+            else if (strcmp(buf, "constructor") == 0) type = TOKEN_CONSTRUCTOR;
             else if (strcmp(buf, "public") == 0) type = TOKEN_PUBLIC;
             else if (strcmp(buf, "private") == 0) type = TOKEN_PRIVATE;
             else if (strcmp(buf, "protected") == 0) type = TOKEN_PROTECTED;
@@ -453,6 +454,7 @@ const char *token_type_name(TokenType type) {
         case TOKEN_EXTENDS: return "EXTENDS";
         case TOKEN_SUPER: return "SUPER";
         case TOKEN_STATIC: return "STATIC";
+        case TOKEN_CONSTRUCTOR: return "CONSTRUCTOR";
         case TOKEN_PUBLIC: return "PUBLIC";
         case TOKEN_PRIVATE: return "PRIVATE";
         case TOKEN_PROTECTED: return "PROTECTED";
