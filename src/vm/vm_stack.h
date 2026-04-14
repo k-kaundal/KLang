@@ -8,7 +8,8 @@ typedef enum {
     OP_AND, OP_OR, OP_NOT,
     OP_LOAD, OP_STORE, OP_CALL, OP_RETURN,
     OP_JUMP, OP_JUMP_IF_FALSE, OP_JUMP_IF_TRUE,
-    OP_PRINT, OP_HALT, OP_MAKE_LIST, OP_INDEX_GET, OP_INDEX_SET, OP_DUP
+    OP_PRINT, OP_HALT, OP_MAKE_LIST, OP_INDEX_GET, OP_INDEX_SET, OP_DUP,
+    OP_INC, OP_DEC  /* Increment and decrement operators */
 } Opcode;
 
 typedef struct {

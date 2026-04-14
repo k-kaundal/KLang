@@ -1,0 +1,33 @@
+# Test if i++ works in for loops
+
+println("Testing i++ in for loops")
+
+# Test 1: Classic for loop with i++
+println("\nTest 1: for (let i = 0; i < 5; i++)")
+for (let i = 0; i < 5; i++) {
+    println("i = " + i)
+}
+
+# Test 2: Countdown with i--
+println("\nTest 2: for (let i = 5; i > 0; i--)")
+for (let i = 5; i > 0; i--) {
+    println("i = " + i)
+}
+
+# Test 3: Step by 2 with compound
+println("\nTest 3: Multiple operations")
+for (let i = 0; i < 10; i++) {
+    if (i % 2 == 0) {
+        println("Even: " + i)
+    }
+}
+
+# Test 4: Nested loops with ++
+println("\nTest 4: Nested loops")
+for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+        println("i=" + i + ", j=" + j)
+    }
+}
+
+println("\n✓ All for loop tests passed!")

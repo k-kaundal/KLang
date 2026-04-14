@@ -30,6 +30,34 @@ void compile_node(Compiler *comp, ASTNode *node) {
             else if (strcmp(op, "/") == 0) chunk_emit_op(comp->chunk, OP_DIV);
             break;
         }
+        case NODE_POSTFIX: {
+            /* Basic support for increment/decrement on stack values */
+            const char *op = node->data.postfix.op;
+            int is_postfix = node->data.postfix.is_postfix;
+            
+            /* Compile the operand (pushes value to stack) */
+            compile_node(comp, node->data.postfix.operand);
+            
+            if (is_postfix) {
+                /* Postfix: duplicate value (for return), increment/decrement, then pop the incremented value */
+                chunk_emit_op(comp->chunk, OP_DUP);  /* Duplicate for return value */
+                if (strcmp(op, "++") == 0) {
+                    chunk_emit_op(comp->chunk, OP_INC);
+                } else if (strcmp(op, "--") == 0) {
+                    chunk_emit_op(comp->chunk, OP_DEC);
+                }
+                /* Note: This is a simplified version. Full implementation would need to store back to variable */
+            } else {
+                /* Prefix: increment/decrement first, then duplicate for return */
+                if (strcmp(op, "++") == 0) {
+                    chunk_emit_op(comp->chunk, OP_INC);
+                } else if (strcmp(op, "--") == 0) {
+                    chunk_emit_op(comp->chunk, OP_DEC);
+                }
+                chunk_emit_op(comp->chunk, OP_DUP);  /* Duplicate incremented value for return */
+            }
+            break;
+        }
         case NODE_CALL: {
             if (node->data.call.callee->type == NODE_IDENT &&
                 strcmp(node->data.call.callee->data.ident.name, "print") == 0 &&

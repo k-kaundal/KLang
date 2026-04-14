@@ -336,6 +336,60 @@ LLVMValueRef llvm_compile_expr(LLVMCompilerContext *ctx, ASTNode *node) {
             return LLVMBuildLoad2(ctx->builder, elem_type, ptr, "idx_val");
         }
         
+        case NODE_POSTFIX: {
+            // Handle increment and decrement operators (++, --, both prefix and postfix)
+            ASTNode *operand_node = node->data.postfix.operand;
+            const char *op = node->data.postfix.op;
+            int is_postfix = node->data.postfix.is_postfix;
+            
+            // Handle nested postfix (when --x appears as a statement, parser might nest it)
+            if (operand_node && operand_node->type == NODE_POSTFIX) {
+                // Use the inner postfix node instead
+                return llvm_compile_expr(ctx, operand_node);
+            }
+            
+            // Only support simple identifiers for now
+            if (!operand_node || operand_node->type != NODE_IDENT) {
+                fprintf(stderr, "Increment/decrement only supported for simple variables in LLVM backend\n");
+                ctx->has_error = 1;
+                return NULL;
+            }
+            
+            const char *var_name = operand_node->data.ident.name;
+            LLVMValueRef var = symbol_table_lookup(ctx->symbols, var_name);
+            
+            if (!var) {
+                fprintf(stderr, "Undefined variable in increment/decrement: %s\n", var_name);
+                ctx->has_error = 1;
+                return NULL;
+            }
+            
+            // Load current value
+            LLVMValueRef old_value = LLVMBuildLoad2(ctx->builder, LLVMGetAllocatedType(var), var, var_name);
+            
+            // Calculate new value based on operator
+            LLVMValueRef new_value;
+            if (strcmp(op, "++") == 0) {
+                // Increment by 1
+                new_value = LLVMBuildFAdd(ctx->builder, old_value, 
+                                         LLVMConstReal(ctx->double_type, 1.0), "inc");
+            } else if (strcmp(op, "--") == 0) {
+                // Decrement by 1
+                new_value = LLVMBuildFSub(ctx->builder, old_value, 
+                                         LLVMConstReal(ctx->double_type, 1.0), "dec");
+            } else {
+                fprintf(stderr, "Unknown postfix operator: %s\n", op);
+                ctx->has_error = 1;
+                return NULL;
+            }
+            
+            // Store new value back
+            LLVMBuildStore(ctx->builder, new_value, var);
+            
+            // Return old value for postfix, new value for prefix
+            return is_postfix ? old_value : new_value;
+        }
+        
         default:
             fprintf(stderr, "Unsupported expression node type: %d\n", node->type);
             ctx->has_error = 1;

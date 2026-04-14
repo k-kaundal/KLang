@@ -1,0 +1,22 @@
+# Simple test for LLVM compilation
+let x = 5
+println("Initial x: ")
+println(x)
+
+x++
+println("After x++: ")
+println(x)
+
+++x
+println("After ++x: ")
+println(x)
+
+x--
+println("After x--: ")
+println(x)
+
+--x
+println("After --x: ")
+println(x)
+
+println("LLVM increment test complete!")

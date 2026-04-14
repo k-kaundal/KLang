@@ -1,0 +1,134 @@
+# Test increment and decrement operators
+# Tests both prefix (++i, --i) and postfix (i++, i--)
+
+println("Testing Increment and Decrement Operators")
+
+# Test 1: Basic postfix increment
+let x = 5
+let y = x++
+assert(y == 5, "Postfix increment should return old value")
+assert(x == 6, "Variable should be incremented")
+println("✓ Test 1: Postfix increment")
+
+# Test 2: Basic prefix increment
+let a = 5
+let b = ++a
+assert(b == 6, "Prefix increment should return new value")
+assert(a == 6, "Variable should be incremented")
+println("✓ Test 2: Prefix increment")
+
+# Test 3: Basic postfix decrement
+let m = 10
+let n = m--
+assert(n == 10, "Postfix decrement should return old value")
+assert(m == 9, "Variable should be decremented")
+println("✓ Test 3: Postfix decrement")
+
+# Test 4: Basic prefix decrement
+let p = 10
+let q = --p
+assert(q == 9, "Prefix decrement should return new value")
+assert(p == 9, "Variable should be decremented")
+println("✓ Test 4: Prefix decrement")
+
+# Test 5: Multiple increments in expression
+let c = 0
+let d = c++ + c++ + c++
+assert(d == 3, "Sum of postfix increments: 0 + 1 + 2 = 3")
+assert(c == 3, "Variable should be incremented 3 times")
+println("✓ Test 5: Multiple increments in expression")
+
+# Test 6: Prefix and postfix mixed
+let e = 5
+let f = ++e + e++
+assert(f == 12, "Prefix (6) + postfix (6) = 12")
+assert(e == 7, "Variable should be incremented twice")
+println("✓ Test 6: Mixed prefix and postfix")
+
+# Test 7: With floats
+let g = 3.5
+g++
+assert(g == 4.5, "Float increment should work")
+g--
+assert(g == 3.5, "Float decrement should work")
+println("✓ Test 7: Float increment/decrement")
+
+# Test 8: In array access
+let arr = [10, 20, 30, 40]
+let idx = 0
+assert(arr[idx++] == 10, "First element")
+assert(idx == 1, "Index incremented")
+assert(arr[idx++] == 20, "Second element")
+assert(idx == 2, "Index incremented again")
+println("✓ Test 8: Array access with postfix increment")
+
+# Test 9: With object properties
+let obj = {count: 0}
+obj.count++
+assert(obj.count == 1, "Object property increment")
+++obj.count
+assert(obj.count == 2, "Object property prefix increment")
+obj.count--
+assert(obj.count == 1, "Object property decrement")
+println("✓ Test 9: Object property increment/decrement")
+
+# Test 10: Standalone statements
+let standalone = 0
+standalone++
+assert(standalone == 1, "Standalone postfix increment")
+++standalone
+assert(standalone == 2, "Standalone prefix increment")
+standalone--
+assert(standalone == 1, "Standalone postfix decrement")
+--standalone
+assert(standalone == 0, "Standalone prefix decrement")
+println("✓ Test 10: Standalone statements")
+
+# Test 11: In while loop
+let counter = 0
+while (counter < 5) {
+    counter++
+}
+assert(counter == 5, "While loop with increment")
+println("✓ Test 11: While loop with increment")
+
+# Test 12: Chained increments
+let chain = 0
+chain++
+chain++
+chain++
+assert(chain == 3, "Chained increments")
+println("✓ Test 12: Chained increments")
+
+# Test 13: With negative numbers
+let neg = -5
+neg++
+assert(neg == -4, "Increment negative number")
+neg--
+assert(neg == -5, "Decrement back to negative")
+println("✓ Test 13: Negative numbers")
+
+# Test 14: Return value vs side effect
+let ret1 = 10
+let val1 = ret1++  # Returns 10, ret1 becomes 11
+assert(val1 == 10, "Postfix returns old value")
+assert(ret1 == 11, "But modifies the variable")
+
+let ret2 = 10
+let val2 = ++ret2  # Returns 11, ret2 becomes 11
+assert(val2 == 11, "Prefix returns new value")
+assert(ret2 == 11, "And modifies the variable")
+println("✓ Test 14: Return value vs side effect")
+
+# Test 15: Complex expression
+let complex = 5
+let result = (complex++ * 2) + (++complex * 3)
+# complex starts at 5
+# complex++ returns 5, complex becomes 6, multiply by 2 = 10
+# ++complex makes it 7, returns 7, multiply by 3 = 21
+# total = 10 + 21 = 31
+assert(result == 31, "Complex expression evaluation")
+assert(complex == 7, "Final value after complex expression")
+println("✓ Test 15: Complex expression")
+
+println("\n=== All tests passed! ===")

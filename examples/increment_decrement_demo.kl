@@ -1,0 +1,130 @@
+#!/usr/bin/env klang
+# ============================================
+# Increment and Decrement Operators Demo
+# ============================================
+# Demonstrates the use of ++ and -- operators
+# Both prefix (++i, --i) and postfix (i++, i--) forms
+
+println("=== Increment and Decrement Operators Demo ===\n")
+
+# ===========================================
+# Postfix Increment (i++)
+# ===========================================
+println("1. Postfix Increment (i++):")
+let x = 5
+println("  Initial x = " + x)
+println("  x++ returns: " + x++)
+println("  After x++, x = " + x)
+println()
+
+# ===========================================
+# Prefix Increment (++i)
+# ===========================================
+println("2. Prefix Increment (++i):")
+let y = 5
+println("  Initial y = " + y)
+println("  ++y returns: " + ++y)
+println("  After ++y, y = " + y)
+println()
+
+# ===========================================
+# Postfix Decrement (i--)
+# ===========================================
+println("3. Postfix Decrement (i--):")
+let a = 10
+println("  Initial a = " + a)
+println("  a-- returns: " + a--)
+println("  After a--, a = " + a)
+println()
+
+# ===========================================
+# Prefix Decrement (--i)
+# ===========================================
+println("4. Prefix Decrement (--i):")
+let b = 10
+println("  Initial b = " + b)
+println("  --b returns: " + --b)
+println("  After --b, b = " + b)
+println()
+
+# ===========================================
+# Using in Expressions
+# ===========================================
+println("5. Using in Expressions:")
+let counter = 0
+println("  counter = " + counter)
+
+let result1 = counter++ + counter++
+println("  counter++ + counter++ = " + result1)
+println("  counter is now: " + counter)
+
+counter = 0
+let result2 = ++counter + ++counter
+println("  ++counter + ++counter = " + result2)
+println("  counter is now: " + counter)
+println()
+
+# ===========================================
+# In For Loops (now supported!)
+# ===========================================
+println("6. Using in For Loops:")
+println("  Counting up with i++:")
+for (let i = 0; i < 5; i++) {
+    println("    i = " + i)
+}
+
+println("\n  Counting down with i--:")
+for (let i = 5; i > 0; i--) {
+    println("    i = " + i)
+}
+
+println("\n  Using prefix ++i:")
+for (let i = 0; i < 5; ++i) {
+    println("    i = " + i)
+}
+println()
+
+# ===========================================
+# With Arrays
+# ===========================================
+println("7. With Arrays:")
+let arr = [10, 20, 30]
+let index = 0
+println("  arr[index++] = " + arr[index++])
+println("  arr[index++] = " + arr[index++])
+println("  arr[index++] = " + arr[index++])
+println("  index is now: " + index)
+println()
+
+# ===========================================
+# With Object Properties
+# ===========================================
+println("8. With Object Properties:")
+let obj = {count: 0}
+println("  obj.count = " + obj.count)
+println("  obj.count++ = " + obj.count++)
+println("  After increment, obj.count = " + obj.count)
+println("  ++obj.count = " + ++obj.count)
+println("  After prefix increment, obj.count = " + obj.count)
+println()
+
+# ===========================================
+# Difference Between Prefix and Postfix
+# ===========================================
+println("9. Key Difference:")
+println("  Postfix (i++): Returns OLD value, then increments")
+println("  Prefix (++i): Increments first, then returns NEW value")
+println()
+
+let demo = 5
+println("  demo = " + demo)
+println("  In expression (demo++ * 2): " + (demo++ * 2))
+println("  demo is now: " + demo)
+
+demo = 5
+println("  demo = " + demo)
+println("  In expression (++demo * 2): " + (++demo * 2))
+println("  demo is now: " + demo)
+println()
+
+println("=== Demo Complete ===")

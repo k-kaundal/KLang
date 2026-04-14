@@ -42,7 +42,7 @@ fn test_unsafe_with_control_flow() {
     
     let result = 0;
     unsafe {
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 5; i = i + 1) {
             if (i == 2) {
                 println("Skipping i = 2");
                 continue;

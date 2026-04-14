@@ -106,9 +106,9 @@ class ScreenBuffer {
     
     clear() {
         this.buffer = []
-        for (let i = 0; i < this.height; i++) {
+        for (let i = 0; i < this.height; i = i + 1) {
             let row = []
-            for (let j = 0; j < this.width; j++) {
+            for (let j = 0; j < this.width; j = j + 1) {
                 row.push({char: " ", style: ""})
             }
             this.buffer.push(row)
@@ -118,7 +118,7 @@ class ScreenBuffer {
     write(x, y, text, style) {
         if (y < 0 || y >= this.height) return
         
-        for (let i = 0; i < len(text); i++) {
+        for (let i = 0; i < len(text); i = i + 1) {
             let col = x + i
             if (col >= 0 && col < this.width) {
                 this.buffer[y][col] = {
@@ -130,7 +130,7 @@ class ScreenBuffer {
     }
     
     writeLines(x, y, lines, style) {
-        for (let i = 0; i < len(lines); i++) {
+        for (let i = 0; i < len(lines); i = i + 1) {
             this.write(x, y + i, lines[i], style)
         }
     }
@@ -141,11 +141,11 @@ class ScreenBuffer {
         print("\x1b[H")
         
         # Render buffer
-        for (let y = 0; y < this.height; y++) {
+        for (let y = 0; y < this.height; y = y + 1) {
             let line = ""
             let currentStyle = ""
             
-            for (let x = 0; x < this.width; x++) {
+            for (let x = 0; x < this.width; x = x + 1) {
                 let cell = this.buffer[y][x]
                 
                 if (cell.style != currentStyle) {
@@ -167,8 +167,8 @@ class ScreenBuffer {
         # Only render changed cells (more efficient)
         # Note: Deep copy using map may impact performance for very large buffers
         # Consider optimizing if targeting higher resolutions or lower-end systems
-        for (let y = 0; y < this.height; y++) {
-            for (let x = 0; x < this.width; x++) {
+        for (let y = 0; y < this.height; y = y + 1) {
+            for (let x = 0; x < this.width; x = x + 1) {
                 let current = this.buffer[y][x]
                 let previous = this.previousBuffer[y] ? this.previousBuffer[y][x] : null
                 
