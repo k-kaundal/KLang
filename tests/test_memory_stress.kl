@@ -5,7 +5,7 @@ println("=== Memory Stress Test Suite ===\n");
 println("Test 1: Create/Destroy Many Objects");
 function testObjectCreation() {
     let count = 0;
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 1000; i = i + 1) {
         let obj = {
             id: i,
             name: "Object" + i,
@@ -27,19 +27,19 @@ println("Created " + objCount + " objects");
 println("\nTest 2: Large Array Allocations");
 function testLargeArrays() {
     let arr1 = [];
-    for (let i = 0; i < 10000; i++) {
+    for (let i = 0; i < 10000; i = i + 1) {
         arr1.push(i);
     }
     println("Array 1 size: " + arr1.length);
     
     let arr2 = [];
-    for (let i = 0; i < 10000; i++) {
+    for (let i = 0; i < 10000; i = i + 1) {
         arr2.push("String" + i);
     }
     println("Array 2 size: " + arr2.length);
     
     let arr3 = [];
-    for (let i = 0; i < 5000; i++) {
+    for (let i = 0; i < 5000; i = i + 1) {
         arr3.push({id: i, value: i * 2});
     }
     println("Array 3 size: " + arr3.length);
@@ -79,7 +79,7 @@ println("Deep recursion result: " + deepResult);
 println("\nTest 5: String Concatenation in Loops");
 function testStringConcat() {
     let str = "";
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 1000; i = i + 1) {
         str += "A";
     }
     return str.length;
@@ -91,7 +91,7 @@ println("Concatenated string length: " + strLen);
 println("\nTest 6: Multiple String Operations");
 function testMultipleStrings() {
     let strings = [];
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 1000; i = i + 1) {
         strings.push("String number " + i + " with some additional text");
     }
     return strings.length;
@@ -106,7 +106,7 @@ function createNestedStructure(depth, breadth) {
         return {value: "leaf"};
     }
     let obj = {level: depth, children: []};
-    for (let i = 0; i < breadth; i++) {
+    for (let i = 0; i < breadth; i = i + 1) {
         obj.children.push(createNestedStructure(depth - 1, breadth));
     }
     return obj;
@@ -117,9 +117,9 @@ println("Created nested structure with depth 5 and breadth 3");
 // Test 8: Memory churn (allocate and release)
 println("\nTest 8: Memory Churn Test");
 function memoryChurn() {
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 100; i = i + 1) {
         let tempArray = [];
-        for (let j = 0; j < 100; j++) {
+        for (let j = 0; j < 100; j = j + 1) {
             tempArray.push({id: j, data: "Data" + j});
         }
         // tempArray goes out of scope
@@ -134,17 +134,17 @@ function testArrayOperations() {
     let arr = [];
     
     // Push operations
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 1000; i = i + 1) {
         arr.push(i);
     }
     
     // Pop operations
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 500; i = i + 1) {
         arr.pop();
     }
     
     // More pushes
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 500; i = i + 1) {
         arr.push(i * 2);
     }
     
@@ -168,12 +168,12 @@ println("Large repeat length: " + largeRepeat.length);
 println("\nTest 11: Object Property Access");
 function testPropertyAccess() {
     let obj = {};
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 1000; i = i + 1) {
         obj["prop" + i] = "value" + i;
     }
     
     let sum = 0;
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 1000; i = i + 1) {
         if (obj["prop" + i]) {
             sum++;
         }
@@ -187,7 +187,7 @@ println("Properties accessed: " + propCount);
 println("\nTest 12: Closure Memory Test");
 function createClosures() {
     let closures = [];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 100; i = i + 1) {
         let captured = i;
         closures.push(function() {
             return captured * 2;
@@ -202,7 +202,7 @@ println("Created " + closureCount + " closures");
 println("\nTest 13: Mixed Operations");
 function mixedOperations() {
     let result = 0;
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 100; i = i + 1) {
         let obj = {id: i};
         let arr = [i, i+1, i+2];
         let str = "Test" + i;
@@ -215,9 +215,9 @@ println("Mixed operations result: " + mixedResult);
 
 // Test 14: Rapid allocation/deallocation
 println("\nTest 14: Rapid Allocation/Deallocation");
-for (let iteration = 0; iteration < 10; iteration++) {
+for (let iteration = 0; iteration < 10; iteration = iteration + 1) {
     let tempData = [];
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 1000; i = i + 1) {
         tempData.push({
             id: i,
             name: "Item" + i,
@@ -231,7 +231,7 @@ println("Completed 10 iterations of rapid allocation");
 // Test 15: String split and join operations
 println("\nTest 15: String Split/Join Operations");
 let longString = "";
-for (let i = 0; i < 100; i++) {
+for (let i = 0; i < 100; i = i + 1) {
     longString += "word" + i + " ";
 }
 let words = longString.split(" ");

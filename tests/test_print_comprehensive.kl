@@ -83,7 +83,7 @@ println("Nested object: ", nestedObj);
 
 // Test 10: Rapid successive prints
 println("\n=== Test 10: Rapid Successive Prints ===");
-for (let i = 0; i < 100; i++) {
+for (let i = 0; i < 100; i = i + 1) {
     print(i);
     if (i < 99) print(", ");
 }
@@ -99,7 +99,7 @@ println(" - newline");
 // Test 12: Long line
 println("\n=== Test 12: Long Line ===");
 let longLine = "";
-for (let i = 0; i < 200; i++) {
+for (let i = 0; i < 200; i = i + 1) {
     longLine += "Word" + i + " ";
 }
 println(longLine);
