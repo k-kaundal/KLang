@@ -196,49 +196,98 @@ static ASTNode *parse_primary(Parser *parser) {
         token_free(&t);
         
         /* Check if this is a struct literal (Identifier { ... }) */
+        /* Use lookahead to distinguish from code blocks:
+         * Struct literal: Identifier { field: value, ... }
+         * Code block: Identifier { statements }
+         * Lookahead: check if { is followed by IDENT and then COLON
+         */
         if (check(parser, TOKEN_LBRACE)) {
-            Token lbrace = advance(parser);
-            ASTNode *struct_lit = ast_new_struct_literal(ident_name, line);
-            token_free(&lbrace);
-            free(ident_name);
+            int is_struct_literal = 0;
             
-            /* Parse field initializers */
-            while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
-                char *field_name;
-                ASTNode *field_value;
-                Token field_tok;
+            /* Lookahead to check if this is really a struct literal */
+            if (parser->peek.type == TOKEN_IDENT) {
+                /* Check if this could be a struct literal by looking for pattern: IDENT followed by COLON or RBRACE */
+                /* Save current state for potential backtrack */
+                int saved_pos = parser->lexer->pos;
+                int saved_line = parser->lexer->line;
+                int saved_col = parser->lexer->col;
+                Token saved_current = parser->current;
+                Token saved_peek = parser->peek;
                 
-                while (match(parser, TOKEN_COMMA)) {}
-                if (check(parser, TOKEN_RBRACE)) break;
+                /* Advance past LBRACE */
+                advance(parser);
                 
-                /* Parse field name */
-                field_tok = consume(parser, TOKEN_IDENT);
-                field_name = strdup(field_tok.value);
-                token_free(&field_tok);
-                
-                /* Expect colon */
-                {
-                    Token colon = consume(parser, TOKEN_COLON);
-                    token_free(&colon);
+                /* Check if followed by IDENT and COLON (struct literal pattern) */
+                if (check(parser, TOKEN_IDENT)) {
+                    if (parser->peek.type == TOKEN_COLON) {
+                        is_struct_literal = 1;
+                    }
+                } else if (check(parser, TOKEN_RBRACE)) {
+                    /* Empty braces: Identifier {} is a struct literal */
+                    is_struct_literal = 1;
                 }
                 
-                /* Parse field value */
-                field_value = parse_expression(parser);
-                
-                /* Add field to struct literal */
-                ast_struct_literal_add_field(struct_lit, field_name, field_value);
-                free(field_name);
-                
-                /* Allow comma separator */
-                match(parser, TOKEN_COMMA);
+                /* Restore parser state */
+                parser->lexer->pos = saved_pos;
+                parser->lexer->line = saved_line;
+                parser->lexer->col = saved_col;
+                parser->current = saved_current;
+                parser->peek = saved_peek;
+            } else if (parser->peek.type == TOKEN_RBRACE) {
+                /* Empty braces: Identifier {} is a struct literal */
+                is_struct_literal = 1;
             }
             
-            {
-                Token rbrace = consume(parser, TOKEN_RBRACE);
-                token_free(&rbrace);
+            if (is_struct_literal) {
+                Token lbrace = advance(parser);
+                ASTNode *struct_lit = ast_new_struct_literal(ident_name, line);
+                token_free(&lbrace);
+                free(ident_name);
+                
+                /* Parse field initializers */
+                while (!check(parser, TOKEN_RBRACE) && !check(parser, TOKEN_EOF)) {
+                    char *field_name;
+                    ASTNode *field_value;
+                    Token field_tok;
+                    
+                    while (match(parser, TOKEN_COMMA)) {}
+                    if (check(parser, TOKEN_RBRACE)) break;
+                    
+                    /* Parse field name */
+                    field_tok = consume(parser, TOKEN_IDENT);
+                    field_name = strdup(field_tok.value);
+                    token_free(&field_tok);
+                    
+                    /* Expect colon */
+                    {
+                        Token colon = consume(parser, TOKEN_COLON);
+                        token_free(&colon);
+                    }
+                    
+                    /* Parse field value */
+                    field_value = parse_expression(parser);
+                    
+                    /* Add field to struct literal */
+                    ast_struct_literal_add_field(struct_lit, field_name, field_value);
+                    free(field_name);
+                    
+                    /* Allow comma separator */
+                    match(parser, TOKEN_COMMA);
+                }
+                
+                {
+                    Token rbrace = consume(parser, TOKEN_RBRACE);
+                    token_free(&rbrace);
+                }
+                
+                return struct_lit;
+            } else {
+                /* Not a struct literal - just return the identifier */
+                /* The { will be handled by the caller (e.g., as a block in while/if statements) */
+                ASTNode *n = ast_new_ident(ident_name, line);
+                free(ident_name);
+                return n;
             }
-            
-            return struct_lit;
         } else {
             /* Regular identifier */
             ASTNode *n = ast_new_ident(ident_name, line);
