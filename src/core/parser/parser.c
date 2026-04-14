@@ -2143,11 +2143,25 @@ static ASTNode *parse_class_def(Parser *parser) {
     class_name = strdup(name_tok.value);
     token_free(&name_tok);
     
-    /* Check for extends clause */
+    /* Check for extends clause - supports both `extends ClassName` and `extends module.ClassName` */
     if (match(parser, TOKEN_EXTENDS)) {
         Token parent_tok = consume(parser, TOKEN_IDENT);
         parent_name = strdup(parent_tok.value);
         token_free(&parent_tok);
+        
+        /* Check for qualified name: module.ClassName */
+        if (check(parser, TOKEN_DOT)) {
+            Token dot_tok = advance(parser);
+            token_free(&dot_tok);
+            Token class_tok = consume(parser, TOKEN_IDENT);
+            
+            /* Combine module.ClassName into a single string */
+            char *qualified_name = malloc(strlen(parent_name) + strlen(class_tok.value) + 2);
+            sprintf(qualified_name, "%s.%s", parent_name, class_tok.value);
+            free(parent_name);
+            parent_name = qualified_name;
+            token_free(&class_tok);
+        }
     }
     
     class_node = ast_new_class_def(class_name, parent_name, line);

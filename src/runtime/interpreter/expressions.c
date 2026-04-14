@@ -948,6 +948,77 @@ Value eval_call(Interpreter *interp, ASTNode *node, Env *env) {
                 interp->last_result.return_value = make_null();
             }
         }
+    } else if (callee.type == VAL_CLASS) {
+        // Direct class instantiation: Test() instead of new Test()
+        // Check if class is abstract
+        if (callee.as.class_val.is_abstract) {
+            fprintf(stderr, "Error: cannot instantiate abstract class '%s'\n",
+                    callee.as.class_val.name);
+            interp->had_error = 1;
+            value_free(&result);
+            result = make_null();
+        } else {
+            // Create object
+            Value obj = make_object(callee.as.class_val.name, callee.as.class_val.methods);
+            
+            // Initialize fields with default values from class
+            EnvEntry *field_entry = callee.as.class_val.fields->entries;
+            while (field_entry) {
+                Value field_val = field_entry->value;
+                // Don't duplicate here - env_set_local will handle it
+                env_set_local(obj.as.object_val->fields, field_entry->name, field_val);
+                field_entry = field_entry->next;
+            }
+            
+            // Call constructor or init method if it exists
+            Value *ctor_method = env_get(callee.as.class_val.methods, "constructor");
+            if (!ctor_method || ctor_method->type != VAL_FUNCTION) {
+                // Fallback to "init" for backward compatibility
+                ctor_method = env_get(callee.as.class_val.methods, "init");
+            }
+            if (ctor_method && ctor_method->type == VAL_FUNCTION) {
+                // Create call environment with 'this' bound
+                Env *call_env = env_new(ctor_method->as.func_val.closure);
+                env_set_local(call_env, "this", obj);
+                
+                /* Handle rest parameters */
+                if (ctor_method->as.func_val.has_rest_param && ctor_method->as.func_val.param_count > 0) {
+                    /* Bind regular params */
+                    for (i = 0; i < ctor_method->as.func_val.param_count - 1 && i < argc; i++)
+                        env_set_local(call_env, ctor_method->as.func_val.param_names[i], args[i]);
+                    
+                    /* Collect rest args into array */
+                    Value rest_array;
+                    int rest_count = argc - (ctor_method->as.func_val.param_count - 1);
+                    if (rest_count < 0) rest_count = 0;
+                    rest_array.type = VAL_LIST;
+                    rest_array.as.list_val.count = rest_count;
+                    rest_array.as.list_val.capacity = rest_count;
+                    rest_array.as.list_val.items = malloc((rest_count > 0 ? rest_count : 1) * sizeof(Value));
+                    for (i = 0; i < rest_count; i++) {
+                        int arg_idx = ctor_method->as.func_val.param_count - 1 + i;
+                        rest_array.as.list_val.items[i] = args[arg_idx];
+                    }
+                    env_set_local(call_env, ctor_method->as.func_val.param_names[ctor_method->as.func_val.param_count - 1], rest_array);
+                } else {
+                    for (i = 0; i < ctor_method->as.func_val.param_count && i < argc; i++)
+                        env_set_local(call_env, ctor_method->as.func_val.param_names[i], args[i]);
+                }
+                
+                Value init_result = eval_block(interp, ctor_method->as.func_val.body, call_env);
+                value_free(&init_result);
+                
+                env_release(call_env);
+                
+                if (interp->last_result.is_return) {
+                    value_free(&interp->last_result.return_value);
+                    interp->last_result.is_return = 0;
+                }
+            }
+            
+            value_free(&result);
+            result = obj;
+        }
     }
 
     for (i = 0; i < argc; i++) value_free(&args[i]);

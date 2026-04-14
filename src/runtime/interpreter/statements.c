@@ -203,10 +203,19 @@ Value eval_if(Interpreter *interp, ASTNode *node, Env *env) {
     else if (cond.type == VAL_NULL) truthy = 0;
     else truthy = 1;
     value_free(&cond);
-    if (truthy)
-        return eval_node_env(interp, node->data.if_stmt.then_block, env);
-    else if (node->data.if_stmt.else_block)
-        return eval_node_env(interp, node->data.if_stmt.else_block, env);
+    if (truthy) {
+        // For blocks, eval directly without creating new scope
+        // (scope is managed by eval_block_stmt if needed)
+        if (node->data.if_stmt.then_block->type == NODE_BLOCK)
+            return eval_block(interp, node->data.if_stmt.then_block, env);
+        else
+            return eval_node_env(interp, node->data.if_stmt.then_block, env);
+    } else if (node->data.if_stmt.else_block) {
+        if (node->data.if_stmt.else_block->type == NODE_BLOCK)
+            return eval_block(interp, node->data.if_stmt.else_block, env);
+        else
+            return eval_node_env(interp, node->data.if_stmt.else_block, env);
+    }
     return make_null();
 }
 
@@ -220,7 +229,12 @@ Value eval_while(Interpreter *interp, ASTNode *node, Env *env) {
         value_free(&cond);
         if (!truthy) break;
         {
-            Value r = eval_node_env(interp, node->data.while_stmt.body, env);
+            Value r;
+            // For blocks, eval directly without creating new scope
+            if (node->data.while_stmt.body->type == NODE_BLOCK)
+                r = eval_block(interp, node->data.while_stmt.body, env);
+            else
+                r = eval_node_env(interp, node->data.while_stmt.body, env);
             value_free(&r);
         }
         if (interp->last_result.is_return || interp->last_result.is_break) {

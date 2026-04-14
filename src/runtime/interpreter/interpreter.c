@@ -307,8 +307,8 @@ Value make_class(const char *name, const char *parent_name) {
     val.type = VAL_CLASS;
     val.as.class_val.name = strdup(name);
     val.as.class_val.parent_name = parent_name ? strdup(parent_name) : NULL;
-    val.as.class_val.methods = NULL;
-    val.as.class_val.fields = NULL;
+    val.as.class_val.methods = env_new(NULL);  /* Initialize to prevent NULL pointer */
+    val.as.class_val.fields = env_new(NULL);   /* Initialize to prevent NULL pointer */
     val.as.class_val.static_methods = env_new(NULL);  /* Initialize to prevent NULL pointer */
     val.as.class_val.static_fields = env_new(NULL);   /* Initialize to prevent NULL pointer */
     return val;
@@ -497,9 +497,7 @@ void value_free(Value *v) {
             if (v->as.object_val->fields) {
                 env_free(v->as.object_val->fields);
             }
-            if (v->as.object_val->methods) {
-                env_free(v->as.object_val->methods);
-            }
+            // Don't free methods - they're shared with the class
             free(v->as.object_val);
             v->as.object_val = NULL;  // Only null out if we actually freed it
         } else {
