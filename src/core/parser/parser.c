@@ -2222,11 +2222,33 @@ static int check_ahead(Parser *parser, TokenType type) {
  * import defaultName from "module"
  * import * as namespace from "module"
  * import defaultName, {name1, name2} from "module"
+ * import "module" as alias
  */
 static ASTNode *parse_import(Parser *parser) {
     Token import_tok = consume(parser, TOKEN_IMPORT);
     int line = import_tok.line;
     token_free(&import_tok);
+
+    /* import "module" as alias */
+    if (check(parser, TOKEN_STRING)) {
+        Token path_tok = consume(parser, TOKEN_STRING);
+        char *module_path = strdup(path_tok.value);
+        Token as_tok, alias_tok;
+        ASTNode *result;
+        token_free(&path_tok);
+        
+        as_tok = consume(parser, TOKEN_AS);
+        token_free(&as_tok);
+        
+        alias_tok = consume(parser, TOKEN_IDENT);
+        char *alias = strdup(alias_tok.value);
+        token_free(&alias_tok);
+        
+        result = ast_new_import_namespace(alias, module_path, line);
+        free(alias);
+        free(module_path);
+        return result;
+    }
 
     /* import * as namespace from "module" */
     if (check(parser, TOKEN_STAR)) {
