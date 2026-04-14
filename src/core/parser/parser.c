@@ -2139,7 +2139,7 @@ static ASTNode *parse_class_def(Parser *parser) {
             is_static = 1;
         }
         
-        /* Parse class members (let statements and function definitions) */
+        /* Parse class members (let statements, function definitions, and constructors) */
         if (check(parser, TOKEN_LET)) {
             if (is_abstract) {
                 fprintf(stderr, "Parse error at line %d: fields cannot be abstract\n",
@@ -2168,8 +2168,110 @@ static ASTNode *parse_class_def(Parser *parser) {
                 }
                 nodelist_push(&class_node->data.class_def.members, member);
             }
+        } else if (check(parser, TOKEN_CONSTRUCTOR)) {
+            /* Parse constructor - treat it as a special function named "constructor" */
+            if (is_static) {
+                fprintf(stderr, "Parse error at line %d: constructors cannot be static\n",
+                        parser->current.line);
+                parser->had_error = 1;
+            }
+            if (is_abstract) {
+                fprintf(stderr, "Parse error at line %d: constructors cannot be abstract\n",
+                        parser->current.line);
+                parser->had_error = 1;
+            }
+            
+            /* Consume constructor keyword */
+            int ctor_line = parser->current.line;
+            Token ctor_tok = advance(parser);
+            token_free(&ctor_tok);
+            
+            /* Parse parameters */
+            Token lparen_tok = consume(parser, TOKEN_LPAREN);
+            token_free(&lparen_tok);
+            
+            char **param_names = NULL;
+            char **param_types = NULL;
+            ASTNode **param_defaults = NULL;
+            int param_count = 0;
+            int param_cap = 0;
+            int seen_default = 0;
+            
+            while (!check(parser, TOKEN_RPAREN) && !check(parser, TOKEN_EOF)) {
+                int is_rest = 0;
+                
+                /* Check for rest parameter */
+                if (check(parser, TOKEN_SPREAD)) {
+                    Token spread_tok = advance(parser);
+                    token_free(&spread_tok);
+                    is_rest = 1;
+                }
+                
+                Token pname_tok = consume(parser, TOKEN_IDENT);
+                if (param_count >= param_cap) {
+                    param_cap = param_cap == 0 ? 4 : param_cap * 2;
+                    param_names = realloc(param_names, param_cap * sizeof(char *));
+                    param_types = realloc(param_types, param_cap * sizeof(char *));
+                    param_defaults = realloc(param_defaults, param_cap * sizeof(ASTNode *));
+                }
+                param_names[param_count] = strdup(pname_tok.value);
+                token_free(&pname_tok);
+                param_types[param_count] = NULL;
+                param_defaults[param_count] = NULL;
+                
+                if (match(parser, TOKEN_COLON)) {
+                    Token ptype_tok = consume(parser, TOKEN_IDENT);
+                    param_types[param_count] = strdup(ptype_tok.value);
+                    token_free(&ptype_tok);
+                }
+                
+                /* Check for default value: name = expr */
+                if (match(parser, TOKEN_ASSIGN)) {
+                    param_defaults[param_count] = parse_expression(parser);
+                    seen_default = 1;
+                } else if (seen_default && !is_rest) {
+                    fprintf(stderr, "Parse error at line %d: Required parameter '%s' cannot follow parameter with default value\n", 
+                            parser->current.line, param_names[param_count]);
+                    parser->had_error = 1;
+                }
+                
+                param_count++;
+                
+                if (is_rest) {
+                    if (!check(parser, TOKEN_RPAREN)) {
+                        fprintf(stderr, "Parse error at line %d: Rest parameter must be last\n", parser->current.line);
+                        parser->had_error = 1;
+                    }
+                    break;
+                }
+                
+                if (!match(parser, TOKEN_COMMA)) break;
+            }
+            
+            Token rparen_tok = consume(parser, TOKEN_RPAREN);
+            token_free(&rparen_tok);
+            
+            /* Create a function node for the constructor */
+            member = ast_new_func_def("constructor", NULL, ctor_line);
+            member->data.func_def.param_types = param_types;
+            member->data.func_def.default_values = param_defaults;
+            
+            int i;
+            for (i = 0; i < param_count; i++) {
+                nodelist_push(&member->data.func_def.params, ast_new_ident(param_names[i], ctor_line));
+                free(param_names[i]);
+            }
+            free(param_names);
+            
+            /* Parse constructor body */
+            member->data.func_def.body = parse_block(parser);
+            member->data.func_def.is_static = 0;
+            member->data.func_def.access = access;
+            member->data.func_def.is_abstract = 0;
+            
+            nodelist_push(&class_node->data.class_def.members, member);
         } else {
-            fprintf(stderr, "Parse error at line %d: expected 'let' or 'fn' in class body, got %s\n",
+            fprintf(stderr, "Parse error at line %d: expected 'let', 'fn', or 'constructor' in class body, got %s\n",
                     parser->current.line, token_type_name(parser->current.type));
             parser->had_error = 1;
             {
